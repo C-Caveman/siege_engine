@@ -1,0 +1,22 @@
+Features:
+    > Every animation has it's own file.
+    
+    > Every animation accessible by name.
+    
+    > Only two text files need to be changed
+      to add a new animation.
+      
+    > Animation length can be changed without
+      updating any text files.
+
+
+Details:
+
+Every animation name is listed in "textures/animation_names.txt"
+so that they can be loaded in that order.
+
+That same list of names is pasted into the animation_ids enum in graphics.h
+so that each animation can be referred to by name in the program.
+
+The length of each animation is calculated upon load time,
+then stored in the anim_len array.

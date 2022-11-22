@@ -1,0 +1,8 @@
+-interaction with chunks
+    -physics
+    -wall vs floor distinction
+-standardize think functions
+-merge animation enum and name list into one thing?
+-make adding entities easy
+-make animations step forward
+

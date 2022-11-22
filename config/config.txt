@@ -1,0 +1,20 @@
+# Format:
+#  (name) (value)
+#
+# To make a comment,
+# start a line with
+# the '#' symbol.
+#
+# Variable order does not matter,
+# but adding new variables requires
+# the use of vars_list.txt
+# with print_hashes(char* fname)
+# to update the hash table in cfg.cpp
+
+window_x 800
+window_y 800
+
+#window_x 1920
+#window_y 1080
+fullscreen 0
+fps_cap 120

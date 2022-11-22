@@ -1,0 +1,22 @@
+Features:
+    > All interactible things in the game are entities.
+    
+    > Every entity can have a "think" function to add
+      special behaviors.
+      
+    > Every entity can "think" during its "think_frame",
+      which can be mapped to certain frames of
+      their animations.
+
+
+Details:
+
+
+if (ent.frame >= ent.think_frame)
+    ent.think()
+
+entity spawning:
+    list of initial params
+
+entity thinking:
+    list of rules based on current params
