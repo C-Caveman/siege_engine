@@ -1,1 +1,5 @@
+# don't track .o files or executables
 o/*.o 
+ex
+# don't track images
+*.bmp
