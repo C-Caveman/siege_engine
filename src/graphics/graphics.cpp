@@ -184,7 +184,6 @@ void init_fonts() {
             font_relative_path, 
             sizeof(font_relative_path));
     TTF_Font* font = TTF_OpenFont(font_path, 24);
-    printf("\"\n");
     if (font == 0) {
         printf("Failed to load font: %s\n", TTF_GetError());
         printf("Path to font tried: %s\n", font_path);

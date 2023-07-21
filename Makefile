@@ -12,9 +12,14 @@
 # |
 # +--> input ---------------> ent --> defs
 
+LIBS="-lSDL2 -lSDL2_ttf"
+OBJECTS="o/server.o o/config.o o/graphics.o o/input.o \
+         o/world.o  o/chunk.o  o/actions.o  o/ent.o \
+         o/defs.o   o/client.o"
+
 ex: o/server.o o/graphics.o o/input.o o/world.o o/actions.o o/ent.o o/defs.o o/config.o o/client.o
 	cd o/
-	g++ -Wall -lSDL2 o/server.o o/config.o o/graphics.o o/input.o o/world.o o/chunk.o o/actions.o o/ent.o o/defs.o o/client.o -o ex $(shell pkg-config --cflags --libs sdl2)
+	g++ -Wall "${OBJECTS}" -o ex "${LIBS}"
 
 o/client.o: src/client/client.cpp src/client.h
 	gcc -c src/client/client.cpp -o o/client.o

@@ -1,7 +1,7 @@
-Features:
+Format:
     > Every animation has it's own file.
     
-    > Every animation accessible by name.
+    > Every animation accessible by name through an enum.
     
     > Only two text files need to be changed
       to add a new animation.
