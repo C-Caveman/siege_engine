@@ -17,4 +17,4 @@ window_y 800
 #window_x 1920
 #window_y 1080
 fullscreen 0
-fps_cap 120
+fps_cap 250
