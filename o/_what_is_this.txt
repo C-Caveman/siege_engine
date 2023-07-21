@@ -1,0 +1,1 @@
+This folder is for keeping all the .o files in one place.
