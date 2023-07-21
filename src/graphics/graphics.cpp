@@ -3,7 +3,11 @@
 #include <unistd.h>
 #include <iostream>
 #include <stdlib.h> // snprintf used for tex fname generation
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 
+#define MAX_PATH_LEN 256
+char path[MAX_PATH_LEN]; // path to the executable
 SDL_Texture* textures[MAX_TEXTURES];
 char animation_names[NUM_ANIM*ANIM_NAME_LEN];
 int animation_lengths[NUM_ANIM];
@@ -87,8 +91,8 @@ int load_animation_names() {
 // get all the textures for each animation loaded into the game
 void load_animations() {
     SDL_Surface* cur_surf;
-    char tex_filename[32];
-    char fname_folder_name[] = "textures/";
+    char tex_filename[64];
+    char fname_folder_name[] = "graphics/animations/";
     char fname_bmp[] = ".bmp";
     char frame_num_string[4];
     char* anim_name = 0;
@@ -111,7 +115,7 @@ void load_animations() {
         //printf("Loading animation %.*s at idx %d, tex_index=%d\n", anim_name_len, anim_name, total_textures, i);
         while (1) {
             // build the filename for the current animation frame
-            snprintf(tex_filename, sizeof(tex_filename), "textures/%.*s/%d.bmp", anim_name_len, anim_name, num_frames);
+            snprintf(tex_filename, sizeof(tex_filename), "graphics/animations/%.*s/%d.bmp", anim_name_len, anim_name, num_frames);
             // check if the next frame exists
             if (access(tex_filename, F_OK) == 0) {
                 // load the image into a surface
@@ -124,7 +128,7 @@ void load_animations() {
                 break;
             }
             if (!cur_surf) {
-                printf("***Texture loading error.\n");
+                printf("*** Texture loading error.\n");
                 printf("Loaded %d frames of %s, i=%d\n", num_frames, anim_name, i);
                 break;
             }
@@ -138,16 +142,57 @@ void load_animations() {
             total_textures++;
         }
         if (num_frames == 0) {
-            printf("*** Error: animation textures/%.*s is missing!\n", ANIM_NAME_LEN, anim_name);
+            printf("*** Error: animation graphics/animations/%.*s is missing!\n", ANIM_NAME_LEN, anim_name);
             exit(-1);
         }
         animation_lengths[i] = num_frames;
     }
-    printf("Loaded %d/%d textures max.\n", total_textures, MAX_TEXTURES);
+    printf("Loaded %d textures (maximum allowed is %d).\n", total_textures, MAX_TEXTURES);
 }
 
 
+void get_path() {
+    // determine the current working directory
+    FILE* fp = popen("/bin/pwd", "r"); //TODO support cross-platform
+    if (fp == 0) {
+        printf("Failed to run command.\n");
+        exit(1);
+    }
+    fgets(path, sizeof(path), fp);
+    pclose(fp);
+    if (path[0] == 0) { // make sure a path was obtained
+        printf("Failed to run PWD to get current directory.\n");
+        exit(1);
+    }
+    // remove the added newline from fgets
+    path[strcspn(path, "\n")] = '\0';
+    printf("Path: \"%s\"\n", path);
+}
+
+void init_fonts() {
+    // init font rendering
+    if(TTF_Init() < 0) {
+        printf("Failed to load SDL2_ttf library: %s\n", TTF_GetError());
+        exit(1);
+    }
+    // build a path to the font file
+    char font_path[MAX_PATH_LEN * 2];
+    strncpy(font_path, path, MAX_PATH_LEN);
+    int base_path_len = strnlen(font_path, MAX_PATH_LEN);
+    char font_relative_path[] = "/graphics/fonts/KronaOne-Regular.ttf";
+    strncpy(font_path+base_path_len, 
+            font_relative_path, 
+            sizeof(font_relative_path));
+    TTF_Font* font = TTF_OpenFont(font_path, 24);
+    printf("\"\n");
+    if (font == 0) {
+        printf("Failed to load font: %s\n", TTF_GetError());
+        printf("Path to font tried: %s\n", font_path);
+    }
+}
+
 void init_graphics() {
+    get_path();
     //
     // initialize the window
     //
@@ -176,8 +221,10 @@ void init_graphics() {
     if (anim_count != NUM_ANIM+1)
         printf("Found %d animation names, expected %d... \n", anim_count, NUM_ANIM+1);
     
-    // turn the images in the textures folder into GPU-usable textures
+    // turn the images in the graphics folder into GPU-usable textures
     load_animations();
+    // init the font rendering
+    init_fonts();
 }
 
 void track_fps() {
@@ -262,10 +309,10 @@ void draw_ent(ent* e) {
                      flip);
 }
 
-void draw_ents(ent** ent_array, float num_ents) {
+void draw_ents(ent* ent_array, float num_ents) {
     //draw_background();
     for (int i=0; i<num_ents; i++) {
-        draw_ent(ent_array[i]);
+        draw_ent(&ent_array[i]);
     }
     //
     // finished rendering a frame, 

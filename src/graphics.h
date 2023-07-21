@@ -27,7 +27,7 @@ void init_graphics();
 void track_fps();
 void draw_background();
 void draw_ent(ent* e);
-void draw_ents(ent** ent_array, float num_ents);
+void draw_ents(ent* ent_array, float num_ents);
 void draw_chunk(chunk* chunk);
 void draw_text(ent* e);
 void cleanup_graphics();
