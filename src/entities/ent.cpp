@@ -120,20 +120,18 @@ void ent::collide_ent_cs(ent* ent_b) {
 int ent::get_typ() {return type;}
 
 vec2 ent::get_pos() {return pos;}
-
 void ent::set_pos(vec2 p) {pos = p;}
 
 vec2 ent::get_dir() {return dir;}
-
 void ent::set_dir(vec2 d) {dir = d;}
 
 vec2 ent::get_vel() {return vel;}
-
 void ent::set_vel(vec2 v) {vel = v;}
 
 int ent::get_id() {return id;}
 
 int ent::get_anim() {return anim;}
+void ent::set_anim(int animation) {anim = animation;}
 
 ostream& operator << (ostream& os, const ent& e) {
     os << "ent type " << e.type << ", pos " << e.pos << ", vel " << e.vel << ", id " << e.id;
@@ -149,6 +147,6 @@ void ent::set_next(ent* n) {next = n;}
 void ent::set_prev(ent* p) {prev = p;}
 
 void ent::set_state(int state_index, int new_state) {
-    state_info[state_index] = new_state;
+    state_info[state_index] = (char) new_state;
 }
 int ent::get_state(int state_index) {return (int)state_info[state_index];}

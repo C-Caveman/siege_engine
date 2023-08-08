@@ -2,8 +2,17 @@
 
 #include "../client.h"
 
-void client_init(int my_id, ent* my_ent) {
+
+
+//TODO this
+void get_input_state() {}
+
+struct ent* client::get_ent() {return client_ent;}
+void client::set_ent(struct ent* e) {client_ent = e;}
+
+// TODO this
+void client_init(struct client* c, ent* client_entity) {
     //printf("Client initializing...\n");
     //id = my_id;
-    //client_ent = my_ent;
+    c->set_ent(client_entity);
 }

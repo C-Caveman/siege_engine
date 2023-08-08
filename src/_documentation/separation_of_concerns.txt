@@ -1,0 +1,36 @@
+=================================================
+Separation of Concerns:
+-----------------------------
+
+To prevent spaghetti, everything must have:
+    > a clear purpose
+    > an obvious means of correct use.
+
+    
+=============================================
+Where is all the data?
+-------------------------
+
+Client Struct:
+    input_state:
+        mouse_x, mouse_y
+        keys pressed
+    
+Client's Entity:
+    entity_state:
+        updated using input_state
+        updated by the server
+    
+Animation Frames:
+
+
+
+=========================================
+Flow of Information
+--------------------------
+
+Player Movement:
+client_input -> input_state -> entity_state
+
+Animation:
+entity_state -> animation_frame

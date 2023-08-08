@@ -22,6 +22,7 @@ float last_frame_end, frame_time, frame_count, last_sec, fps;
 float dt = 0;
 float view_x = 0;
 float view_y = 0;
+TTF_Font* font = 0;
 
 //TODO fix this
 extern int mouse_angle;
@@ -140,6 +141,9 @@ void load_animations() {
                 printf("***Failed to load texture %s\n", tex_filename);
             num_frames++;
             total_textures++;
+            if (cur_surf != 0) { // free the surface used to load the current texture
+                SDL_FreeSurface(cur_surf);
+            }
         }
         if (num_frames == 0) {
             printf("*** Error: animation graphics/animations/%.*s is missing!\n", ANIM_NAME_LEN, anim_name);
@@ -183,7 +187,7 @@ void init_fonts() {
     strncpy(font_path+base_path_len, 
             font_relative_path, 
             sizeof(font_relative_path));
-    TTF_Font* font = TTF_OpenFont(font_path, 24);
+    font = TTF_OpenFont(font_path, 24);
     if (font == 0) {
         printf("Failed to load font: %s\n", TTF_GetError());
         printf("Path to font tried: %s\n", font_path);
@@ -191,6 +195,7 @@ void init_fonts() {
 }
 
 void init_graphics() {
+    // find the file path of the executable, primarily to build an absolute path to the font file
     get_path();
     //
     // initialize the window
@@ -357,7 +362,9 @@ void cleanup_graphics() {
     SDL_DestroyWindow(window);
     for (int i=0; i<MAX_TEXTURES; i++) {
         if (textures[i] != 0)
-            SDL_DestroyTexture(textures[i]);
+            ;//SDL_DestroyTexture(textures[i]);
     }
+    TTF_CloseFont(font);
+    TTF_Quit();
     SDL_Quit();
 }

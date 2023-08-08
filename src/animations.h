@@ -13,8 +13,10 @@ load_animation_names() to find the enum
 
 // each animation loaded by the game (filenames)
 enum animation_ids {
-    player,
+    rocket_tank,
     gun_0,
+    gun_chaingun,
+    gun_grenade,
     sword,
     sand,
     stone,

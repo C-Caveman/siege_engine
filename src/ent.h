@@ -53,6 +53,7 @@ public:
     void set_vel(vec2);
     int get_id();
     int get_anim();
+    void set_anim(int animation);
     friend ostream& operator << (ostream& os, const ent& e);
     ent* get_next();
     ent* get_prev();

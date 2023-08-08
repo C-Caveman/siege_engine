@@ -2,6 +2,7 @@
 #ifndef SERVER
 #define SERVER
 
+#include "audio.h"
 #include "graphics.h"
 #include "input.h"
 #include "world.h"
@@ -10,15 +11,19 @@
 #include "actions.h"
 
 //TODO set up data structures for handling server data
-struct ent entities[MAX_ENTS];
-struct client clients[MAX_CLIENTS];
+extern int num_entities;
+extern struct ent entities[MAX_ENTS];
+extern int num_clients;
+extern struct client clients[MAX_CLIENTS]; //TODO move server constants
 
-// load config data
+// load server config data
 void server_config();
 
 //TODO manage the entities array
-void add_ent(int id); // TODO this
+struct ent* add_ent(int type); // TODO this
 void remove_ent(int id); // TODO this
+//TODO manage client array
+struct client* add_client();
 
 //TODO initialize a singleplayer server
 // start up a singleplayer server

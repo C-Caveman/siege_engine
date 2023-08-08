@@ -2,9 +2,39 @@
 // update the clients on what has happened (if multiplayer)
 
 #include "../server.h"
+#include <unistd.h> // testing memory leaks with sleep()
 
-void sword_movement(ent* e, ent* e_displayer) {
-    e_displayer->move_ent(e->get_pos() + vec2(mouse_x,mouse_y));
+// entity and client data are in these arrays
+int num_entities = 0;
+struct ent entities[MAX_ENTS];
+int num_clients = 0;
+struct client clients[MAX_CLIENTS];
+
+// each entity gets a unique ID number
+int id = 0;
+int new_id() {return ++id;}
+
+// add an entity to "entities"
+struct ent* add_ent(int type) {
+    //TODO add an insert_ent() method here, so new ents fill gaps in the ent_array TODO
+    entities[num_entities] = ent (new_id(), type, rocket_tank, 0, 0, 2, vec2(0,0), vec2(0,0), vec2(0,0));
+    struct ent* e = &entities[num_entities];
+    //printf("New ent id %d\n", e->get_id());
+    num_entities++;
+    return e;
+}
+
+// add a client to "clients"
+struct client* add_client() {
+    struct ent* client_ent  = add_ent(type_player);
+    client_init(&clients[num_clients], client_ent);
+    struct client* c = &clients[num_clients];
+    num_clients++;
+    return c;
+}
+
+void gun_movement(ent* e, ent* e_displayer) {
+    e_displayer->move_ent(e->get_pos() );//+ vec2(mouse_x,mouse_y));
 }
 
 void server_config() {
@@ -18,20 +48,14 @@ void server_config() {
     vars_from_file(config_fname);
 }
 
-int id = 0;
-int new_id() {
-    id++;
-    return id;
-}
 
 int main() {
     server_config();
-    // make the player_0 entity
-    ent e1(new_id(), type_player, knight_1, 0, 0, 2, vec2(0,0), vec2(0,0), vec2(0,0));
-    entities[0] = e1;
-    client_init(0, &entities[0]);
-    ent* player_0 = &entities[0];
-    player_0->set_state(state_player_speed,8); // walk instead of sneak
+    // make the player_entity entity
+    struct client* player_entity_client = add_client();
+    //player_entity_client->get_ent()->set_anim(rocket_tank);
+    ent* player_entity = player_entity_client->get_ent();
+    player_entity->set_state(state_player_speed,8); // walk instead of sneak
     
     
     //
@@ -40,27 +64,27 @@ int main() {
     running = 1;
     init_graphics();
     
-    
     //
     // build an example world of entities
     //
-    // TODO use a function to populate the server's entity array
     world test_world;
     test_world.get_chunks()->set_blocks(stonedk);
     test_world.get_chunks()->set_block(1,0, tiledark,1);
-    int num_ents = 5;
-    ent* ent_array[MAX_ENTS];
-    entities[1]=ent(new_id(), type_scenery, stone, 0, 0, 1, vec2(0,0), vec2(0,0), vec2(0,0));
-    entities[2]=ent(new_id(), type_gun, sword, 0, 0, 1, vec2(0,0), vec2(0,0), vec2(0,0));
-    entities[3]=ent(new_id(), type_scenery, firepit, 0, 0, 1, vec2(0,0), vec2(0,0), vec2(0,0));
-    entities[4]=ent(new_id(), type_scenery, sand, 0, 0, 1, vec2(0,0), vec2(0,0), vec2(0,0));
-    ent* rock_ent =  &entities[1];
-    ent* sword_ent = &entities[2];
-    ent* fire_ent =  &entities[3];
-    ent* sand_ent =  &entities[4];
+    // spawn a rock
+    ent* rock_ent =  add_ent(type_scenery);
+    rock_ent->set_anim(stone);
     rock_ent->slide_ent(vec2(200, 200));
-    sword_ent->slide_ent(vec2(200+128, 200));
+    // spawn the gun
+    ent* gun_ent = add_ent(type_gun);
+    gun_ent->set_anim(gun_grenade);
+    gun_ent->slide_ent(vec2(200+128, 200));
+    // spawn a firepit
+    ent* fire_ent = add_ent(type_scenery);
+    fire_ent->set_anim(firepit);
     fire_ent->slide_ent(vec2(200+128, 200+128));
+    // spawn a pile of sand
+    ent* sand_ent = add_ent(type_scenery);
+    sand_ent->set_anim(sand);
     sand_ent->slide_ent(vec2(200, 200+128));
     
     while (running) {
@@ -70,27 +94,27 @@ int main() {
         //
         // handle client inputs and movement
         //
-        client_input(player_0);
-        player_accel(player_0);
+        client_input(player_entity);
+        player_accel(player_entity);
         //
         // move things according to their velocity
         //
-        move(player_0);
+        move(player_entity);
         //
         // do collisions
         //
-        player_0->collide_ent_cs(rock_ent);
-        sword_movement(player_0, sword_ent);
+        player_entity->collide_ent_cs(rock_ent);
+        gun_movement(player_entity, gun_ent);
         //
         // update the player's camera position
         //
-        view_x = player_0->get_pos().get_x();
-        view_y = player_0->get_pos().get_y();
+        view_x = player_entity->get_pos().get_x();
+        view_y = player_entity->get_pos().get_y();
         //
         // draw the world
         //
         draw_chunk(test_world.get_chunks());
-        draw_ents(entities, num_ents);
+        draw_ents(entities, num_entities);
     }
     printf("Server was running for %d seconds.\n", SDL_GetTicks() / 1000);
     cleanup_graphics();
