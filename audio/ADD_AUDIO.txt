@@ -1,0 +1,1 @@
+Sound effects go in the sfx folder, and music goes in the music folder.

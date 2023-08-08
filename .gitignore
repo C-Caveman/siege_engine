@@ -3,3 +3,7 @@ o/*.o
 ex
 # don't track images
 *.bmp
+# don't track sounds
+*.ogg
+*.wav
+*.mp3
