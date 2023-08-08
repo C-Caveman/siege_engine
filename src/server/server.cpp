@@ -63,6 +63,7 @@ int main() {
     //
     running = 1;
     init_graphics();
+    init_audio();
     
     //
     // build an example world of entities
@@ -118,5 +119,6 @@ int main() {
     }
     printf("Server was running for %d seconds.\n", SDL_GetTicks() / 1000);
     cleanup_graphics();
+    cleanup_audio();
     return 0;
 }

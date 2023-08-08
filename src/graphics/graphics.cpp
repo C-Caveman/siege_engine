@@ -144,6 +144,10 @@ void load_animations() {
             if (cur_surf != 0) { // free the surface used to load the current texture
                 SDL_FreeSurface(cur_surf);
             }
+            if (total_textures >= MAX_TEXTURES) {
+                printf("*** Error: MAX_TEXTURES exceeded in load_animations.\n");
+                exit(-1);
+            }
         }
         if (num_frames == 0) {
             printf("*** Error: animation graphics/animations/%.*s is missing!\n", ANIM_NAME_LEN, anim_name);
@@ -151,7 +155,7 @@ void load_animations() {
         }
         animation_lengths[i] = num_frames;
     }
-    printf("Loaded %d textures (maximum allowed is %d).\n", total_textures, MAX_TEXTURES);
+    printf("Loaded %d textures (max is %d).\n", total_textures, MAX_TEXTURES);
 }
 
 

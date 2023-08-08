@@ -1,4 +1,5 @@
 #include "../input.h"
+#include "../audio.h"
 
 #define ACCEL 1
 // give access to the var needed to quit the game
@@ -108,6 +109,7 @@ void client_input(ent* e) {
                         //TODO redo this
                         mouse_angle += 180;
                         printf("Rotating...\n");
+                        Mix_PlayMusic(music, 0); //HACK
                         break;
                         
                     // end of key up processing
@@ -164,6 +166,7 @@ void client_input(ent* e) {
             switch(event.button.button) {
                 case 1: // left click
                     //printf("Left click down.\n");
+                    Mix_PlayChannel(-1, sound, 0);
                     break;
                 case 2: // middle click
                     //printf("Middle click down.\n");
