@@ -147,6 +147,6 @@ void ent::set_next(ent* n) {next = n;}
 void ent::set_prev(ent* p) {prev = p;}
 
 void ent::set_state(int state_index, int new_state) {
-    state_info[state_index] = (char) new_state;
+    state_info[state_index] = (uint8_t) new_state;
 }
 int ent::get_state(int state_index) {return (int)state_info[state_index];}

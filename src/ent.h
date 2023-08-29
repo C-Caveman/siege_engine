@@ -16,12 +16,13 @@ enum ent_types {
     type_gun
 };
 
-enum state_info_player {
+enum state_info_player { // 8 uints
     state_player_something=0,
     state_player_speed,
     state_player_rotation
 };
 
+#define STATE_INFO_SIZE 8
 class ent {
 private:
     int id;   // unique identifier
@@ -35,7 +36,7 @@ private:
     vec2 vel; // velocity
     ent* next;
     ent* prev;
-    char state_info[8]; // general purpose vars
+    uint8_t state_info[STATE_INFO_SIZE]; // general purpose vars
 public:    
     ent();
     ent(int id, int type, int anim, int fr_st, int thk_fr, int an_len, vec2 pos, vec2 dir, vec2 vel);

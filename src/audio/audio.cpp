@@ -10,13 +10,16 @@ void init_audio() {
     }
     Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024);
     music = Mix_LoadMUS("audio/music/brown.ogg");
-    sound = Mix_LoadWAV("audio/sfx/thud.wav");
     if (!music) {
         printf("*** init_audio failed: %s\n", Mix_GetError());
     }
+    sound = Mix_LoadWAV("audio/sfx/thud.wav");
     if (!sound) {
         printf("*** init_audio failed: %s\n", Mix_GetError());
     }
+    // set initial volume TODO make configurable TODO
+    Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
+    Mix_Volume(-1, MIX_MAX_VOLUME / 4);
 }
 
 void cleanup_audio() {

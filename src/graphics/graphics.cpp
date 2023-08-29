@@ -302,9 +302,17 @@ void draw_ent(ent* e) {
     //SDL_RenderCopy(renderer, textures[animation_index[e->get_anim()]+anim_frame], NULL, &ent_render_pos);
     
     SDL_Texture* current_tex = textures[animation_index[e->get_anim()]+anim_frame];
+    //
+    // Set rotation based on entity type.
+    //
     int rotation = 0;
-    if (e->get_typ() == type_gun)
-        rotation = mouse_angle;
+    switch(e->get_typ()) {
+        case type_gun:
+            rotation = mouse_angle;
+            break;
+        default:
+            break;
+    }
     SDL_RendererFlip flip = SDL_FLIP_NONE;
     if (/*e->get_vel().get_x() < 0*/ e->get_typ() == type_player && mouse_x < 0)
         flip = SDL_FLIP_HORIZONTAL; //TODO set this using ent flags
