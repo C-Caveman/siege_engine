@@ -26,7 +26,7 @@ struct ent* add_ent(int type) {
 
 // add a client to "clients"
 struct client* add_client() {
-    struct ent* client_ent  = add_ent(type_player);
+    struct ent* client_ent  = add_ent(ENT_PLAYER);
     client_init(&clients[num_clients], client_ent);
     struct client* c = &clients[num_clients];
     num_clients++;
@@ -72,19 +72,19 @@ int main() {
     test_world.get_chunks()->set_blocks(stonedk);
     test_world.get_chunks()->set_block(1,0, tiledark,1);
     // spawn a rock
-    ent* rock_ent =  add_ent(type_scenery);
+    ent* rock_ent =  add_ent(ENT_SCENERY);
     rock_ent->set_anim(stone);
     rock_ent->slide_ent(vec2(200, 200));
     // spawn the gun
-    ent* gun_ent = add_ent(type_gun);
-    gun_ent->set_anim(gun_grenade);
+    ent* gun_ent = add_ent(ENT_GUN);
+    gun_ent->set_anim(gun_chaingun);
     gun_ent->slide_ent(vec2(200+128, 200));
     // spawn a firepit
-    ent* fire_ent = add_ent(type_scenery);
+    ent* fire_ent = add_ent(ENT_SCENERY);
     fire_ent->set_anim(firepit);
     fire_ent->slide_ent(vec2(200+128, 200+128));
     // spawn a pile of sand
-    ent* sand_ent = add_ent(type_scenery);
+    ent* sand_ent = add_ent(ENT_SCENERY);
     sand_ent->set_anim(sand);
     sand_ent->slide_ent(vec2(200, 200+128));
     

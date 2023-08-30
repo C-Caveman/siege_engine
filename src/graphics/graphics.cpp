@@ -307,14 +307,14 @@ void draw_ent(ent* e) {
     //
     int rotation = 0;
     switch(e->get_typ()) {
-        case type_gun:
+        case ENT_GUN:
             rotation = mouse_angle;
             break;
         default:
             break;
     }
     SDL_RendererFlip flip = SDL_FLIP_NONE;
-    if (/*e->get_vel().get_x() < 0*/ e->get_typ() == type_player && mouse_x < 0)
+    if (/*e->get_vel().get_x() < 0*/ e->get_typ() == ENT_PLAYER && mouse_x < 0)
         flip = SDL_FLIP_HORIZONTAL; //TODO set this using ent flags
     SDL_RenderCopyEx(renderer, 
                      current_tex, 

@@ -10,10 +10,10 @@
 #define CIRCLE_R 64  // radius of circular entities
 
 enum ent_types {
-    type_default=0,
-    type_player,
-    type_scenery,
-    type_gun
+    ENT_DEFAULT=0,
+    ENT_PLAYER,
+    ENT_SCENERY,
+    ENT_GUN
 };
 
 enum state_info_player { // 8 uints
