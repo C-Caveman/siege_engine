@@ -17,7 +17,7 @@ enum animation_ids {
     gun_0,
     gun_chaingun,
     gun_grenade,
-    sword,
+    gun_railgun,
     sand,
     stone,
     stonedk, // feel free to add comments here

@@ -77,7 +77,7 @@ int main() {
     rock_ent->slide_ent(vec2(200, 200));
     // spawn the gun
     ent* gun_ent = add_ent(ENT_GUN);
-    gun_ent->set_anim(gun_chaingun);
+    gun_ent->set_anim(gun_grenade);
     gun_ent->slide_ent(vec2(200+128, 200));
     // spawn a firepit
     ent* fire_ent = add_ent(ENT_SCENERY);

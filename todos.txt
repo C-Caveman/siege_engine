@@ -1,0 +1,5 @@
+Entity-specific logic.
+
+Animation logic.
+
+Modular entities.
