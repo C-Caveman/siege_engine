@@ -1,1 +1,1 @@
-Add your animation file names to the enum in src/graphics.h!
+Add your animation file names to the enum in src/animations.h!
