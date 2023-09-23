@@ -24,6 +24,8 @@ enum animation_ids {
     tiledark,
     firepit,
     knight_1,
+    wall_steel,
+    wall_steel_2,
     NUM_ANIM,
 };
 

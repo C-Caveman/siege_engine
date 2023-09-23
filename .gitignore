@@ -1,9 +1,16 @@
 # don't track .o files or executables
 o/*.o 
 ex
-# don't track images
+# don't track graphics
+animations
+graphics/WIP_graphics/
 *.bmp
+*.ase
 # don't track sounds
 *.ogg
 *.wav
 *.mp3
+# don't track garbage data
+sup.log
+sup_list.supp
+valgrind_log.txt

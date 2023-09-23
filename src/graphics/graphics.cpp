@@ -24,7 +24,6 @@ float view_x = 0;
 float view_y = 0;
 TTF_Font* font = 0;
 
-//TODO fix this
 extern int mouse_angle;
 
 void skip_comment(FILE* fp) {
@@ -355,6 +354,7 @@ void draw_chunk(chunk* chunk) {
     float vpos_y = 0 - (view_y - window_y/2 + 64);
     int cur_anim = 0;
     int cur_frame = 0;
+    // Draw the floor:
     for (int i=0; i<256; i++) {
         render_pos.x = vpos_x + (i % CHUNK_WIDTH)*RSIZE;
         render_pos.y = vpos_y + floor(i / CHUNK_WIDTH)*RSIZE;
@@ -367,6 +367,7 @@ void draw_chunk(chunk* chunk) {
             &render_pos
                       );
     }
+    // Draw the walls:
 }
 
 void cleanup_graphics() {

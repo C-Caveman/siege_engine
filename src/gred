@@ -1,0 +1,42 @@
+.
+├── actions.h
+├── animations.h
+├── audio
+│   └── audio.cpp
+├── audio.h
+├── chunk.h
+├── client
+│   └── client.cpp
+├── client.h
+├── config
+│   └── cfg.cpp
+├── config.h
+├── defs
+│   └── defs.cpp
+├── defs.h
+├── _documentation
+│   ├── Animations.txt
+│   ├── Entities.txt
+│   ├── separation_of_concerns.txt
+│   └── TODO.txt
+├── ent.h
+├── entities
+│   ├── actions.cpp
+│   └── ent.cpp
+├── graphics
+│   └── graphics.cpp
+├── graphics.h
+├── gred
+├── input
+│   └── input.cpp
+├── input.h
+├── server
+│   └── server.cpp
+├── server_constants.h
+├── server.h
+├── world
+│   ├── chunk.cpp
+│   └── world.cpp
+└── world.h
+
+10 directories, 29 files
