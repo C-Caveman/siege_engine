@@ -345,8 +345,11 @@ void draw_ents(ent* ent_array, float num_ents) {
 }
 
 void draw_chunk(chunk* chunk) {
-    int* blocks = chunk->get_blocks();
+    // Get a pointer to the chunk's tile array.
+    struct tile (*tiles)[CHUNK_WIDTH] = chunk->get_tiles();
+    SDL_Rect tile_pos;
     SDL_Rect render_pos;
+    SDL_Rect offset;
     render_pos.x = 0;
     render_pos.y = 0;
     render_pos.w = render_pos.h = RSIZE;
@@ -355,20 +358,77 @@ void draw_chunk(chunk* chunk) {
     int cur_anim = 0;
     int cur_frame = 0;
     // Draw the floor:
-    for (int i=0; i<256; i++) {
-        render_pos.x = vpos_x + (i % CHUNK_WIDTH)*RSIZE;
-        render_pos.y = vpos_y + floor(i / CHUNK_WIDTH)*RSIZE;
-        cur_anim = animation_index[blocks[i*B_INTS + B_ANIM]];
-        cur_frame = blocks[i*B_INTS + B_FRAME];
-        SDL_RenderCopy(
-            renderer, 
-            textures[cur_anim+cur_frame], 
-            NULL, 
-            &render_pos
-                      );
+    for (int y=0; y<CHUNK_WIDTH; y++) {
+        // Draw a row of tiles.
+        for (int x=0; x<CHUNK_WIDTH; x++) {
+            struct tile t = tiles[y][x];
+            render_pos.x = vpos_x + x * RSIZE;
+            render_pos.y = vpos_y + y * RSIZE;
+            tile_pos = render_pos;
+            // Draw floor:
+            if (t.wall_top_anim == 0) {
+                cur_anim = animation_index[t.floor_anim];
+                SDL_RenderCopy(
+                    renderer, 
+                    textures[cur_anim+cur_frame], 
+                    NULL, 
+                    &render_pos
+                );
+            }
+            // Draw wall:
+            else {
+                cur_anim = animation_index[t.wall_side_anim];
+                if (t.wall_height == 0)
+                    t.wall_height = 1;
+                float offset_x = ((view_x+window_x/2-RSIZE/2) - view_x - (tile_pos.x))/(window_x)*10.0f;
+                float offset_y = ((view_y+window_y/2-RSIZE/2) - view_y - (tile_pos.y))/(window_y)*10.0f;
+                render_pos.x = (view_x+window_x/2-RSIZE/2) - view_x;
+                render_pos.y = (view_y+window_y/2-RSIZE/2) - view_y;
+                /*
+                SDL_RenderCopy(
+                    renderer,
+                    textures[cur_anim],
+                    NULL,
+                    &render_pos
+                );
+                */
+                for (int i=0; i<t.wall_height; i++) {
+                    render_pos = tile_pos;
+                    render_pos.x = render_pos.x - offset_x*(i);
+                    render_pos.y = render_pos.y - offset_y*(i);
+                    SDL_RenderCopy(
+                        renderer,
+                        textures[cur_anim+cur_frame],
+                        NULL,
+                        &render_pos
+                    );
+                }
+                cur_anim = animation_index[t.wall_top_anim];
+                render_pos = tile_pos;
+                render_pos.x = render_pos.x - offset_x * t.wall_height;
+                render_pos.y = render_pos.y - offset_y * t.wall_height;
+                SDL_RenderCopy(
+                    renderer,
+                    textures[cur_anim],
+                    NULL,
+                    &render_pos
+                );
+            }
+        }
     }
-    // Draw the walls:
 }
+/*
+void wall_parallax(struct ent* wall_slices[], 
+                   int num_slices, 
+                   ent* player_entity, 
+                   vec2 parent_position) {
+    vec2 offset = player_entity->get_pos() - parent_position;
+    offset = offset / vec2(window_x, window_y);
+    for (int i=0; i<num_slices; i++) {
+        wall_slices[i]->move_ent(parent_position - (offset * i * 10));
+    }
+}
+*/
 
 void cleanup_graphics() {
     SDL_DestroyRenderer(renderer);

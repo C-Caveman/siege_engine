@@ -48,21 +48,6 @@ void server_config() {
     vars_from_file(config_fname);
 }
 
-void wall_parallax(struct ent* wall_slices[], 
-                   int num_slices, 
-                   ent* player_entity, 
-                   vec2 parent_position) {
-    vec2 offset = player_entity->get_pos() - parent_position;
-    offset = offset / vec2(window_x, window_y);
-    //offset = offset / 128;
-    //offset = offset +vec2(0, 128);
-    for (int i=0; i<num_slices; i++) {
-        //offset = offset * (i+1);
-        wall_slices[i]->move_ent(parent_position - (offset * i * 10));
-    }
-}
-
-
 int main() {
     server_config();
     // make the player_entity entity
@@ -83,8 +68,12 @@ int main() {
     // build an example world of entities
     //
     world test_world;
-    test_world.get_chunks()->set_blocks(stonedk);
-    test_world.get_chunks()->set_block(1,0, tiledark,1);
+    test_world.get_chunks()->set_floors(stonedk);
+    test_world.get_chunks()->set_floor(0,0, tiledark);
+    test_world.get_chunks()->set_wall(1,4, wall_steel,wall_steel_side,8);
+    test_world.get_chunks()->set_wall(3,4, wall_steel,wall_steel_side,8);
+    test_world.get_chunks()->set_wall(7,7, wall_steel,wall_steel_side,8);
+    test_world.get_chunks()->set_wall(8,7, wall_steel,wall_steel_side,16);
     // spawn a rock
     ent* rock_ent =  add_ent(ENT_SCENERY);
     rock_ent->set_anim(stone);
@@ -101,46 +90,6 @@ int main() {
     ent* sand_ent = add_ent(ENT_SCENERY);
     sand_ent->set_anim(sand);
     sand_ent->slide_ent(vec2(200, 200+128));
-#define NUM_WALL_BITS 8
-    ent* wall_bits[NUM_WALL_BITS];
-    // spawn lower layers of the wall
-    for (int i=0; i<NUM_WALL_BITS-1; i++) {
-        wall_bits[i] = add_ent(ENT_SCENERY);
-        wall_bits[i]->set_anim(wall_steel_2);
-        wall_bits[i]->slide_ent(vec2(128*5, 128*5));
-    }
-    
-    
-#define NUM_WALL_BITS_2 16
-    ent* wall_bits_2[NUM_WALL_BITS_2];
-    // spawn lower layers of the wall
-    for (int i=0; i<NUM_WALL_BITS_2-1; i++) {
-        wall_bits_2[i] = add_ent(ENT_SCENERY);
-        wall_bits_2[i]->set_anim(wall_steel_2);
-        wall_bits_2[i]->slide_ent(vec2(128*6, 128*5));
-    }
-#define NUM_WALL_BITS_3 32
-    ent* wall_bits_3[NUM_WALL_BITS_3];
-    // spawn lower layers of the wall
-    for (int i=0; i<NUM_WALL_BITS_3-1; i++) {
-        wall_bits_3[i] = add_ent(ENT_SCENERY);
-        wall_bits_3[i]->set_anim(wall_steel_2);
-        wall_bits_3[i]->slide_ent(vec2(128*7, 128*5));
-    }
-    // spawn top of the wall
-    wall_bits_3[NUM_WALL_BITS_3-1] = add_ent(ENT_SCENERY);
-    wall_bits_3[NUM_WALL_BITS_3-1]->set_anim(wall_steel);
-    wall_bits_3[NUM_WALL_BITS_3-1]->slide_ent(vec2(128*7, 128*5));
-    
-    // spawn top of the wall
-    wall_bits_2[NUM_WALL_BITS_2-1] = add_ent(ENT_SCENERY);
-    wall_bits_2[NUM_WALL_BITS_2-1]->set_anim(wall_steel);
-    wall_bits_2[NUM_WALL_BITS_2-1]->slide_ent(vec2(128*6, 128*5));
-    
-    // spawn top of the wall
-    wall_bits[NUM_WALL_BITS-1] = add_ent(ENT_SCENERY);
-    wall_bits[NUM_WALL_BITS-1]->set_anim(wall_steel);
-    wall_bits[NUM_WALL_BITS-1]->slide_ent(vec2(128*5, 128*5));
     
     while (running) {
         dt = (SDL_GetTicks() - last_frame_end) / 1000;
@@ -155,11 +104,6 @@ int main() {
         // move things according to their velocity
         //
         move(player_entity);
-        
-        wall_parallax(wall_bits, NUM_WALL_BITS, player_entity, vec2(128*5, 128*5));
-        wall_parallax(wall_bits_2, NUM_WALL_BITS_2, player_entity, vec2(128*6, 128*5));
-        wall_parallax(wall_bits_3, NUM_WALL_BITS_3, player_entity, vec2(128*7, 128*5));
-        
         //
         // do collisions
         //

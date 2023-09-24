@@ -1,17 +1,26 @@
-// defines blocks, groups of blocks, ect.
+// defines tiles, groups of tiles, ect.
 #include "../chunk.h" 
 
-int* chunk::get_blocks() {return blocks;}
+struct tile (*chunk::get_tiles())[CHUNK_WIDTH] {return tiles;}
 
-void chunk::set_blocks(int tex_id) {
-    for (int i=0; i<CHUNK_WIDTH*CHUNK_WIDTH; i++) {
-        blocks[i*B_INTS + B_ANIM] = tex_id;
+void chunk::set_floors(int floor_anim) {
+    for (int i=0; i<CHUNK_WIDTH; i++) {
+        for (int j=0; j<CHUNK_WIDTH; j++)
+            tiles[i][j].floor_anim = floor_anim;
     }
 }
 
-void chunk::set_block(int x, int y, int new_anim, int new_frame) {
-    blocks[x*B_INTS + y*CHUNK_WIDTH*B_INTS + B_ANIM] = new_anim;
-    blocks[x*B_INTS + y*CHUNK_WIDTH*B_INTS + B_FRAME] = new_frame;
+void chunk::set_tile(int x, int y, int new_anim, int new_frame) {
+    tiles[y][x].wall_top_anim = new_anim;
+    //tiles[x*TILE_INTS + y*CHUNK_WIDTH*TILE_INTS + TILE_FRAME] = new_frame;
 }
+
+void chunk::set_floor(int x, int y, int floor_anim) { tiles[y][x].floor_anim = floor_anim;}
+void chunk::set_wall(int x, int y, int wall_top_anim, int wall_side_anim, unsigned char wall_height) {
+    tiles[y][x].wall_top_anim = wall_top_anim;
+    tiles[y][x].wall_side_anim = wall_side_anim;
+    tiles[y][x].wall_height = wall_height;
+}
+
 
 

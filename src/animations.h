@@ -25,7 +25,7 @@ enum animation_ids {
     firepit,
     knight_1,
     wall_steel,
-    wall_steel_2,
+    wall_steel_side,
     NUM_ANIM,
 };
 

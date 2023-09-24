@@ -1,29 +1,26 @@
-// A chunk is a 16x16 area of blocks.
+// A chunk is a 16x16 area of tiles.
+// Each tile has a floor and a wall.
 #include "ent.h"
 
-// textured tile with various properties
-
-#define B_INTS 4 // block integers
-#define CHUNK_WIDTH 16
-
-enum block_data {
-    B_ANIM=0,
-    B_FRAME, // which frame in the animation should be used
-    B_TYPE,
-    B_HEALTH,
-    B_FLAGS
+struct tile {
+    unsigned char flags, health, wall_height, unused;
+    int wall_top_anim, wall_side_anim, floor_anim;
 };
 
 //TODO connect entities to the chunks!
-// 16x16 area of blocks
+
+#define CHUNK_WIDTH 16
+// 16x16 area of tiles
 class chunk {
 private:
-    int blocks[CHUNK_WIDTH * CHUNK_WIDTH * B_INTS];
+    struct tile tiles[CHUNK_WIDTH][CHUNK_WIDTH];
 public:
-    int* get_blocks();
-    void set_blocks(int tex_id);
-    void set_block(int x, int y, int new_anim, int new_frame);
+    struct tile (*get_tiles())[CHUNK_WIDTH];
+    void set_floors(int wall_top_animation);
+    void set_tile(int x, int y, int wall_top_anim, int new_frame);
+    void set_floor(int x, int y, int floor_anim);
+    void set_wall(int x, int y, int wall_top_anim, int wall_side_anim, unsigned char wall_height);
 };
 
 
-//TODO make block types here
+//TODO make tile types here
