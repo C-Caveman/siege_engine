@@ -4,6 +4,8 @@
 #include "../server.h"
 #include <unistd.h> // testing memory leaks with sleep()
 
+extern bool m1_held;
+
 // entity and client data are in these arrays
 int num_entities = 0;
 struct ent entities[MAX_ENTS];
@@ -114,6 +116,20 @@ int main() {
         //
         view_x = player_entity->get_pos().get_x();
         view_y = player_entity->get_pos().get_y();
+        
+        int chunk_pos_x = (int)(view_x) + RSIZE/2;
+        int chunk_pos_y = (int)(view_y) + RSIZE/2;
+        if (chunk_pos_x < 0) chunk_pos_x = 0;
+        if (chunk_pos_y < 0) chunk_pos_y = 0;
+        //printf("Block: (%d, %d)\n", chunk_pos_x / RSIZE, chunk_pos_y / RSIZE);
+        if (m1_held) {
+            m1_held = false;
+            printf("Pos: (%d, %d)  ", chunk_pos_x / RSIZE, chunk_pos_y / RSIZE);
+            printf("Click: (%d, %d)\n", 
+                   (mouse_x + chunk_pos_x) / RSIZE,
+                   (mouse_y + chunk_pos_y) / RSIZE
+            );
+        }
         //
         // draw the world
         //

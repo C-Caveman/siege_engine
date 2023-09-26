@@ -8,6 +8,10 @@ extern bool running;
 // give access to screen size data
 extern int window_x, window_y;
 
+// Center of the player's screen.
+extern float view_x;
+extern float view_y;
+
 //
 // QUICK HACK FOR AIMING
 //
@@ -20,6 +24,7 @@ bool just_clicked = false;
 //TODO move this to the client datastructure
 int mouse_x = 0;
 int mouse_y = 0;
+bool m1_held = false;
 int mouse_angle = 0;
 bool mouse_moved = false;
 
@@ -166,6 +171,16 @@ void client_input(ent* e) {
             switch(event.button.button) {
                 case 1: // left click
                     //printf("Left click down.\n");
+                    m1_held = true;
+                    SDL_GetMouseState(&mouse_x, &mouse_y);
+                    //(int)view_x
+                    /*
+                    printf(
+                        "(%d, %d)\n", 
+                        (mouse_x-window_x/2),
+                        (mouse_y-window_y/2)
+                    );
+                    */
                     Mix_PlayChannel(-1, sound, 0);
                     break;
                 case 2: // middle click
@@ -184,6 +199,7 @@ void client_input(ent* e) {
             switch(event.button.button) {
                 case 1: // left click
                     //printf("Left click up.\n");
+                    m1_held = false;
                     break;
                 case 2: // middle click
                     //printf("Middle click up.\n");

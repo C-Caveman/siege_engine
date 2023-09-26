@@ -380,10 +380,10 @@ void draw_chunk(chunk* chunk) {
                 cur_anim = animation_index[t.wall_side_anim];
                 if (t.wall_height == 0)
                     t.wall_height = 1;
-                float offset_x = ((view_x+window_x/2-RSIZE/2) - view_x - (tile_pos.x))/(window_x)*10.0f;
-                float offset_y = ((view_y+window_y/2-RSIZE/2) - view_y - (tile_pos.y))/(window_y)*10.0f;
-                render_pos.x = (view_x+window_x/2-RSIZE/2) - view_x;
-                render_pos.y = (view_y+window_y/2-RSIZE/2) - view_y;
+                float offset_x = ((view_x+window_x/2-RSIZE) - view_x - (tile_pos.x))/(window_x)*10.0f;
+                float offset_y = ((view_y+window_y/2-RSIZE) - view_y - (tile_pos.y))/(window_y)*10.0f;
+                render_pos.x = (view_x+window_x/2) - view_x;
+                render_pos.y = (view_y+window_y/2) - view_y;
                 /*
                 SDL_RenderCopy(
                     renderer,
@@ -414,21 +414,10 @@ void draw_chunk(chunk* chunk) {
                     &render_pos
                 );
             }
+            // TODO draw entity here! <------------------------------------------ TODO!!!
         }
     }
 }
-/*
-void wall_parallax(struct ent* wall_slices[], 
-                   int num_slices, 
-                   ent* player_entity, 
-                   vec2 parent_position) {
-    vec2 offset = player_entity->get_pos() - parent_position;
-    offset = offset / vec2(window_x, window_y);
-    for (int i=0; i<num_slices; i++) {
-        wall_slices[i]->move_ent(parent_position - (offset * i * 10));
-    }
-}
-*/
 
 void cleanup_graphics() {
     SDL_DestroyRenderer(renderer);
