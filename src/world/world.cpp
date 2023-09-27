@@ -4,4 +4,4 @@ world::world() {
     name = "Default";
 }
 
-chunk* world::get_chunks() {return &chunks[0];}
+chunk* world::get_chunk(int x, int y) {return &chunks[y][x];}

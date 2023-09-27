@@ -19,7 +19,7 @@ int new_id() {return ++id;}
 // add an entity to "entities"
 struct ent* add_ent(int type) {
     //TODO add an insert_ent() method here, so new ents fill gaps in the ent_array TODO
-    entities[num_entities] = ent (new_id(), type, rocket_tank, 0, 0, 2, vec2(0,0), vec2(0,0), vec2(0,0));
+    entities[num_entities] = ent (new_id(), type, rocket_tank, 0, 0, 2, vec2f(0,0), vec2f(0,0), vec2f(0,0));
     struct ent* e = &entities[num_entities];
     //printf("New ent id %d\n", e->get_id());
     num_entities++;
@@ -36,7 +36,7 @@ struct client* add_client() {
 }
 
 void gun_movement(ent* e, ent* e_displayer) {
-    e_displayer->move_ent(e->get_pos() );//+ vec2(mouse_x,mouse_y));
+    e_displayer->move_ent(e->get_pos() );//+ vec2f(mouse_x,mouse_y));
 }
 
 void server_config() {
@@ -70,28 +70,29 @@ int main() {
     // build an example world of entities
     //
     world test_world;
-    test_world.get_chunks()->set_floors(stonedk);
-    test_world.get_chunks()->set_floor(0,0, tiledark);
-    test_world.get_chunks()->set_wall(1,4, wall_steel,wall_steel_side,8);
-    test_world.get_chunks()->set_wall(3,4, wall_steel,wall_steel_side,8);
-    test_world.get_chunks()->set_wall(7,7, wall_steel,wall_steel_side,8);
-    test_world.get_chunks()->set_wall(8,7, wall_steel,wall_steel_side,16);
+    chunk* chunk_0 = test_world.get_chunk(0,0);
+    chunk_0->set_floors(floor_test);
+    chunk_0->set_floor(0,0, tiledark);
+    chunk_0->set_wall(1,4, wall_steel,wall_steel_side,8);
+    chunk_0->set_wall(3,4, wall_steel,wall_steel_side,8);
+    chunk_0->set_wall(7,7, wall_steel,wall_steel_side,8);
+    chunk_0->set_wall(8,7, wall_steel,wall_steel_side,16);
     // spawn a rock
     ent* rock_ent =  add_ent(ENT_SCENERY);
     rock_ent->set_anim(stone);
-    rock_ent->slide_ent(vec2(200, 200));
+    rock_ent->slide_ent(vec2f(RSIZE*3, RSIZE*1));
     // spawn the gun
     ent* gun_ent = add_ent(ENT_GUN);
     gun_ent->set_anim(gun_grenade);
-    gun_ent->slide_ent(vec2(200+128, 200));
+    gun_ent->slide_ent(vec2f(RSIZE*5, RSIZE*1));
     // spawn a firepit
     ent* fire_ent = add_ent(ENT_SCENERY);
     fire_ent->set_anim(firepit);
-    fire_ent->slide_ent(vec2(200+128, 200+128));
+    fire_ent->slide_ent(vec2f(RSIZE*7, RSIZE*1));
     // spawn a pile of sand
     ent* sand_ent = add_ent(ENT_SCENERY);
     sand_ent->set_anim(sand);
-    sand_ent->slide_ent(vec2(200, 200+128));
+    sand_ent->slide_ent(vec2f(RSIZE*10, RSIZE*1));
     
     while (running) {
         dt = (SDL_GetTicks() - last_frame_end) / 1000;
@@ -121,6 +122,8 @@ int main() {
         int chunk_pos_y = (int)(view_y) + RSIZE/2;
         if (chunk_pos_x < 0) chunk_pos_x = 0;
         if (chunk_pos_y < 0) chunk_pos_y = 0;
+        if (chunk_pos_x > (CHUNK_WIDTH-1)*RSIZE) chunk_pos_x = (CHUNK_WIDTH-1)*RSIZE;
+        if (chunk_pos_y > (CHUNK_WIDTH-1)*RSIZE) chunk_pos_y = (CHUNK_WIDTH-1)*RSIZE;
         //printf("Block: (%d, %d)\n", chunk_pos_x / RSIZE, chunk_pos_y / RSIZE);
         if (m1_held) {
             m1_held = false;
@@ -129,11 +132,14 @@ int main() {
                    (mouse_x + chunk_pos_x) / RSIZE,
                    (mouse_y + chunk_pos_y) / RSIZE
             );
+            chunk_0->set_wall((mouse_x + chunk_pos_x) / RSIZE,
+                              (mouse_y + chunk_pos_y) / RSIZE, 
+                              wall_steel,wall_steel_side,16);
         }
         //
         // draw the world
         //
-        draw_chunk(test_world.get_chunks());
+        draw_chunk(test_world.get_chunk(0,0));
         draw_ents(entities, num_entities);
     }
     printf("Server was running for %d seconds.\n", SDL_GetTicks() / 1000);

@@ -11,12 +11,12 @@
 class world {
 private:
     string name;
-    chunk chunks[WORLD_WIDTH]; // chunk array (for tiles)
+    chunk chunks[WORLD_WIDTH][WORLD_WIDTH]; // chunk array (for tiles)
     ent ents[MAX_ENTS];    // entity array
 public:
     world();
     // TODO make this happen
-    chunk* get_chunks();
+    chunk* get_chunk(int x, int y);
 };
 
 #endif

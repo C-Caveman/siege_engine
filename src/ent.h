@@ -31,27 +31,27 @@ private:
     int frame_start; // what sdl_tick did the animation start on?
     int think_frame; // which frame of the animation to think on?
     int anim_len; // how many frames long is the animation?
-    vec2 pos; // position
-    vec2 dir; // direction
-    vec2 vel; // velocity
+    vec2f pos; // position
+    vec2f dir; // direction
+    vec2f vel; // velocity
     ent* next;
     ent* prev;
     uint8_t state_info[STATE_INFO_SIZE]; // general purpose vars
 public:    
     ent();
-    ent(int id, int type, int anim, int fr_st, int thk_fr, int an_len, vec2 pos, vec2 dir, vec2 vel);
+    ent(int id, int type, int anim, int fr_st, int thk_fr, int an_len, vec2f pos, vec2f dir, vec2f vel);
     ~ent();
-    void move_ent(vec2 pos);
-    void slide_ent(vec2 distance);
+    void move_ent(vec2f pos);
+    void slide_ent(vec2f distance);
     void collide_ent(ent* ent_b); // square bumping into a square
     void collide_ent_cs(ent* ent_b); // circle bumping into a square
     int get_typ();
-    vec2 get_pos();
-    void set_pos(vec2);
-    vec2 get_dir();
-    void set_dir(vec2);
-    vec2 get_vel();
-    void set_vel(vec2);
+    vec2f get_pos();
+    void set_pos(vec2f);
+    vec2f get_dir();
+    void set_dir(vec2f);
+    vec2f get_vel();
+    void set_vel(vec2f);
     int get_id();
     int get_anim();
     void set_anim(int animation);

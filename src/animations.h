@@ -26,6 +26,7 @@ enum animation_ids {
     knight_1,
     wall_steel,
     wall_steel_side,
+    floor_test,
     NUM_ANIM,
 };
 

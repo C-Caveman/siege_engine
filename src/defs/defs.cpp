@@ -1,44 +1,37 @@
 // useful primitives
 #include "../defs.h"
 # include <math.h>
+///////////////////////////////////////////////////////////////////////////////////////////////
+// Vector of 2 floats:
+//
+vec2f::vec2f() : x(0), y(0) {}
+vec2f::vec2f(float new_x, float new_y) : x(new_x), y(new_y) {}
+vec2f::~vec2f() {}
 
-vec2::vec2() : x(0), y(0) {}
+float vec2f::get_x() {return x;}
+float vec2f::get_y() {return y;}
+void vec2f::set_x(float new_val) {x = new_val;}
+void vec2f::set_y(float new_val) {y = new_val;}
 
-vec2::vec2(float new_x, float new_y) : x(new_x), y(new_y) {}
-
-vec2::~vec2() {}
-
-float vec2::get_x() {return x;}
-
-float vec2::get_y() {return y;}
-
-void vec2::set_x(float new_val) {x = new_val;}
-
-void vec2::set_y(float new_val) {y = new_val;}
-
-float vec2::is_cardinal() {
+float vec2f::is_cardinal() {
     return (this->x && this->y);
 }
-
-float vec2::vlen() {
+float vec2f::vlen() {
     float length = sqrt(x*x + y*y);
     if (this->x && this->y && length > 2)
         length -= 2;
     return length;
 }
-
-float vec2::dot(vec2& v) {
+float vec2f::dot(vec2f& v) {
     return v.x*x + v.y*y;
 }
-
-void vec2::normalize() {
+void vec2f::normalize() {
     float length = sqrt(x*x + y*y);
     if (length == 0) return; // don't divide by zero!!!!
     x /= length;
     y /= length;
 }
-
-void vec2::semi_normalize() {
+void vec2f::semi_normalize() {
     bool x_pos = (x > 0);
     bool y_pos = (y > 0);
     bool x_neg = (x < 0);
@@ -59,9 +52,8 @@ void vec2::semi_normalize() {
     else if (y_neg && y == 0)
         y = -1;
 }
-
-vec2 vec2::normalized() {
-    vec2 new_vec(x, y);
+vec2f vec2f::normalized() {
+    vec2f new_vec(x, y);
     float length = sqrt(x*x + y*y);
     if (length == 0) 
         return new_vec; // don't divide by zero!!!!
@@ -69,9 +61,8 @@ vec2 vec2::normalized() {
     new_vec.y /= length;
     return new_vec;
 }
-
-vec2 vec2::semi_normalized() {
-    vec2 new_vec(x, y);
+vec2f vec2f::semi_normalized() {
+    vec2f new_vec(x, y);
     float length = sqrt(x*x + y*y);
     if (length == 0) 
         return new_vec; // don't divide by zero!!!!
@@ -90,16 +81,14 @@ vec2 vec2::semi_normalized() {
         new_vec.y = -1;
     return new_vec;
 }
-
-void vec2::scale_to(float new_length) {
+void vec2f::scale_to(float new_length) {
     float old_length = this->vlen();
     float length_ratio = old_length / new_length;
     x *= length_ratio;
     y *= length_ratio;
 }
-
-vec2 vec2::scaled_to(float new_length) {
-    vec2 new_vec(this->x, this->y);
+vec2f vec2f::scaled_to(float new_length) {
+    vec2f new_vec(this->x, this->y);
     float old_length = this->vlen();
     if (old_length == 0)
         old_length = 1;
@@ -110,57 +99,92 @@ vec2 vec2::scaled_to(float new_length) {
     /*
     float old_length = this->vlen();
     if (old_length != 0)
-        return vec2(x, y) * new_length / old_length;
+        return vec2f(x, y) * new_length / old_length;
     else
-        return vec2(x, y) * new_length;
+        return vec2f(x, y) * new_length;
     */
 }
-
-void vec2::print() {
+void vec2f::print() {
     printf("(%f, %f)", x, y);
 }
 
-
 // operator overloading
-vec2 vec2::operator + (const vec2& v) {
-    return vec2(x + v.x, y + v.y);
+vec2f vec2f::operator + (const vec2f& v) {
+    return vec2f(x + v.x, y + v.y);
 }
-
-vec2 vec2::operator - (const vec2& v){
-    return vec2(x - v.x, y - v.y);
+vec2f vec2f::operator - (const vec2f& v){
+    return vec2f(x - v.x, y - v.y);
 }
-
-vec2 vec2::operator * (const vec2& v){
-    return vec2(x * v.x, y * v.y);
+vec2f vec2f::operator * (const vec2f& v){
+    return vec2f(x * v.x, y * v.y);
 }
-
-vec2 vec2::operator / (const vec2& v){
-    return vec2(x / v.x, y / v.y);
+vec2f vec2f::operator / (const vec2f& v){
+    return vec2f(x / v.x, y / v.y);
 }
-
-void vec2::operator = (const vec2& v) {
+void vec2f::operator = (const vec2f& v) {
     x = v.x;
     y = v.y;
 }
-
-bool vec2::operator == (const vec2& v) {
+bool vec2f::operator == (const vec2f& v) {
     if (x == v.x && y == v.y)
         return true;
     else
         return false;
 }
-
-ostream& operator << (ostream& os, const vec2& v)
+ostream& operator << (ostream& os, const vec2f& v)
 {
     os << "(" << v.x << ", " << v.y << ")";
     return os;
 }
 
 // scale vector by an float
-vec2 vec2::operator * (const float& scale){
-    return vec2(x * scale, y * scale);
+vec2f vec2f::operator * (const float& scale){
+    return vec2f(x * scale, y * scale);
+}
+vec2f vec2f::operator / (const float& scale){
+    return vec2f(x / scale, y / scale);
 }
 
-vec2 vec2::operator / (const float& scale){
-    return vec2(x / scale, y / scale);
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+// Vector of 2 ints:
+//
+vec2i::vec2i() : x(0), y(0) {}
+vec2i::vec2i(int new_x, int new_y) : x(new_x), y(new_y) {}
+vec2i::~vec2i() {}
+
+// operator overloading
+vec2i vec2i::operator + (const vec2i& v) {
+    return vec2i(x + v.x, y + v.y);
+}
+vec2i vec2i::operator - (const vec2i& v){
+    return vec2i(x - v.x, y - v.y);
+}
+vec2i vec2i::operator * (const vec2i& v){
+    return vec2i(x * v.x, y * v.y);
+}
+vec2i vec2i::operator / (const vec2i& v){
+    return vec2i(x / v.x, y / v.y);
+}
+void vec2i::operator = (const vec2i& v) {
+    x = v.x;
+    y = v.y;
+}
+bool vec2i::operator == (const vec2i& v) {
+    if (x == v.x && y == v.y)
+        return true;
+    else
+        return false;
+}
+ostream& operator << (ostream& os, const vec2i& v)
+{
+    os << "(" << v.x << ", " << v.y << ")";
+    return os;
+}
+// scale vector
+vec2i vec2i::operator * (const float& scale){
+    return vec2i(x * scale, (int)(y * scale));
+}
+vec2i vec2i::operator / (const int& scale){
+    return vec2i(x / scale, y / scale);
 }

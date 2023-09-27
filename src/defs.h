@@ -6,39 +6,59 @@
 #include <iostream>
 using namespace std;
 
-class vec2 {
+class vec2f {
 private:
     float x;
     float y;
 public:
-    vec2();
-    vec2(float x, float y);
-    ~vec2();
+    vec2f();
+    vec2f(float x, float y);
+    ~vec2f();
     float get_x();
     float get_y();
     void set_x(float new_val);
     void set_y(float new_val);
     float is_cardinal();
     float vlen();
-    float dot(vec2& v);
+    float dot(vec2f& v);
     void normalize();
     void semi_normalize(); // don't round x or y down to zero
-    vec2 normalized();
-    vec2 semi_normalized();
+    vec2f normalized();
+    vec2f semi_normalized();
     void scale_to(float new_length);
-    vec2 scaled_to(float new_length);
+    vec2f scaled_to(float new_length);
     void print();
     // operator overloading
-    vec2 operator + (const vec2& v);
-    vec2 operator - (const vec2& v);
-    vec2 operator * (const vec2& v);
-    vec2 operator / (const vec2& v);
-    void operator = (const vec2& v);
-    bool operator == (const vec2& v);
-    friend ostream& operator << (ostream& os, const vec2& v);
+    vec2f operator + (const vec2f& v);
+    vec2f operator - (const vec2f& v);
+    vec2f operator * (const vec2f& v);
+    vec2f operator / (const vec2f& v);
+    void operator = (const vec2f& v);
+    bool operator == (const vec2f& v);
+    friend ostream& operator << (ostream& os, const vec2f& v);
     // scale vector by an float
-    vec2 operator * (const float& scale);
-    vec2 operator / (const float& scale);
+    vec2f operator * (const float& scale);
+    vec2f operator / (const float& scale);
+};
+
+class vec2i {
+public:
+    int x;
+    int y;
+    vec2i();
+    vec2i(int x, int y);
+    ~vec2i();
+    // operator overloading
+    vec2i operator + (const vec2i& v);
+    vec2i operator - (const vec2i& v);
+    vec2i operator * (const vec2i& v);
+    vec2i operator / (const vec2i& v);
+    void operator = (const vec2i& v);
+    bool operator == (const vec2i& v);
+    friend ostream& operator << (ostream& os, const vec2i& v);
+    // scale vector by an float
+    vec2i operator * (const float& scale);
+    vec2i operator / (const int& scale);
 };
 
 #endif
