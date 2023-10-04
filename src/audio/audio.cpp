@@ -1,4 +1,4 @@
-#include "../audio.h" 
+#include "audio.h" 
 
 Mix_Music* music;
 Mix_Chunk* sound;

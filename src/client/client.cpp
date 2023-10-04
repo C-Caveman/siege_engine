@@ -1,6 +1,6 @@
 // store all player-related information
 
-#include "../client.h"
+#include "client.h"
 
 
 

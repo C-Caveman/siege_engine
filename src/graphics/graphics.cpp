@@ -1,5 +1,5 @@
 // draw to the game window 
-#include "../graphics.h"
+#include "graphics.h"
 #include <unistd.h>
 #include <iostream>
 #include <stdlib.h> // snprintf used for tex fname generation
@@ -40,7 +40,7 @@ int load_animation_names() {
     int num_names = 0;
     int name_char_index = 0;
     int chars_left = ANIM_NAME_LEN;
-    fp = fopen("src/animations.h", "r");
+    fp = fopen("src/graphics/animations.h", "r");
     if (fp == 0) {
         printf("Failed to find textures/animation_names.txt\n");
         return -1; // don't seg fault by tring to close fp here

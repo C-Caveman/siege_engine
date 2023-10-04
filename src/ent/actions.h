@@ -3,8 +3,8 @@
 #ifndef ACTIONS
 #define ACTIONS
 
-#include "ent.h"
-#include "server_constants.h"
+#include "../ent/ent.h"
+#include "../server/server_constants.h"
 
 // use player's desired direction
 // to accelerate them

@@ -1,7 +1,7 @@
 #ifndef INPUT
 #define INPUT
 
-#include "ent.h"
+#include "../ent/ent.h"
 #include <SDL2/SDL.h> 
 #include <iostream>
 

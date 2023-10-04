@@ -3,7 +3,7 @@
 #define CLIENT
 
 #include <stdio.h>
-#include "ent.h"
+#include "../ent/ent.h"
 
 struct client { // TODO move client stuff here
 private:

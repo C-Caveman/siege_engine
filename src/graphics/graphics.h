@@ -1,7 +1,7 @@
 #ifndef GRAPHICS
 #define GRAPHICS
 
-#include "world.h"
+#include "../world/world.h"
 #include "animations.h"
 #include <SDL2/SDL.h>
 

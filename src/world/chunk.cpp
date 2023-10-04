@@ -1,5 +1,5 @@
 // defines tiles, groups of tiles, ect.
-#include "../chunk.h" 
+#include "chunk.h" 
 
 struct tile (*chunk::get_tiles())[CHUNK_WIDTH] {return tiles;}
 

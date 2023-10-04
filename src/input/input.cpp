@@ -1,5 +1,5 @@
-#include "../input.h"
-#include "../audio.h"
+#include "input.h"
+#include "../audio/audio.h"
 
 #define ACCEL 1
 // give access to the var needed to quit the game
@@ -216,7 +216,7 @@ void client_input(ent* e) {
     } // end of input event queue loop
     
     // send movement direction to the entity
-    e->set_dir(vec2f(right, up));
+    e->set_dir(vec2f {right, up});
     
     // send the rotation to the gun
     if (rotating < 0)

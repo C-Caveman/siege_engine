@@ -1,6 +1,6 @@
 // how entities do things 
 
-#include "../actions.h"
+#include "../ent/actions.h"
 extern float dt;
 
 // accel the player entity using the desired direction and move_mode
@@ -27,7 +27,7 @@ void player_accel(ent* e) {
     // TODO implement walking/running using the move_mode variable
     // apply friction
     if (man_speed < MIN_SPEED) {
-        player_velocity = vec2f(0,0);
+        player_velocity = vec2f{0,0};
     }
     else 
         //player_velocity = player_velocity * (1-0.08);

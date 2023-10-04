@@ -6,14 +6,13 @@
 #include <iostream>
 using namespace std;
 
-class vec2f {
-private:
+struct vec2f {
     float x;
     float y;
-public:
-    vec2f();
-    vec2f(float x, float y);
-    ~vec2f();
+    
+    //vec2f();
+    //vec2f(float x, float y);
+    //~vec2f();
     float get_x();
     float get_y();
     void set_x(float new_val);
@@ -25,8 +24,6 @@ public:
     void semi_normalize(); // don't round x or y down to zero
     vec2f normalized();
     vec2f semi_normalized();
-    void scale_to(float new_length);
-    vec2f scaled_to(float new_length);
     void print();
     // operator overloading
     vec2f operator + (const vec2f& v);
@@ -41,13 +38,13 @@ public:
     vec2f operator / (const float& scale);
 };
 
-class vec2i {
-public:
+struct vec2i {
     int x;
     int y;
-    vec2i();
-    vec2i(int x, int y);
-    ~vec2i();
+    
+    //vec2i();
+    //vec2i(int x, int y);
+    //~vec2i();
     // operator overloading
     vec2i operator + (const vec2i& v);
     vec2i operator - (const vec2i& v);

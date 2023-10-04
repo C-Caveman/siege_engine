@@ -4,9 +4,10 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Vector of 2 floats:
 //
-vec2f::vec2f() : x(0), y(0) {}
-vec2f::vec2f(float new_x, float new_y) : x(new_x), y(new_y) {}
-vec2f::~vec2f() {}
+
+//vec2f::vec2f() : x(0), y(0) {}
+//vec2f::vec2f(float new_x, float new_y) : x(new_x), y(new_y) {}
+//vec2f::~vec2f() {}
 
 float vec2f::get_x() {return x;}
 float vec2f::get_y() {return y;}
@@ -53,7 +54,7 @@ void vec2f::semi_normalize() {
         y = -1;
 }
 vec2f vec2f::normalized() {
-    vec2f new_vec(x, y);
+    vec2f new_vec = vec2f{x, y};
     float length = sqrt(x*x + y*y);
     if (length == 0) 
         return new_vec; // don't divide by zero!!!!
@@ -62,7 +63,7 @@ vec2f vec2f::normalized() {
     return new_vec;
 }
 vec2f vec2f::semi_normalized() {
-    vec2f new_vec(x, y);
+    vec2f new_vec = vec2f{x, y};
     float length = sqrt(x*x + y*y);
     if (length == 0) 
         return new_vec; // don't divide by zero!!!!
@@ -81,45 +82,23 @@ vec2f vec2f::semi_normalized() {
         new_vec.y = -1;
     return new_vec;
 }
-void vec2f::scale_to(float new_length) {
-    float old_length = this->vlen();
-    float length_ratio = old_length / new_length;
-    x *= length_ratio;
-    y *= length_ratio;
-}
-vec2f vec2f::scaled_to(float new_length) {
-    vec2f new_vec(this->x, this->y);
-    float old_length = this->vlen();
-    if (old_length == 0)
-        old_length = 1;
-    float length_ratio = new_length / old_length;
-    new_vec.x *= length_ratio;
-    new_vec.y *= length_ratio;
-    return new_vec;
-    /*
-    float old_length = this->vlen();
-    if (old_length != 0)
-        return vec2f(x, y) * new_length / old_length;
-    else
-        return vec2f(x, y) * new_length;
-    */
-}
+
 void vec2f::print() {
     printf("(%f, %f)", x, y);
 }
 
 // operator overloading
 vec2f vec2f::operator + (const vec2f& v) {
-    return vec2f(x + v.x, y + v.y);
+    return vec2f{x + v.x, y + v.y};
 }
 vec2f vec2f::operator - (const vec2f& v){
-    return vec2f(x - v.x, y - v.y);
+    return vec2f{x - v.x, y - v.y};
 }
 vec2f vec2f::operator * (const vec2f& v){
-    return vec2f(x * v.x, y * v.y);
+    return vec2f{x * v.x, y * v.y};
 }
 vec2f vec2f::operator / (const vec2f& v){
-    return vec2f(x / v.x, y / v.y);
+    return vec2f{x / v.x, y / v.y};
 }
 void vec2f::operator = (const vec2f& v) {
     x = v.x;
@@ -139,32 +118,32 @@ ostream& operator << (ostream& os, const vec2f& v)
 
 // scale vector by an float
 vec2f vec2f::operator * (const float& scale){
-    return vec2f(x * scale, y * scale);
+    return vec2f{x * scale, y * scale};
 }
 vec2f vec2f::operator / (const float& scale){
-    return vec2f(x / scale, y / scale);
+    return vec2f{x / scale, y / scale};
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // Vector of 2 ints:
 //
-vec2i::vec2i() : x(0), y(0) {}
-vec2i::vec2i(int new_x, int new_y) : x(new_x), y(new_y) {}
-vec2i::~vec2i() {}
+//vec2i::vec2i() : x(0), y(0) {}
+//vec2i::vec2i(int new_x, int new_y) : x(new_x), y(new_y) {}
+//vec2i::~vec2i() {}
 
 // operator overloading
 vec2i vec2i::operator + (const vec2i& v) {
-    return vec2i(x + v.x, y + v.y);
+    return vec2i{x + v.x, y + v.y};
 }
 vec2i vec2i::operator - (const vec2i& v){
-    return vec2i(x - v.x, y - v.y);
+    return vec2i{x - v.x, y - v.y};
 }
 vec2i vec2i::operator * (const vec2i& v){
-    return vec2i(x * v.x, y * v.y);
+    return vec2i{x * v.x, y * v.y};
 }
 vec2i vec2i::operator / (const vec2i& v){
-    return vec2i(x / v.x, y / v.y);
+    return vec2i{x / v.x, y / v.y};
 }
 void vec2i::operator = (const vec2i& v) {
     x = v.x;
@@ -183,8 +162,8 @@ ostream& operator << (ostream& os, const vec2i& v)
 }
 // scale vector
 vec2i vec2i::operator * (const float& scale){
-    return vec2i(x * scale, (int)(y * scale));
+    return vec2i{(int)(x * scale), (int)(y * scale)};
 }
 vec2i vec2i::operator / (const int& scale){
-    return vec2i(x / scale, y / scale);
+    return vec2i{x / scale, y / scale};
 }

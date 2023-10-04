@@ -2,13 +2,13 @@
 #ifndef SERVER
 #define SERVER
 
-#include "audio.h"
-#include "graphics.h"
-#include "input.h"
-#include "world.h"
-#include "config.h"
-#include "client.h"
-#include "actions.h"
+#include "../audio/audio.h"
+#include "../graphics/graphics.h"
+#include "../input/input.h"
+#include "../world/world.h"
+#include "../config/config.h"
+#include "../client/client.h"
+#include "../ent/actions.h"
 
 //TODO set up data structures for handling server data
 extern int num_entities;

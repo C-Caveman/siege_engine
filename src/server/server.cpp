@@ -1,7 +1,7 @@
 // update the world using messages from the clients,
 // update the clients on what has happened (if multiplayer)
 
-#include "../server.h"
+#include "server.h"
 #include <unistd.h> // testing memory leaks with sleep()
 
 extern bool m1_held;
@@ -19,7 +19,7 @@ int new_id() {return ++id;}
 // add an entity to "entities"
 struct ent* add_ent(int type) {
     //TODO add an insert_ent() method here, so new ents fill gaps in the ent_array TODO
-    entities[num_entities] = ent (new_id(), type, rocket_tank, 0, 0, 2, vec2f(0,0), vec2f(0,0), vec2f(0,0));
+    entities[num_entities] = ent (new_id(), type, rocket_tank, 0, 0, 2, vec2f{0,0}, vec2f{0,0}, vec2f{0,0});
     struct ent* e = &entities[num_entities];
     //printf("New ent id %d\n", e->get_id());
     num_entities++;
@@ -80,19 +80,29 @@ int main() {
     // spawn a rock
     ent* rock_ent =  add_ent(ENT_SCENERY);
     rock_ent->set_anim(stone);
-    rock_ent->slide_ent(vec2f(RSIZE*3, RSIZE*1));
+    rock_ent->slide_ent(vec2f{RSIZE*3, RSIZE*1});
     // spawn the gun
     ent* gun_ent = add_ent(ENT_GUN);
     gun_ent->set_anim(gun_grenade);
-    gun_ent->slide_ent(vec2f(RSIZE*5, RSIZE*1));
+    gun_ent->slide_ent(vec2f{RSIZE*5, RSIZE*1});
     // spawn a firepit
     ent* fire_ent = add_ent(ENT_SCENERY);
     fire_ent->set_anim(firepit);
-    fire_ent->slide_ent(vec2f(RSIZE*7, RSIZE*1));
+    fire_ent->slide_ent(vec2f{RSIZE*7, RSIZE*1});
     // spawn a pile of sand
     ent* sand_ent = add_ent(ENT_SCENERY);
     sand_ent->set_anim(sand);
-    sand_ent->slide_ent(vec2f(RSIZE*10, RSIZE*1));
+    sand_ent->slide_ent(vec2f{RSIZE*10, RSIZE*1});
+    
+    printf("Each segment is %ld bits.\n", sizeof(segment) * 8);
+    printf("The player entity is %d segments long.\n", get_ent_size(PLAYER));
+    constexpr int SEGMENT_ARRAY_SIZE = 4096;
+    segment entity_segment_array[SEGMENT_ARRAY_SIZE];
+    ent_player* p = (ent_player*)spawn_ent(PLAYER, entity_segment_array, SEGMENT_ARRAY_SIZE);
+    printf("Ent type: %d, VEL: %f\n", p->data[head].head.type, p->data[vel].vel.vel.x);
+    ent_scenery* s = (ent_scenery*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
+    despawn_ent((segment*)s);
+    ent_scenery* S = (ent_scenery*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
     
     while (running) {
         dt = (SDL_GetTicks() - last_frame_end) / 1000;

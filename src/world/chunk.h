@@ -1,6 +1,6 @@
 // A chunk is a 16x16 area of tiles.
 // Each tile has a floor and a wall.
-#include "ent.h"
+#include "../ent/ent.h"
 
 struct tile {
     unsigned char flags, health, wall_height, unused;

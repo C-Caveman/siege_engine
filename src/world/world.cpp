@@ -1,4 +1,4 @@
-#include "../world.h"
+#include "world.h"
 
 world::world() {
     name = "Default";
