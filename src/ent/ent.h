@@ -136,17 +136,25 @@ ENTITY STRUCTURE:
 
     > sprite 0 pos
     > sprite 0 anim
+    > sprite 0 rotation (only present when anim.flags &= ROTATABLE)
     > ...
     > sprite n pos
     > sprite n anim
+    > sprite n rotation (only present when anim.flags &= ROTATABLE)
 
     > ...
 
 ENTITY UPDATE CYCLE:
-    > Think (entity-specific functions)
-    > Move (apply velocity)
+    > Animate
+         Update the frame number of each sprite. Trigger think if on a special frame.
+    > Think
+        Entity-specific functions like pathfinding and shooting.
+    > Move
+        Apply velocity.
     > Collide
-    > Draw (all of the entity's sprites)
+        Tweak position/velocity based on overlap with walls/entities.
+    > Draw
+        All of the entity's sprites.
 */
 enum entity_types {
     EMPTY, PLAYER, SCENERY,
