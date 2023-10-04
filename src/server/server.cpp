@@ -149,7 +149,7 @@ int main() {
         //
         // draw the world
         //
-        draw_chunk(test_world.get_chunk(0,0));
+        draw_chunk(test_world.get_chunk(0,0), vec2f{view_x, view_y});
         draw_ents(entities, num_entities);
     }
     printf("Server was running for %d seconds.\n", SDL_GetTicks() / 1000);

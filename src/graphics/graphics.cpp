@@ -344,7 +344,58 @@ void draw_ents(ent* ent_array, float num_ents) {
     SDL_RenderPresent(renderer);
 }
 
-void draw_chunk(chunk* chunk) {
+void draw_tile(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f scaled_view_pos) {
+    //struct tile (*tiles)[CHUNK_WIDTH] = chunk->get_tiles();
+    struct tile t = tiles[y][x];
+    int cur_anim = 0;
+    int cur_frame = 0;
+    SDL_Rect render_pos;
+    render_pos.w = render_pos.h = RSIZE;
+    render_pos.x = scaled_view_pos.x + x * RSIZE;
+    render_pos.y = scaled_view_pos.y + y * RSIZE;
+    SDL_Rect tile_pos = render_pos;
+    // Draw floor:
+    cur_anim = animation_index[t.floor_anim];
+    SDL_RenderCopy(
+        renderer, 
+        textures[cur_anim+cur_frame], 
+        NULL, 
+        &render_pos
+    );
+    // Draw wall:
+    cur_anim = animation_index[t.wall_side_anim];
+    float offset_x = ((view_x+window_x/2-RSIZE) - view_x - (tile_pos.x))/(window_x)*10.0f;
+    float offset_y = ((view_y+window_y/2-RSIZE) - view_y - (tile_pos.y))/(window_y)*10.0f;
+    render_pos.x = (view_x+window_x/2) - view_x;
+    render_pos.y = (view_y+window_y/2) - view_y;
+    for (int i=0; i<t.wall_height; i++) {
+        render_pos = tile_pos;
+        render_pos.x = render_pos.x - offset_x*(i);
+        render_pos.y = render_pos.y - offset_y*(i);
+        SDL_RenderCopy(
+            renderer,
+            textures[cur_anim+cur_frame],
+            NULL,
+            &render_pos
+        );
+    }
+    if (t.wall_height > 0) {
+        cur_anim = animation_index[t.wall_top_anim];
+        render_pos = tile_pos;
+        render_pos.x = render_pos.x - offset_x * t.wall_height;
+        render_pos.y = render_pos.y - offset_y * t.wall_height;
+        SDL_RenderCopy(
+            renderer,
+            textures[cur_anim],
+            NULL,
+            &render_pos
+        );
+    }
+}
+
+void draw_chunk(chunk* chunk, vec2f camera_pos) {
+    // Convert the camera_pos to a chunk_pos:
+    vec2i chunk_pos = vec2i{(int)camera_pos.x/RSIZE, (int)camera_pos.y/RSIZE};
     // Get a pointer to the chunk's tile array.
     struct tile (*tiles)[CHUNK_WIDTH] = chunk->get_tiles();
     SDL_Rect tile_pos;
@@ -357,67 +408,52 @@ void draw_chunk(chunk* chunk) {
     float vpos_y = 0 - (view_y - window_y/2 + 64);
     int cur_anim = 0;
     int cur_frame = 0;
-    // Draw the floor:
-    for (int y=0; y<CHUNK_WIDTH; y++) {
-        // Draw a row of tiles.
-        for (int x=0; x<CHUNK_WIDTH; x++) {
-            struct tile t = tiles[y][x];
-            render_pos.x = vpos_x + x * RSIZE;
-            render_pos.y = vpos_y + y * RSIZE;
-            tile_pos = render_pos;
-            // Draw floor:
-            if (t.wall_top_anim == 0) {
-                cur_anim = animation_index[t.floor_anim];
-                SDL_RenderCopy(
-                    renderer, 
-                    textures[cur_anim+cur_frame], 
-                    NULL, 
-                    &render_pos
-                );
-            }
-            // Draw wall:
-            else {
-                cur_anim = animation_index[t.wall_side_anim];
-                if (t.wall_height == 0)
-                    t.wall_height = 1;
-                float offset_x = ((view_x+window_x/2-RSIZE) - view_x - (tile_pos.x))/(window_x)*10.0f;
-                float offset_y = ((view_y+window_y/2-RSIZE) - view_y - (tile_pos.y))/(window_y)*10.0f;
-                render_pos.x = (view_x+window_x/2) - view_x;
-                render_pos.y = (view_y+window_y/2) - view_y;
-                /*
-                SDL_RenderCopy(
-                    renderer,
-                    textures[cur_anim],
-                    NULL,
-                    &render_pos
-                );
-                */
-                for (int i=0; i<t.wall_height; i++) {
-                    render_pos = tile_pos;
-                    render_pos.x = render_pos.x - offset_x*(i);
-                    render_pos.y = render_pos.y - offset_y*(i);
-                    SDL_RenderCopy(
-                        renderer,
-                        textures[cur_anim+cur_frame],
-                        NULL,
-                        &render_pos
-                    );
-                }
-                cur_anim = animation_index[t.wall_top_anim];
-                render_pos = tile_pos;
-                render_pos.x = render_pos.x - offset_x * t.wall_height;
-                render_pos.y = render_pos.y - offset_y * t.wall_height;
-                SDL_RenderCopy(
-                    renderer,
-                    textures[cur_anim],
-                    NULL,
-                    &render_pos
-                );
-            }
-            // TODO draw entity here! <------------------------------------------ TODO!!!
+    
+    //
+    // Draw from the outer edges, work inwards.
+    //
+    // Top:
+    for (int y=0; y<chunk_pos.y; y++) {
+        // Left:
+        for (int x=0; x<chunk_pos.x; x++) {
+            draw_tile(tiles, x, y, vec2f {vpos_x, vpos_y});
+        }
+        // Right:
+        for (int x=CHUNK_WIDTH-1; x>chunk_pos.x; x--) {
+            draw_tile(tiles, x, y, vec2f {vpos_x, vpos_y});
         }
     }
+    // Bottom:
+    for (int y=CHUNK_WIDTH-1; y>chunk_pos.y; y--) {
+        // Left:
+        for (int x=0; x<chunk_pos.x; x++) {
+            draw_tile(tiles, x, y, vec2f {vpos_x, vpos_y});
+        }
+        // Right:
+        for (int x=CHUNK_WIDTH-1; x>chunk_pos.x; x--) {
+            draw_tile(tiles, x, y, vec2f {vpos_x, vpos_y});
+        }
+    }
+    // Center left:
+    for (int x=0; x<chunk_pos.x; x++) {
+        draw_tile(tiles, x, chunk_pos.y, vec2f {vpos_x, vpos_y});
+    }
+    // Center right:
+    for (int x=CHUNK_WIDTH-1; x>chunk_pos.x; x--) {
+        draw_tile(tiles, x, chunk_pos.y, vec2f {vpos_x, vpos_y});
+    }
+    // Center top:
+    for (int y=0; y<chunk_pos.y; y++) {
+        draw_tile(tiles, chunk_pos.x, y, vec2f {vpos_x, vpos_y});
+    }
+    // Center bottom:
+    for (int y=CHUNK_WIDTH-1; y>chunk_pos.y; y--) {
+        draw_tile(tiles, chunk_pos.x, y, vec2f {vpos_x, vpos_y});
+    }
+    // Center:
+    draw_tile(tiles, chunk_pos.x, chunk_pos.y, vec2f {vpos_x, vpos_y});
 }
+
 
 void cleanup_graphics() {
     SDL_DestroyRenderer(renderer);
