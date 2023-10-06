@@ -204,13 +204,30 @@ void init_graphics() {
     // initialize the window
     //
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
-        cout << "SDL init failed." << endl;
-    if (SDL_CreateWindowAndRenderer(window_x, window_y, 0, &window, &renderer) < 0)
-        cout << "SDL window/renderer init failed" << endl;
-    SDL_SetWindowTitle(window, "Hello SDL!");
+        cout << "SDL init failed. " << SDL_GetError() << "\n";
+    // Set the logical resolution:
+    //SDL_RenderSetLogicalSize(renderer, 1920, 1080);
     // make it fullscreen if config file says so
-    if (fullscreen)
+    if (fullscreen) {
+        // Find the screen's resolution:
+        SDL_Rect bounds;
+        int displayIndex = 0;
+        if (SDL_GetDisplayBounds(displayIndex, &bounds) != 0)
+            printf("*** init_graphics error: %s\n", SDL_GetError());
+        // Set the resolution to that of the screen:
+        window_x = bounds.w;
+        window_y = bounds.h;
+        if (SDL_CreateWindowAndRenderer(window_x, window_y, 0, &window, &renderer) != 0)
+            cout << "SDL window/renderer init failed" << SDL_GetError() << "\n";
+        printf("\nResolution:\n        %dx%d\n", bounds.w, bounds.h);
         SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+    }
+    else {
+        // Make a window with the configured size:
+        if (SDL_CreateWindowAndRenderer(window_x, window_y, 0, &window, &renderer) != 0)
+            cout << "SDL window/renderer init failed" << SDL_GetError() << "\n";
+    }
+    SDL_SetWindowTitle(window, "Hello SDL!");
     // set the framerate via the config
     if (fps_cap > 0)
         min_frame_time = 1000/fps_cap;
@@ -239,8 +256,8 @@ void track_fps() {
         last_sec = last_frame_end;
         fps = frame_count;
         frame_count = 0;
-        //cout << "One second has passed, fps = " << fps << endl;
-        //cout << "Delta time was: " << dt << endl;
+        //cout << "One second has passed, fps = " << fps << "\n";
+        //cout << "Delta time was: " << dt << "\n";
     }
 }
 
@@ -345,7 +362,8 @@ void draw_ents(ent* ent_array, float num_ents) {
 }
 
 void draw_tile(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f scaled_view_pos) {
-    //struct tile (*tiles)[CHUNK_WIDTH] = chunk->get_tiles();
+    if (x < 0 || x > CHUNK_WIDTH-1 || y < 0 || y > CHUNK_WIDTH-1)
+        return;
     struct tile t = tiles[y][x];
     int cur_anim = 0;
     int cur_frame = 0;

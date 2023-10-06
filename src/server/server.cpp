@@ -50,6 +50,24 @@ void server_config() {
     vars_from_file(config_fname);
 }
 
+void place_wall(chunk* chonk) {
+    // No longer the start of a click. TODO rename and move to input.cpp TODO
+    m1_held = false;
+    // Adjusted player position (to get the center).
+    int camera_offset_x = (int)(view_x) + RSIZE/2;
+    int camera_offset_y = (int)(view_y) + RSIZE/2;
+    int selected_x = (camera_offset_x + mouse_x) / RSIZE;
+    int selected_y = (camera_offset_y + mouse_y) / RSIZE;
+    if (selected_x < 0) selected_x = 0;
+    if (selected_y < 0) selected_y = 0;
+    if (selected_x > (CHUNK_WIDTH-1)) selected_x = (CHUNK_WIDTH-1);
+    if (selected_y > (CHUNK_WIDTH-1)) selected_y = (CHUNK_WIDTH-1);
+    printf("Tile: (%d, %d)\n", selected_x, selected_y);
+    chonk->set_wall(selected_x,
+                    selected_y,
+                    wall_steel,wall_steel_side,16);
+}
+
 int main() {
     server_config();
     // make the player_entity entity
@@ -94,6 +112,7 @@ int main() {
     sand_ent->set_anim(sand);
     sand_ent->slide_ent(vec2f{RSIZE*10, RSIZE*1});
     
+    /*
     printf("Each segment is %ld bits.\n", sizeof(segment) * 8);
     printf("The player entity is %d segments long.\n", get_ent_size(PLAYER));
     constexpr int SEGMENT_ARRAY_SIZE = 4096;
@@ -103,6 +122,7 @@ int main() {
     ent_scenery* s = (ent_scenery*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
     despawn_ent((segment*)s);
     ent_scenery* S = (ent_scenery*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
+    */
     
     while (running) {
         dt = (SDL_GetTicks() - last_frame_end) / 1000;
@@ -128,24 +148,9 @@ int main() {
         view_x = player_entity->get_pos().get_x();
         view_y = player_entity->get_pos().get_y();
         
-        int chunk_pos_x = (int)(view_x) + RSIZE/2;
-        int chunk_pos_y = (int)(view_y) + RSIZE/2;
-        if (chunk_pos_x < 0) chunk_pos_x = 0;
-        if (chunk_pos_y < 0) chunk_pos_y = 0;
-        if (chunk_pos_x > (CHUNK_WIDTH-1)*RSIZE) chunk_pos_x = (CHUNK_WIDTH-1)*RSIZE;
-        if (chunk_pos_y > (CHUNK_WIDTH-1)*RSIZE) chunk_pos_y = (CHUNK_WIDTH-1)*RSIZE;
-        //printf("Block: (%d, %d)\n", chunk_pos_x / RSIZE, chunk_pos_y / RSIZE);
-        if (m1_held) {
-            m1_held = false;
-            printf("Pos: (%d, %d)  ", chunk_pos_x / RSIZE, chunk_pos_y / RSIZE);
-            printf("Click: (%d, %d)\n", 
-                   (mouse_x + chunk_pos_x) / RSIZE,
-                   (mouse_y + chunk_pos_y) / RSIZE
-            );
-            chunk_0->set_wall((mouse_x + chunk_pos_x) / RSIZE,
-                              (mouse_y + chunk_pos_y) / RSIZE, 
-                              wall_steel,wall_steel_side,16);
-        }
+        if (m1_held)
+            place_wall(chunk_0);
+        
         //
         // draw the world
         //
