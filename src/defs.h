@@ -1,7 +1,10 @@
 #ifndef DEFS
 #define DEFS
+// Some useful primitives and constants.
 
-// some useful primitives and constants
+// Debug flags:
+#define DEBUG_ENTS 0
+#define DEBUG_GRAPHICS 1
 
 #include <iostream>
 using namespace std;

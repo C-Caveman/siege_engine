@@ -117,12 +117,21 @@ int main() {
     printf("The player entity is %d segments long.\n", get_ent_size(PLAYER));
     constexpr int SEGMENT_ARRAY_SIZE = 4096;
     segment entity_segment_array[SEGMENT_ARRAY_SIZE];
-    ent_player* p = (ent_player*)spawn_ent(PLAYER, entity_segment_array, SEGMENT_ARRAY_SIZE);
+    ent_PLAYER* p = (ent_PLAYER*)spawn_ent(PLAYER, entity_segment_array, SEGMENT_ARRAY_SIZE);
     printf("Ent type: %d, VEL: %f\n", p->data[head].head.type, p->data[vel].vel.vel.x);
-    ent_scenery* s = (ent_scenery*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
+    ent_SCENERY* s = (ent_SCENERY*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
     despawn_ent((segment*)s);
-    ent_scenery* S = (ent_scenery*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
+    ent_SCENERY* S = (ent_SCENERY*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
     */
+    constexpr int SEGMENT_ARRAY_SIZE = 4096;
+    segment entity_segment_array[SEGMENT_ARRAY_SIZE];
+    ent_PLAYER* p = (ent_PLAYER*)spawn_ent(PLAYER, entity_segment_array, SEGMENT_ARRAY_SIZE);
+    ent_SCENERY* s = (ent_SCENERY*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
+    printf("*Type name: %s\n", get_type_name(p->data[0].head.type));
+    int second_ent_index = get_next_ent(0, entity_segment_array, SEGMENT_ARRAY_SIZE);
+    printf("*Type name: %s\n", get_type_name(entity_segment_array[second_ent_index].head.type));
+    draw_ent_sprites((segment*) p);
+    draw_ent_sprites((segment*) &entity_segment_array[second_ent_index]);
     
     while (running) {
         dt = (SDL_GetTicks() - last_frame_end) / 1000;

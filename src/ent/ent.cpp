@@ -1,4 +1,8 @@
+// Implementations of entity functions.
 #include "ent.h"
+
+// Used to give each spawned entity a unique id number.
+uint16_t unique_entity_id = 0;
 
 ent::ent() {
     id = 0;
@@ -156,26 +160,39 @@ int ent::get_state(int state_index) {return (int)state_info[state_index];}
 // Initialize an entity (to the default values for its type).
 //
 
-/* Segments common to most entities.
-enum ent_basics_segments {                  // basic entity (component of most entitites)
-    head, chunkpos, pos, vel, dir, anim, health,
-    basic_ent_size
-};*/
-
-/* enum player_segments {                      // player
-    player_end_of_basics=basic_ent_size-1,
-    weapon, name, whatever, ect,
-    player_size
-};*/
-void ent_player::init() {
-    data[head].head.type = PLAYER;
-    data[head].head.flags = DRAWABLE | MOVABLE | ANIMATABLE | THINKABLE;
+void ent_EMPTY_init(segment* e) {
+    // Our work here is done.
 }
-void ent_scenery::init() {}
+void ent_PLAYER_init(segment* e) {
+    ent_PLAYER* p = (ent_PLAYER*)e;
+    p->data[head].head.flags = DRAWABLE | ANIMATABLE | MOVABLE | COLLIDABLE | THINKABLE;
+    p->data[head].head.num_sprites = 2;
+    // Init the sprites:
+    p->data[player_sprites_start+body].anim.anim = rocket_tank;
+    p->data[player_sprites_start+body].pos.pos = vec2f{0,0};
+    p->data[player_sprites_start+gun].anim.anim = gun_grenade;
+    p->data[player_sprites_start+gun].pos.pos = vec2f{0,0};
+}
+void ent_SCENERY_init(segment* e) {
+    ent_SCENERY* s = (ent_SCENERY*)e;
+    s->data[head].head.flags = DRAWABLE | ANIMATABLE;
+    s->data[head].head.num_sprites = num_scenery_sprites;
+    // Init the sprites:
+    s->data[scenery_sprites_start+scenery_sprite].anim.anim = tiledark; // Default sprite.
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
-// Spawn an entity (insert a given type of ent to an array of entitity segments).
+// Entity management functions. (spawning, despawning, getting next ent in array, ect.)
 //
+
+// This macro formats the ENTITY_TYPES_LIST into an array of strings.
+#undef f
+#define f(x) #x, 
+char entity_type_names[NUM_ENT_TYPES][MAX_ENTITY_TYPE_NAME_LEN] = { ENTITY_TYPES_LIST };
+// Return the name for a given entity type.
+char* get_type_name(int type) {
+    return entity_type_names[type];
+}
 // Return the size of the current entity type (in segments).
 int get_ent_size(int type) {
     int size = -1;
@@ -195,6 +212,24 @@ int get_ent_size(int type) {
     }
     return size;
 }
+// Iterate through an array of entity segments. Returns -1 if there are no more entities.
+int get_next_ent(int i, segment* array, int array_len) {
+    // Is segment i full?    (assumed to be be an entity header if so)
+    if (array[i].head.type != EMPTY) {
+        i += array[i].head.size; // Skip past this entity.
+        if (DEBUG_ENTS)
+            printf("get_next_ent() entity at %d. Size is %d.\n", i, array[i].head.size);
+    }
+    // Skip forward until reaching a non-empty segment.
+    while (i < array_len && array[i].head.type == EMPTY) {
+        if (DEBUG_ENTS)
+            printf("get_next_ent() skipping past %d.\n", i);
+        i += 1;
+    }
+    if (i >= array_len) // Out of bounds.
+        i = -1;
+    return i;
+}
 // Make a new entity in the given segment array. Return its index. TODO init the entity TODO
 segment* spawn_ent(int type, segment* array, int array_len) {
     int index = -1;
@@ -204,35 +239,54 @@ segment* spawn_ent(int type, segment* array, int array_len) {
     while (i<array_len) {
         // Empty slot?
         if (array[i].head.type == EMPTY) {
-            printf("Found an open slot at %d.\n", i);
+            if (DEBUG_ENTS)
+                printf("Found an open slot at %d.\n", i);
             empty_space_len += 1;
             i += 1;
         }
         // Slot occupied.
         else {
-            printf("Slots [%d, %d] already taken.\n", i, i+array[i].head.size-1);
+            if (DEBUG_ENTS)
+                printf("Slots [%d, %d] already taken.\n", i, i+array[i].head.size-1);
             empty_space_len = 0;
             i += array[i].head.size;
         }
         // Got enough space to store the ent.
         if (empty_space_len == required_space) {
-            printf("Found enough space for ent in [%d, %d]\n", i-required_space, i-1);
+            if (DEBUG_ENTS)
+                printf("Found enough space for ent in [%d, %d]\n", i-required_space, i-1);
             index = i-required_space;
             break;
         }
     }
     if (index == -1) {
-        printf("***\n*** No space left in the entity array!!!\n***\n");
+        if (DEBUG_ENTS)
+            printf("***\n*** No space left in the entity array!!!\n***\n");
         return nullptr;
     }
-    // Initialize the entity:
+    // Initialize the entity's header info:
+    array[index].head.header_byte = HEADER_BYTE;
     array[index].head.type = type;
     array[index].head.size = required_space;
+    array[index].head.id = unique_entity_id;
+    unique_entity_id += 1; // Make sure the next entity id number is different. TODO ensure unique
+    // Initialize the entity.
+    switch (type) {
+        // This macro formats the entity types list into a series of case statements.
+        // Each case statement calls the appropriate init() function for the entity type.
+        #undef f
+        #define f(x) case x: ent_##x##_init(&array[index]); break; 
+        ENTITY_TYPES_LIST
+        default:
+            printf("*** spawn_ent() error: invalid entity type: %d", type);
+            exit(-1);
+    }
     return &array[index];
 }
-// Remove an entity from an entity segment array.
+// Remove an entity from an entity segment array. TODO ent-specific cleanup TODO
 void despawn_ent(segment* ent_header) {
     int size = ent_header->head.size;
-    printf("Despawning ent of size %d\n", size);
+    if (DEBUG_ENTS)
+        printf("Despawning ent of size %d\n", size);
     memset(ent_header, 0, size*sizeof(segment));
 }

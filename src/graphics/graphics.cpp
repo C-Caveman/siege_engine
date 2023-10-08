@@ -341,6 +341,12 @@ void draw_ent(ent* e) {
                      flip);
 }
 
+void draw_ent_sprites(segment* ent_head) {
+    int num_sprites = ent_head->head.num_sprites;
+    if (DEBUG_GRAPHICS)
+        printf("Num sprites in %s entity: %d\n", get_type_name(ent_head->head.type), num_sprites);
+}
+
 void draw_ents(ent* ent_array, float num_ents) {
     //draw_background();
     for (int i=0; i<num_ents; i++) {

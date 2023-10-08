@@ -27,6 +27,7 @@ void init_graphics();
 void track_fps();
 void draw_background();
 void draw_ent(ent* e);
+void draw_ent_sprites(segment* ent_head);
 void draw_ents(ent* ent_array, float num_ents);
 void draw_chunk(chunk* chunk, vec2f camera_pos);
 void draw_text(ent* e);
