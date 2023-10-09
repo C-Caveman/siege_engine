@@ -10,6 +10,8 @@
 char path[MAX_PATH_LEN]; // path to the executable
 SDL_Texture* textures[MAX_TEXTURES];
 char animation_names[NUM_ANIM*ANIM_NAME_LEN];
+// Details for each animation.
+struct anim_info anim_data[NUM_ANIM];
 int animation_lengths[NUM_ANIM];
 int animation_index[NUM_ANIM];
 float min_frame_time = 1000/60; // second / frames
@@ -341,10 +343,21 @@ void draw_ent(ent* e) {
                      flip);
 }
 
-void draw_ent_sprites(segment* ent_head) {
-    int num_sprites = ent_head->head.num_sprites;
+void draw_ent_sprites(segment* e) {
+    int num_sprites = e->head.num_sprites;
+    vec2f pos;
+    uint32_t anim;
+    float rotation;
+    anim_info animation;
+    //segment
     if (DEBUG_GRAPHICS)
-        printf("Num sprites in %s entity: %d\n", get_type_name(ent_head->head.type), num_sprites);
+        printf("Num sprites in %s entity: %d\n", get_type_name(e->head.type), num_sprites);
+    for (int i=0; i<num_sprites; i++) {
+        pos =      e[basic_ent_size + i*sprite_size + sprite_position_segment].pos.pos;
+        anim =     e[basic_ent_size + i*sprite_size + sprite_animation_segment].anim.anim;
+        rotation = e[basic_ent_size + i*sprite_size + sprite_animation_segment].anim.rotation;
+        //flags = 
+    }
 }
 
 void draw_ents(ent* ent_array, float num_ents) {

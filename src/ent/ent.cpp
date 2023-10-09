@@ -160,25 +160,24 @@ int ent::get_state(int state_index) {return (int)state_info[state_index];}
 // Initialize an entity (to the default values for its type).
 //
 
-void ent_EMPTY_init(segment* e) {
+void ent_EMPTY::init() {
     // Our work here is done.
 }
-void ent_PLAYER_init(segment* e) {
-    ent_PLAYER* p = (ent_PLAYER*)e;
-    p->data[head].head.flags = DRAWABLE | ANIMATABLE | MOVABLE | COLLIDABLE | THINKABLE;
-    p->data[head].head.num_sprites = 2;
+void ent_PLAYER::init() {
+    printf("Player entity initializing!\n");
+    data[head].head.flags = DRAWABLE | ANIMATABLE | MOVABLE | COLLIDABLE | THINKABLE;
+    data[head].head.num_sprites = 2;
     // Init the sprites:
-    p->data[player_sprites_start+body].anim.anim = rocket_tank;
-    p->data[player_sprites_start+body].pos.pos = vec2f{0,0};
-    p->data[player_sprites_start+gun].anim.anim = gun_grenade;
-    p->data[player_sprites_start+gun].pos.pos = vec2f{0,0};
+    data[player_sprites_start+body].anim.anim = rocket_tank;
+    data[player_sprites_start+body].pos.pos = vec2f{0,0};
+    data[player_sprites_start+gun].anim.anim = gun_grenade;
+    data[player_sprites_start+gun].pos.pos = vec2f{0,0};
 }
-void ent_SCENERY_init(segment* e) {
-    ent_SCENERY* s = (ent_SCENERY*)e;
-    s->data[head].head.flags = DRAWABLE | ANIMATABLE;
-    s->data[head].head.num_sprites = num_scenery_sprites;
+void ent_SCENERY::init() {
+    data[head].head.flags = DRAWABLE | ANIMATABLE;
+    data[head].head.num_sprites = num_scenery_sprites;
     // Init the sprites:
-    s->data[scenery_sprites_start+scenery_sprite].anim.anim = tiledark; // Default sprite.
+    data[scenery_sprites_start+scenery_sprite].anim.anim = tiledark; // Default sprite.
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -275,7 +274,7 @@ segment* spawn_ent(int type, segment* array, int array_len) {
         // This macro formats the entity types list into a series of case statements.
         // Each case statement calls the appropriate init() function for the entity type.
         #undef f
-        #define f(x) case x: ent_##x##_init(&array[index]); break; 
+        #define f(x) case x:  ((ent_##x *)(&array[index])) -> init(); break; 
         ENTITY_TYPES_LIST
         default:
             printf("*** spawn_ent() error: invalid entity type: %d", type);

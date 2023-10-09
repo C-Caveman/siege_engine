@@ -103,8 +103,10 @@ struct seg_dir {         // Entity direction.
     vec2f dir;
 };
 struct seg_anim {        // Data for an entity's animation.
-    int anim;            // Index of the animation.
-    int anim_flags;      // Qualities of the animation. (???looping???)
+    uint16_t anim;       // Enum value of the animation. (animation data is stored elsewhere)
+    uint8_t frame;       // current frame of animation.
+    uint8_t flags;       // Flags for changing how an animation is displayed.
+    float rotation;      // Rotation of the sprite.
 };
 struct seg_health {      // Entity health.
     int health;          // Health remaining.
@@ -135,6 +137,7 @@ union segment {
 ENTITY STRUCTURE:
     > header (ent size, flags, num sprites, ect.)
 
+    > cur_chunk
     > position
     > velocity
 
@@ -174,14 +177,21 @@ enum entity_types {
 };
 
 // Segments common to most entities.
-enum ent_basics_segments {                  // basic entity (component of most entitites)
+enum ent_basics_segments {////////////////// Basics of every entity.
     head, cur_chunk, pos, vel,
     basic_ent_size
+};
+
+enum sprite_components {
+    sprite_position_segment,
+    sprite_animation_segment,
+    sprite_size
 };
 
 enum empty_ent_sprites {};///////////////// empty entity
 enum empty_ent_segments {};
 struct ent_EMPTY {
+    void init();
 };
 
 enum player_sprites {////////////////////// player
@@ -197,6 +207,7 @@ enum player_segments {
 };
 struct ent_PLAYER {
     segment data[player_size];
+    void init();
 };
 
 enum scenery_sprites {//////////////////// scenery
@@ -211,6 +222,7 @@ enum scenery_segments {
 };
 struct ent_SCENERY {
     segment data[scenery_size];
+    void init();
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
