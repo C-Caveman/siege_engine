@@ -93,7 +93,7 @@ struct seg_head {        // Header segment. Used by all entities.
 struct seg_pos {         // Entity position.
     vec2f pos;
 };
-struct seg_cur_chunk {    // Chunk the entity is in.
+struct seg_cur_chunk {   // Chunk the entity is in.
     vec2i cur_chunk;
 };
 struct seg_vel {         // Entity velocity.
@@ -121,14 +121,14 @@ struct seg_movetype {   // Entity movement speeds. (sneak/walk/sprint/dash)
 /////////////////////////////////////////////////////////////////////////////////////////
 // Allow arrays of different segments.
 union segment {
-    struct seg_head     head;
-    struct seg_pos      pos;
+    struct seg_head      head;
+    struct seg_pos       pos;
     struct seg_cur_chunk cur_chunk;
-    struct seg_vel      vel;
-    struct seg_dir      dir;
-    struct seg_anim     anim;
-    struct seg_health   health;
-    struct seg_movetype movetype;
+    struct seg_vel       vel;
+    struct seg_dir       dir;
+    struct seg_anim      anim;
+    struct seg_health    health;
+    struct seg_movetype  movetype;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -182,7 +182,7 @@ enum ent_basics_segments {////////////////// Basics of every entity.
     basic_ent_size
 };
 
-enum sprite_components {
+enum sprite_components {//////////////////// Sprite data (used by most entities).
     sprite_position_segment,
     sprite_animation_segment,
     sprite_size
@@ -192,37 +192,38 @@ enum empty_ent_sprites {};///////////////// empty entity
 enum empty_ent_segments {};
 struct ent_EMPTY {
     void init();
+    void think();
 };
 
-enum player_sprites {////////////////////// player
-    body,
-    gun,
-    num_player_sprites
-};
-enum player_segments {
+enum player_segments {///////////////////// player
     player_end_of_basics=basic_ent_size-1,
-    player_sprites_start,
-    more_player_stuff=player_sprites_start+num_player_sprites,
+        p_sprite_body_pos,
+        p_sprite_body_anim,
+        p_sprite_gun_pos,
+        p_sprite_gun_anim,
+    player_dir,
+    player_movetype,
     player_size
 };
+#define num_player_sprites (p_sprite_gun_anim - player_end_of_basics)/2
 struct ent_PLAYER {
     segment data[player_size];
     void init();
+    void think();
 };
 
-enum scenery_sprites {//////////////////// scenery
-    scenery_sprite,
-    num_scenery_sprites
-};
-enum scenery_segments {
+enum scenery_segments {/////////////////// scenery
     scenery_end_of_basics=basic_ent_size-1,
-    scenery_sprites_start,
-    more_scenery_stuff=scenery_sprites_start+num_scenery_sprites,
+        scenery_sprite_pos,
+        scenery_sprite_anim,
+    more_scenery_stuff,
     scenery_size
 };
+#define num_scenery_sprites (scenery_sprite_anim - scenery_end_of_basics)/2
 struct ent_SCENERY {
     segment data[scenery_size];
     void init();
+    void think();
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -230,10 +231,12 @@ struct ent_SCENERY {
 //
 segment* spawn_ent(int type, segment* array, int array_len);
 void despawn_ent(segment* ent);
+void think_all_ents(segment* array, int array_len);
 char* get_type_name(int type);
 int get_ent_size(int type);
+int get_first_ent(segment* array, int array_len);
 int get_next_ent(int i, segment* array, int array_len);
-
+void move_ent(segment* e);
 
 
 

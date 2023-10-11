@@ -1,6 +1,11 @@
 // Implementations of entity functions.
 #include "ent.h"
 
+extern volatile float mouse_angle; // Direction the mouse is pointed in.
+extern volatile int mouse_x;
+extern volatile int mouse_y;
+extern float dt; // Delta time.
+
 // Used to give each spawned entity a unique id number.
 uint16_t unique_entity_id = 0;
 
@@ -156,31 +161,48 @@ void ent::set_state(int state_index, int new_state) {
 int ent::get_state(int state_index) {return (int)state_info[state_index];}
 
 
-/////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////;;
 // Initialize an entity (to the default values for its type).
 //
-
 void ent_EMPTY::init() {
     // Our work here is done.
 }
 void ent_PLAYER::init() {
-    printf("Player entity initializing!\n");
+    if (DEBUG_ENTS)
+        printf("Player entity initializing!\n");
     data[head].head.flags = DRAWABLE | ANIMATABLE | MOVABLE | COLLIDABLE | THINKABLE;
     data[head].head.num_sprites = 2;
     // Init the sprites:
-    data[player_sprites_start+body].anim.anim = rocket_tank;
-    data[player_sprites_start+body].pos.pos = vec2f{0,0};
-    data[player_sprites_start+gun].anim.anim = gun_grenade;
-    data[player_sprites_start+gun].pos.pos = vec2f{0,0};
+    data[p_sprite_body_pos].pos.pos = vec2f{0,0};
+    data[p_sprite_body_anim].anim.anim = rocket_tank;
+    data[p_sprite_gun_pos].pos.pos = vec2f{0,0};
+    data[p_sprite_gun_anim].anim.anim = gun_grenade;
 }
 void ent_SCENERY::init() {
+    if (DEBUG_ENTS)
+        printf("Scenery ent initializing!\n");
     data[head].head.flags = DRAWABLE | ANIMATABLE;
     data[head].head.num_sprites = num_scenery_sprites;
     // Init the sprites:
-    data[scenery_sprites_start+scenery_sprite].anim.anim = tiledark; // Default sprite.
+    data[scenery_sprite_pos].pos.pos = vec2f{0,0};
+    data[scenery_sprite_anim].anim.anim = floor_test; // Default sprite.
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////;;
+// Update an entity for the next frame.
+//
+void ent_EMPTY::think() {
+    // Our work here is done.
+}
+void ent_PLAYER::think() {
+    data[player_dir].dir.dir = vec2f{(float)cos(mouse_angle/180*M_PI), (float)sin(mouse_angle/180*M_PI)};
+    data[vel].vel.vel = data[player_dir].dir.dir * 100;
+    data[p_sprite_gun_anim].anim.rotation = mouse_angle;
+    //vec2f{(float)mouse_x, (float)mouse_y};
+}
+void ent_SCENERY::think() {}
+
+/////////////////////////////////////////////////////////////////////////////////////////;;
 // Entity management functions. (spawning, despawning, getting next ent in array, ect.)
 //
 
@@ -211,7 +233,7 @@ int get_ent_size(int type) {
     }
     return size;
 }
-// Iterate through an array of entity segments. Returns -1 if there are no more entities.
+// Return index of the next entity's header segment. Returns -1 if there are no more entities.
 int get_next_ent(int i, segment* array, int array_len) {
     // Is segment i full?    (assumed to be be an entity header if so)
     if (array[i].head.type != EMPTY) {
@@ -229,6 +251,18 @@ int get_next_ent(int i, segment* array, int array_len) {
         i = -1;
     return i;
 }
+// Return index of the first entity in a segment array. Return -1 if no entities are found.
+int get_first_ent(segment* array, int array_len) {
+    int i=0;
+    // Search for the first valid header segment with non-empty entity.
+    for (i=0; i<array_len; i++) {
+        if ((array[i].head.header_byte == HEADER_BYTE) && (array[i].head.type != EMPTY))
+            break;
+    }
+    if (i == (array_len-1))
+        i = -1;
+    return i;
+}
 // Make a new entity in the given segment array. Return its index. TODO init the entity TODO
 segment* spawn_ent(int type, segment* array, int array_len) {
     int index = -1;
@@ -238,28 +272,28 @@ segment* spawn_ent(int type, segment* array, int array_len) {
     while (i<array_len) {
         // Empty slot?
         if (array[i].head.type == EMPTY) {
-            if (DEBUG_ENTS)
+            if (DEBUG_ENT_SPAWNING)
                 printf("Found an open slot at %d.\n", i);
             empty_space_len += 1;
             i += 1;
         }
         // Slot occupied.
         else {
-            if (DEBUG_ENTS)
+            if (DEBUG_ENT_SPAWNING)
                 printf("Slots [%d, %d] already taken.\n", i, i+array[i].head.size-1);
             empty_space_len = 0;
             i += array[i].head.size;
         }
         // Got enough space to store the ent.
         if (empty_space_len == required_space) {
-            if (DEBUG_ENTS)
+            if (DEBUG_ENT_SPAWNING)
                 printf("Found enough space for ent in [%d, %d]\n", i-required_space, i-1);
             index = i-required_space;
             break;
         }
     }
     if (index == -1) {
-        if (DEBUG_ENTS)
+        if (DEBUG_ENT_SPAWNING)
             printf("***\n*** No space left in the entity array!!!\n***\n");
         return nullptr;
     }
@@ -282,10 +316,43 @@ segment* spawn_ent(int type, segment* array, int array_len) {
     }
     return &array[index];
 }
+// Run the think() function for each entitiy in a segment array.
+void think_all_ents(segment* array, int array_len) {
+    int type = EMPTY;
+    int i = 0;
+    i = get_first_ent(array, array_len);
+    while (i != -1) {
+        if (array[i].head.header_byte != HEADER_BYTE) {
+            if (DEBUG_ENTS)
+                printf("*** Invalid index given by get_next_ent() in think_all_ents()\n");
+            break;
+        }
+        // Run the correct think function for this entity:
+        type = array[i].head.type;
+        //printf("Thinking entity type: '%s' at index %d.\n", get_type_name(type), i);
+        switch (type) {
+            // This macro formats the entity types list into a series of case statements.
+            // Each case statement calls the appropriate think() function for the entity type.
+            #undef f
+            #define f(x) case x:  ((ent_##x *)(&array[i])) -> think(); break; 
+            ENTITY_TYPES_LIST
+            default:
+                printf("*** entity at %d not recognized in think_all_ents().\n",  i);
+                exit(-1);
+        }
+        i = get_next_ent(i, array, array_len);
+    }
+}
 // Remove an entity from an entity segment array. TODO ent-specific cleanup TODO
 void despawn_ent(segment* ent_header) {
     int size = ent_header->head.size;
     if (DEBUG_ENTS)
         printf("Despawning ent of size %d\n", size);
     memset(ent_header, 0, size*sizeof(segment));
+}
+// Update an ent's position based on its velocity:
+void move_ent(segment* e) {
+    vec2f v = e[vel].vel.vel;
+    vec2f p = e[pos].pos.pos;
+    e[pos].pos.pos = p + v*dt;
 }

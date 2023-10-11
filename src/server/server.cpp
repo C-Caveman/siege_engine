@@ -5,6 +5,7 @@
 #include <unistd.h> // testing memory leaks with sleep()
 
 extern bool m1_held;
+extern int mouse_angle;
 
 // entity and client data are in these arrays
 int num_entities = 0;
@@ -126,12 +127,10 @@ int main() {
     constexpr int SEGMENT_ARRAY_SIZE = 4096;
     segment entity_segment_array[SEGMENT_ARRAY_SIZE];
     ent_PLAYER* p = (ent_PLAYER*)spawn_ent(PLAYER, entity_segment_array, SEGMENT_ARRAY_SIZE);
-    ent_SCENERY* s = (ent_SCENERY*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
-    printf("*Type name: %s\n", get_type_name(p->data[0].head.type));
-    int second_ent_index = get_next_ent(0, entity_segment_array, SEGMENT_ARRAY_SIZE);
-    printf("*Type name: %s\n", get_type_name(entity_segment_array[second_ent_index].head.type));
-    draw_ent_sprites((segment*) p);
-    draw_ent_sprites((segment*) &entity_segment_array[second_ent_index]);
+    //ent_SCENERY* s = (ent_SCENERY*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
+    //printf("*Type name: %s\n", get_type_name(p->data[0].head.type));
+    
+    //segment* test_ent = spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
     
     while (running) {
         dt = (SDL_GetTicks() - last_frame_end) / 1000;
@@ -154,8 +153,8 @@ int main() {
         //
         // update the player's camera position
         //
-        view_x = player_entity->get_pos().get_x();
-        view_y = player_entity->get_pos().get_y();
+        view_x = p->data[pos].pos.pos.x - window_x/2 + RSIZE/2;
+        view_y = p->data[pos].pos.pos.y - window_y/2 + RSIZE/2;
         
         if (m1_held)
             place_wall(chunk_0);
@@ -165,6 +164,13 @@ int main() {
         //
         draw_chunk(test_world.get_chunk(0,0), vec2f{view_x, view_y});
         draw_ents(entities, num_entities);
+        
+        //p->think();
+        think_all_ents(entity_segment_array, SEGMENT_ARRAY_SIZE);
+        draw_all_ents(entity_segment_array, SEGMENT_ARRAY_SIZE);
+        move_ent((segment*) p);
+        
+        present_frame();
     }
     printf("Server was running for %d seconds.\n", SDL_GetTicks() / 1000);
     cleanup_graphics();

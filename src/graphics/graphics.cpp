@@ -26,7 +26,7 @@ float view_x = 0;
 float view_y = 0;
 TTF_Font* font = 0;
 
-extern int mouse_angle;
+extern volatile float mouse_angle;
 
 void skip_comment(FILE* fp) {
     char c = fgetc(fp);
@@ -125,8 +125,10 @@ void load_animations() {
                 //printf("Loading frame %d of %.*s at idx %d, i=%d\n", num_frames, ANIM_NAME_LEN, anim_name, total_textures, i);
             } 
             else {
-                //printf("Didn't find texture: %s, i=%d\n", tex_filename, i);
-                //printf("Loaded %d frames of %.*s, i=%d\n", num_frames, anim_name_len, anim_name, i);
+                if (DEBUG_GRAPHICS_LOADING) {
+                    printf("Didn't find texture: %s, i=%d\n", tex_filename, i);
+                    printf("Loaded %d frames of %.*s, i=%d\n", num_frames, anim_name_len, anim_name, i);
+                }
                 break;
             }
             if (!cur_surf) {
@@ -156,7 +158,8 @@ void load_animations() {
         }
         animation_lengths[i] = num_frames;
     }
-    printf("Loaded %d textures (max is %d).\n", total_textures, MAX_TEXTURES);
+    if (DEBUG_GRAPHICS_LOADING)
+        printf("Loaded %d textures (max is %d).\n", total_textures, MAX_TEXTURES);
 }
 
 
@@ -343,20 +346,48 @@ void draw_ent(ent* e) {
                      flip);
 }
 
-void draw_ent_sprites(segment* e) {
+void draw_ent_sprites(segment* e) { // TODO use the animation flags / update anim loader TODO ;;
     int num_sprites = e->head.num_sprites;
-    vec2f pos;
+    vec2f p;
     uint32_t anim;
     float rotation;
     anim_info animation;
+    SDL_Rect ent_render_pos;
+    ent_render_pos.w = ent_render_pos.h = RSIZE;
+    vec2f ent_origin = e[pos].pos.pos;
     //segment
     if (DEBUG_GRAPHICS)
         printf("Num sprites in %s entity: %d\n", get_type_name(e->head.type), num_sprites);
     for (int i=0; i<num_sprites; i++) {
-        pos =      e[basic_ent_size + i*sprite_size + sprite_position_segment].pos.pos;
+        // Get sprite data:
+        p =        e[basic_ent_size + i*sprite_size + sprite_position_segment].pos.pos + ent_origin;
         anim =     e[basic_ent_size + i*sprite_size + sprite_animation_segment].anim.anim;
         rotation = e[basic_ent_size + i*sprite_size + sprite_animation_segment].anim.rotation;
-        //flags = 
+        //flags = TODO use the animation flags TODO
+        // Adjust for screen position:
+        ent_render_pos.x = p.x - view_x;
+        ent_render_pos.y = p.y - view_y;
+        // Render the sprite:
+        SDL_RenderCopyEx(renderer, 
+                         textures[animation_index[anim]], 
+                         NULL, 
+                         &ent_render_pos, 
+                         rotation, 
+                         NULL, 
+                         SDL_FLIP_NONE);
+    }
+}
+void draw_all_ents(segment* array, int array_len) { // ;;
+    int i = 0;
+    i = get_first_ent(array, array_len);
+    while (i != -1) {
+        if (array[i].head.header_byte != HEADER_BYTE) {
+            if (DEBUG_GRAPHICS)
+                printf("*** Invalid index given by get_next_ent() in draw_all_ents()\n");
+            break;
+        }
+        draw_ent_sprites(&array[i]);
+        i = get_next_ent(i, array, array_len);
     }
 }
 
@@ -365,6 +396,9 @@ void draw_ents(ent* ent_array, float num_ents) {
     for (int i=0; i<num_ents; i++) {
         draw_ent(&ent_array[i]);
     }
+}
+
+void present_frame() {
     //
     // finished rendering a frame, 
     // now make sure we don't exceed 60 fps

@@ -25,7 +25,7 @@ bool just_clicked = false;
 int mouse_x = 0;
 int mouse_y = 0;
 bool m1_held = false;
-int mouse_angle = 0;
+volatile float mouse_angle = 0;
 bool mouse_moved = false;
 
 void client_input(ent* e) {
