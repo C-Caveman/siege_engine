@@ -9,36 +9,14 @@ extern int mouse_angle;
 
 // entity and client data are in these arrays
 int num_entities = 0;
-struct ent entities[MAX_ENTS];
 int num_clients = 0;
-struct client clients[MAX_CLIENTS];
+
+//TODO replace old client system TODO
+client_data player_client;
 
 // each entity gets a unique ID number
 int id = 0;
 int new_id() {return ++id;}
-
-// add an entity to "entities"
-struct ent* add_ent(int type) {
-    //TODO add an insert_ent() method here, so new ents fill gaps in the ent_array TODO
-    entities[num_entities] = ent (new_id(), type, rocket_tank, 0, 0, 2, vec2f{0,0}, vec2f{0,0}, vec2f{0,0});
-    struct ent* e = &entities[num_entities];
-    //printf("New ent id %d\n", e->get_id());
-    num_entities++;
-    return e;
-}
-
-// add a client to "clients"
-struct client* add_client() {
-    struct ent* client_ent  = add_ent(ENT_PLAYER);
-    client_init(&clients[num_clients], client_ent);
-    struct client* c = &clients[num_clients];
-    num_clients++;
-    return c;
-}
-
-void gun_movement(ent* e, ent* e_displayer) {
-    e_displayer->move_ent(e->get_pos() );//+ vec2f(mouse_x,mouse_y));
-}
 
 void server_config() {
     char varlist_fname[] = "config/vars_list.txt";
@@ -46,7 +24,7 @@ void server_config() {
     // debug print the config variable indicies are in their table
     //print_hashes(varlist_fname);
     // initialize the config variable hash table
-    set_var_ptrs();
+    set_var_ptrs(); // TODO migrate to new config system <--------------- TODO
     // load the config file data
     vars_from_file(config_fname);
 }
@@ -71,11 +49,6 @@ void place_wall(chunk* chonk) {
 
 int main() {
     server_config();
-    // make the player_entity entity
-    struct client* player_entity_client = add_client();
-    //player_entity_client->get_ent()->set_anim(rocket_tank);
-    ent* player_entity = player_entity_client->get_ent();
-    player_entity->set_state(state_player_speed,8); // walk instead of sneak
     
     
     //
@@ -96,37 +69,16 @@ int main() {
     chunk_0->set_wall(3,4, wall_steel,wall_steel_side,8);
     chunk_0->set_wall(7,7, wall_steel,wall_steel_side,8);
     chunk_0->set_wall(8,7, wall_steel,wall_steel_side,16);
-    // spawn a rock
-    ent* rock_ent =  add_ent(ENT_SCENERY);
-    rock_ent->set_anim(stone);
-    rock_ent->slide_ent(vec2f{RSIZE*3, RSIZE*1});
-    // spawn the gun
-    ent* gun_ent = add_ent(ENT_GUN);
-    gun_ent->set_anim(gun_grenade);
-    gun_ent->slide_ent(vec2f{RSIZE*5, RSIZE*1});
-    // spawn a firepit
-    ent* fire_ent = add_ent(ENT_SCENERY);
-    fire_ent->set_anim(firepit);
-    fire_ent->slide_ent(vec2f{RSIZE*7, RSIZE*1});
-    // spawn a pile of sand
-    ent* sand_ent = add_ent(ENT_SCENERY);
-    sand_ent->set_anim(sand);
-    sand_ent->slide_ent(vec2f{RSIZE*10, RSIZE*1});
     
-    /*
-    printf("Each segment is %ld bits.\n", sizeof(segment) * 8);
-    printf("The player entity is %d segments long.\n", get_ent_size(PLAYER));
+    
+    
+    
     constexpr int SEGMENT_ARRAY_SIZE = 4096;
     segment entity_segment_array[SEGMENT_ARRAY_SIZE];
     ent_PLAYER* p = (ent_PLAYER*)spawn_ent(PLAYER, entity_segment_array, SEGMENT_ARRAY_SIZE);
-    printf("Ent type: %d, VEL: %f\n", p->data[head].head.type, p->data[vel].vel.vel.x);
-    ent_SCENERY* s = (ent_SCENERY*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
-    despawn_ent((segment*)s);
-    ent_SCENERY* S = (ent_SCENERY*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
-    */
-    constexpr int SEGMENT_ARRAY_SIZE = 4096;
-    segment entity_segment_array[SEGMENT_ARRAY_SIZE];
-    ent_PLAYER* p = (ent_PLAYER*)spawn_ent(PLAYER, entity_segment_array, SEGMENT_ARRAY_SIZE);
+    player_client.player = (segment*)p;
+    
+    
     //ent_SCENERY* s = (ent_SCENERY*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
     //printf("*Type name: %s\n", get_type_name(p->data[0].head.type));
     
@@ -139,17 +91,8 @@ int main() {
         //
         // handle client inputs and movement
         //
-        client_input(player_entity);
-        player_accel(player_entity);
-        //
-        // move things according to their velocity
-        //
-        move(player_entity);
-        //
-        // do collisions
-        //
-        player_entity->collide_ent_cs(rock_ent);
-        gun_movement(player_entity, gun_ent);
+        client_input(&player_client);
+        player_client.update_player_entity(); // <- new client system
         //
         // update the player's camera position
         //
@@ -163,9 +106,7 @@ int main() {
         // draw the world
         //
         draw_chunk(test_world.get_chunk(0,0), vec2f{view_x, view_y});
-        draw_ents(entities, num_entities);
         
-        //p->think();
         think_all_ents(entity_segment_array, SEGMENT_ARRAY_SIZE);
         draw_all_ents(entity_segment_array, SEGMENT_ARRAY_SIZE);
         move_ent((segment*) p);

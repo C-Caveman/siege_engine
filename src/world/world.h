@@ -12,7 +12,7 @@ class world {
 private:
     string name;
     chunk chunks[WORLD_WIDTH][WORLD_WIDTH]; // chunk array (for tiles)
-    ent ents[MAX_ENTS];    // entity array
+    // TODO move the server's entity array here <------------------------------- TODO
 public:
     world();
     // TODO make this happen

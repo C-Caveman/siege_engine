@@ -28,9 +28,11 @@ bool m1_held = false;
 volatile float mouse_angle = 0;
 bool mouse_moved = false;
 
-void client_input(ent* e) {
-    float up = e->get_dir().get_y();
-    float right = e->get_dir().get_x();
+
+//TODO replace old client system TODO
+extern client_data player_client;
+
+void client_input(client_data* client) {
     SDL_Event event;
     
     //
@@ -61,52 +63,45 @@ void client_input(ent* e) {
                     
                     // close the game
                     case SDLK_ESCAPE:
-                        running = false;
-                        break;
                     case SDLK_q:
                         running = false;
+                        player_client.quitting = true;
                         break;
                     
                     // movement with WASD
                     case SDLK_a:
-                        right -= ACCEL;
+                        player_client.accel_dir.x -= 1;
                         break;
                     case SDLK_d:
-                        right += ACCEL;
+                        player_client.accel_dir.x += 1;
                         break;
                     case SDLK_w:
-                        up -= ACCEL;
+                        player_client.accel_dir.y -= 1;
                         break;
                     case SDLK_s:
-                        up += ACCEL;
+                        player_client.accel_dir.y += 1;
                         break;
                         
                     // sprint
                     case 1073742049: // shift key
-                        // toggle sprinting state
-                        if (e->get_state(state_player_speed) != 4)
-                            e->set_state(state_player_speed, 4);//running speed
-                        else
-                            e->set_state(state_player_speed, 2);//walking speed
+                        player_client.sprinting = !player_client.sprinting;
                         break;
                         
                     // sneak
                     case 1073742048: // ctrl key
                         // toggle sneaking state
-                        if (e->get_state(state_player_speed) != 0)
-                            e->set_state(state_player_speed, 0);
-                        else
-                            e->set_state(state_player_speed, 2);//walking speed
                         break;
                         
                     // aim left
                     case 1073741904: // left arrow
-                        rotating -= 1;
+                        rotating -= 1; // TODO remove this old var TODO
+                        player_client.aim_dir_rotation -= 1;
                         break;
                         
                     // aim right
                     case 1073741903: // right arrow
                         rotating += 1;
+                        player_client.aim_dir_rotation += 1;
                         break;
                     
                     // aim reverse (180 degree turn)
@@ -132,26 +127,28 @@ void client_input(ent* e) {
                 switch(event.key.keysym.sym) {                        
                     // WASD
                     case SDLK_a:
-                        right += ACCEL;
+                        player_client.accel_dir.x += 1;
                         break;
                     case SDLK_d:
-                        right -= ACCEL;
+                        player_client.accel_dir.x -= 1;
                         break;
                     case SDLK_w:
-                       up += ACCEL;
+                       player_client.accel_dir.y += 1;
                         break;
                     case SDLK_s:
-                        up -= ACCEL;
+                        player_client.accel_dir.y -= 1;
                         break;
                         
                     // aim left
                     case 1073741904: // left arrow
                         rotating += 1;
+                        player_client.aim_dir_rotation += 1;
                         break;
                         
                     // aim right
                     case 1073741903: // right arrow
                         rotating -= 1;
+                        player_client.aim_dir_rotation -= 1;
                         break;
                         
                         
@@ -214,9 +211,6 @@ void client_input(ent* e) {
             break;
         }
     } // end of input event queue loop
-    
-    // send movement direction to the entity
-    e->set_dir(vec2f {right, up});
     
     // send the rotation to the gun
     if (rotating < 0)

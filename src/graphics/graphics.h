@@ -37,12 +37,9 @@ extern int mouse_y;
 void init_graphics();
 void track_fps();
 void draw_background();
-void draw_ent(ent* e);
 void draw_ent_sprites(segment* ent_head);
 void draw_all_ents(segment* array, int array_len);
-void draw_ents(ent* ent_array, float num_ents);
 void draw_chunk(chunk* chunk, vec2f camera_pos);
-void draw_text(ent* e);
 void present_frame();
 void cleanup_graphics();
 

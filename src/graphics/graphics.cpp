@@ -307,45 +307,6 @@ void draw_background() {
     SDL_RenderCopy(renderer, textures[BKGRND_TEX], NULL, &background); // down
 }
 
-void draw_ent(ent* e) {
-    //SDL_SetRenderDrawColor(renderer, e->get_redness(), 0, 0, 255);
-    //SDL_RenderFillRect(renderer, e->get_rect());
-    SDL_Rect ent_render_pos;
-    ent_render_pos.x = e->get_pos().get_x();
-    ent_render_pos.y = e->get_pos().get_y();
-    ent_render_pos.w = ent_render_pos.h = RSIZE;
-    ent_render_pos.x -= view_x - window_x/2 + 64;
-    ent_render_pos.y -= view_y - window_y/2 + 64;
-    //TODO incorporate animations
-    // 10 fps animation
-    int r = 4; // animation rate TODO give each animation it's own rate value
-    int anim_frame = (int)(last_frame_end/128/r) % animation_lengths[e->get_anim()];
-    //SDL_RenderCopy(renderer, textures[animation_index[e->get_anim()]+anim_frame], NULL, &ent_render_pos);
-    
-    SDL_Texture* current_tex = textures[animation_index[e->get_anim()]+anim_frame];
-    //
-    // Set rotation based on entity type.
-    //
-    int rotation = 0;
-    switch(e->get_typ()) {
-        case ENT_GUN:
-            rotation = mouse_angle;
-            break;
-        default:
-            break;
-    }
-    SDL_RendererFlip flip = SDL_FLIP_NONE;
-    if (/*e->get_vel().get_x() < 0*/ e->get_typ() == ENT_PLAYER && mouse_x < 0)
-        flip = SDL_FLIP_HORIZONTAL; //TODO set this using ent flags
-    SDL_RenderCopyEx(renderer, 
-                     current_tex, 
-                     NULL, 
-                     &ent_render_pos, 
-                     rotation, 
-                     NULL, 
-                     flip);
-}
-
 void draw_ent_sprites(segment* e) { // TODO use the animation flags / update anim loader TODO ;;
     int num_sprites = e->head.num_sprites;
     vec2f p;
@@ -388,13 +349,6 @@ void draw_all_ents(segment* array, int array_len) { // ;;
         }
         draw_ent_sprites(&array[i]);
         i = get_next_ent(i, array, array_len);
-    }
-}
-
-void draw_ents(ent* ent_array, float num_ents) {
-    //draw_background();
-    for (int i=0; i<num_ents; i++) {
-        draw_ent(&ent_array[i]);
     }
 }
 
