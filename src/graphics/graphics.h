@@ -11,16 +11,13 @@ enum anim_flags {ANIM_LOOPING, ANIM_PAUSED,}; // TODO use these flags.
 struct anim_info {
     uint32_t texture_index;  // First frame in texture array.
     uint8_t  len;            // Number of frames.
-    uint8_t  flags;          // Qualities such as looping.
     uint8_t  keyframe_0;     // Frame where an event occurs.
     uint8_t  keyframe_1;     // Frame where an event occurs.
+    uint8_t  keyframe_2;     // Frame where an event occurs.
 };
 
 // variables used by graphics.cpp and server.cpp
 extern SDL_Texture* textures[];
-extern char animation_names[NUM_ANIM*ANIM_NAME_LEN];
-extern int animation_lengths[NUM_ANIM];
-extern int animation_index[NUM_ANIM];
 extern float min_frame_time;
 extern SDL_Renderer* renderer;
 extern SDL_Window* window;

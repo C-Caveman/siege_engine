@@ -9,23 +9,10 @@
 // give access to screen size data
 extern int window_x, window_y;
 
-// Center of the player's screen.
-extern float view_x;
-extern float view_y;
-
-//
-// QUICK HACK FOR AIMING
-//
-int rotating = 0;
 
 // detect the BOGUS x11 keyup event generated on keydown
 bool just_keyed_down = false;
 bool just_clicked = false;
-
-//TODO move this to the client datastructure
-int mouse_x = 0;
-int mouse_y = 0;
-volatile float mouse_angle = 0;
 bool mouse_moved = false;
 
 
@@ -91,20 +78,18 @@ void client_input(client_data* client) {
                         
                     // aim left
                     case 1073741904: // left arrow
-                        rotating -= 1; // TODO remove this old var TODO
                         client->aim_dir_rotation -= 1;
                         break;
                         
                     // aim right
                     case 1073741903: // right arrow
-                        rotating += 1;
                         client->aim_dir_rotation += 1;
                         break;
                     
                     // aim reverse (180 degree turn)
                     case 1073741906: // up arrow
                         //TODO redo this
-                        mouse_angle += 180;
+                        client->aim_dir += 180;
                         printf("Rotating...\n");
                         Mix_PlayMusic(music, 0); //HACK
                         break;
@@ -154,13 +139,11 @@ void client_input(client_data* client) {
                         
                     // aim left
                     case 1073741904: // left arrow
-                        rotating += 1;
                         client->aim_dir_rotation += 1;
                         break;
                         
                     // aim right
                     case 1073741903: // right arrow
-                        rotating -= 1;
                         client->aim_dir_rotation -= 1;
                         break;
                         
@@ -182,16 +165,6 @@ void client_input(client_data* client) {
                 case 1: // left click
                     //printf("Left click down.\n");
                     client->attacking = true;
-                    SDL_GetMouseState(&mouse_x, &mouse_y);
-                    //(int)view_x
-                    /*
-                    printf(
-                        "(%d, %d)\n", 
-                        (mouse_x-window_x/2),
-                        (mouse_y-window_y/2)
-                    );
-                    */
-                    Mix_PlayChannel(-1, sound, 0);
                     break;
                 case 2: // middle click
                     //printf("Middle click down.\n");
@@ -226,19 +199,19 @@ void client_input(client_data* client) {
     } // end of input event queue loop
     
     // send the rotation to the gun
-    if (rotating < 0)
-        mouse_angle -= 1;
-    if (rotating > 0)
-        mouse_angle += 1;
+    if (client->aim_dir_rotation < 0)
+        client->aim_dir -= 1;
+    if (client->aim_dir_rotation > 0)
+        client->aim_dir += 1;
     // TODO change rotation
     //TODO something with this
     // only override keyboard aim if mouse is moving
-    SDL_GetMouseState(&mouse_x, &mouse_y);
-    mouse_x = (mouse_x - window_x/2);
-    mouse_y = (mouse_y - window_y/2);
+    SDL_GetMouseState(&client->aim_pixel_pos.x, &client->aim_pixel_pos.y);
+    client->aim_pixel_pos.x = (client->aim_pixel_pos.x - window_x/2);
+    client->aim_pixel_pos.y = (client->aim_pixel_pos.y - window_y/2);
     if (mouse_moved == true) {
-        mouse_angle = atan2(mouse_y, mouse_x) * 180 / M_PI;
+        client->aim_dir = atan2(client->aim_pixel_pos.y, client->aim_pixel_pos.x) * 180 / M_PI;
     }
-    if (mouse_angle < 0)
-            mouse_angle += 360;
+    if (client->aim_dir < 0)
+            client->aim_dir += 360;
 }

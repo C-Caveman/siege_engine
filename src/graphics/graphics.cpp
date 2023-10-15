@@ -9,11 +9,8 @@
 #define MAX_PATH_LEN 256
 char path[MAX_PATH_LEN]; // path to the executable
 SDL_Texture* textures[MAX_TEXTURES];
-char animation_names[NUM_ANIM*ANIM_NAME_LEN];
 // Details for each animation.
 struct anim_info anim_data[NUM_ANIM];
-int animation_lengths[NUM_ANIM];
-int animation_index[NUM_ANIM];
 float min_frame_time = 1000/60; // second / frames
 SDL_Renderer* renderer;
 SDL_Window* window;
@@ -23,72 +20,16 @@ int fullscreen, window_x, window_y, fps_cap;
 int running;
 float last_frame_end, frame_time, frame_count, last_sec, fps;
 float dt = 0;
-float view_x = 0;
-float view_y = 0;
 TTF_Font* font = 0;
 
-extern volatile float mouse_angle;
+#define MAKE_STRING(x) #x, 
+constexpr int MAX_ANIM_NAME_LEN = 32;
+char animation_names[NUM_ANIM][MAX_ANIM_NAME_LEN] = { ANIMATION_LIST(MAKE_STRING) };
 
 void skip_comment(FILE* fp) {
     char c = fgetc(fp);
     while (c != '\n' && !feof(fp))
         c = fgetc(fp);
-}
-
-// read filenames from animation.h's enum
-int load_animation_names() {
-    FILE* fp;
-    char c;
-    char name[ANIM_NAME_LEN];
-    int num_names = 0;
-    int name_char_index = 0;
-    int chars_left = ANIM_NAME_LEN;
-    fp = fopen("src/graphics/animations.h", "r");
-    if (fp == 0) {
-        printf("Failed to find textures/animation_names.txt\n");
-        return -1; // don't seg fault by tring to close fp here
-    }
-    c = '?';
-    // skip to the animation enum
-    while (c != '{') {
-        c = fgetc(fp);
-    }
-    // begin reading the names from the text file
-    while (1) {
-        c = fgetc(fp);
-        if (feof(fp) || c == '}') // end of file
-            break;
-        else if (c == '/') // comment
-            skip_comment(fp);
-        else if (c == ' ' || c == '\n' || c == '\t') // skip whitespace
-            continue;
-        else if (c == ',') { // end of a name
-            /*printf("got name: %.*s, idx=%d\n", ANIM_NAME_LEN, 
-                                               animation_names+name_char_index-(ANIM_NAME_LEN-chars_left), 
-                                               name_char_index);*/
-            // keep names starting at multiples of ANIM_NAME_LEN
-            // in the names array
-            name_char_index += chars_left;
-            chars_left = ANIM_NAME_LEN;
-            num_names++;
-        }
-        else {
-            animation_names[name_char_index] = c;
-            name_char_index++;
-            chars_left--;
-            // notify the user when their animation name is too long to use
-            if (chars_left < 0) {
-                printf("Animation name %.*s was longer than max len: %d\n", 
-                       ANIM_NAME_LEN, 
-                       animation_names+name_char_index-(ANIM_NAME_LEN-chars_left), 
-                       ANIM_NAME_LEN
-                );
-                exit(-1);
-            }
-        }
-    }
-    fclose(fp);
-    return num_names;
 }
 
 // get all the textures for each animation loaded into the game
@@ -105,15 +46,10 @@ void load_animations() {
     int total_textures = 0;
     for (int i=0; i<NUM_ANIM; i++) { // load each animation
         num_frames = 0;
-        animation_index[i] = total_textures;
-        anim_name = animation_names+ANIM_NAME_LEN*i;
+        anim_data[i].texture_index = total_textures;
         // find the len of anim_name
-        for (int j=0; j<ANIM_NAME_LEN+1; j++) {
-            anim_name_len = j;
-            if (anim_name[j] == 0) {
-                break;
-            }
-        }
+        anim_name = animation_names[i];
+        anim_name_len = strnlen(anim_name, MAX_ANIM_NAME_LEN);
         // get every frame of the current animation
         //printf("Loading animation %.*s at idx %d, tex_index=%d\n", anim_name_len, anim_name, total_textures, i);
         while (1) {
@@ -157,7 +93,7 @@ void load_animations() {
             printf("*** Error: animation graphics/animations/%.*s is missing!\n", ANIM_NAME_LEN, anim_name);
             exit(-1);
         }
-        animation_lengths[i] = num_frames;
+        anim_data[i].len = num_frames;
     }
     if (DEBUG_GRAPHICS_LOADING)
         printf("Loaded %d textures (max is %d).\n", total_textures, MAX_TEXTURES);
@@ -242,12 +178,6 @@ void init_graphics() {
     background.h = window_x;
     // init some helpful variables
     last_frame_end = frame_time = frame_count = last_sec = fps = 0;
-    int anim_count = 0;
-    
-    // get the names of the animations
-    anim_count = load_animation_names();
-    if (anim_count != NUM_ANIM+1)
-        printf("Found %d animation names, expected %d... \n", anim_count, NUM_ANIM+1);
     
     // turn the images in the graphics folder into GPU-usable textures
     load_animations();
@@ -270,7 +200,6 @@ void draw_ent_sprites(vec2f camera_pos, segment* e) { // TODO use the animation 
     vec2f p;
     uint32_t anim;
     float rotation;
-    anim_info animation;
     SDL_Rect ent_render_pos;
     ent_render_pos.w = ent_render_pos.h = RSIZE;
     vec2f ent_origin = e[pos].pos.pos;
@@ -288,7 +217,7 @@ void draw_ent_sprites(vec2f camera_pos, segment* e) { // TODO use the animation 
         ent_render_pos.y = p.y - camera_pos.y;
         // Render the sprite:
         SDL_RenderCopyEx(renderer, 
-                         textures[animation_index[anim]], 
+                         textures[anim_data[anim].texture_index], 
                          NULL, 
                          &ent_render_pos, 
                          rotation, 
@@ -338,7 +267,7 @@ void draw_tile_floor(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f came
     render_pos.y = -camera_pos.y + y * RSIZE;
     SDL_Rect tile_pos = render_pos;
     // Draw floor:
-    cur_anim = animation_index[t.floor_anim];
+    cur_anim = anim_data[t.floor_anim].texture_index;
     SDL_RenderCopy(
         renderer, 
         textures[cur_anim+cur_frame], 
@@ -359,11 +288,11 @@ void draw_tile_wall_side(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f 
     render_pos.y = -camera_pos.y + y * RSIZE;
     SDL_Rect tile_pos = render_pos;
     // Draw wall:
-    cur_anim = animation_index[t.wall_side_anim];
+    cur_anim = anim_data[t.wall_side_anim].texture_index;
     constexpr float TILE_SLIDE_INCREMENT = 50.0f;
     vec2f offset = (vec2f{(float)x*RSIZE, (float)y*RSIZE} - camera_center) * TILE_SLIDE_INCREMENT / (window_size.w);
-    render_pos.x = (view_x+window_x/2) - view_x;
-    render_pos.y = (view_y+window_y/2) - view_y;
+    render_pos.x = (camera_center.x+window_x/2) - camera_center.x;
+    render_pos.y = (camera_center.y+window_y/2) - camera_center.y;
     float growth = TILE_SLIDE_INCREMENT/14;
     for (int i=0; i<t.wall_height; i++) {
         render_pos = tile_pos;
@@ -391,15 +320,15 @@ void draw_tile_wall_top(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f c
     render_pos.y = -camera_pos.y + y * RSIZE;
     SDL_Rect tile_pos = render_pos;
     // Draw wall:
-    cur_anim = animation_index[t.wall_side_anim];
+    cur_anim = anim_data[t.wall_side_anim].texture_index;
     constexpr float TILE_SLIDE_INCREMENT = 50.0f;
     vec2f offset = (vec2f{(float)x*RSIZE, (float)y*RSIZE} - camera_center) * TILE_SLIDE_INCREMENT / (window_size.w);
-    render_pos.x = (view_x+window_x/2) - render_pos.x;
-    render_pos.y = (view_y+window_y/2) - render_pos.y;
+    render_pos.x = (camera_center.x+window_x/2) - render_pos.x;
+    render_pos.y = (camera_center.y+window_y/2) - render_pos.y;
     float growth = TILE_SLIDE_INCREMENT/14;
     // Draw the top of the wall:
     if (t.wall_height > 0) {
-        cur_anim = animation_index[t.wall_top_anim];
+        cur_anim = anim_data[t.wall_top_anim].texture_index;
         render_pos = tile_pos;
         render_pos.x = render_pos.x + offset.x * t.wall_height - growth*t.wall_height/2;
         render_pos.y = render_pos.y + offset.y * t.wall_height - growth*t.wall_height/2;
@@ -424,8 +353,8 @@ void draw_chunk(vec2f camera_pos, vec2f camera_center, chunk* chunk) {
     render_pos.x = 0;
     render_pos.y = 0;
     render_pos.w = render_pos.h = RSIZE;
-    float vpos_x = 0 - (view_x - window_x/2 + 64);
-    float vpos_y = 0 - (view_y - window_y/2 + 64);
+    float vpos_x = 0 - (camera_center.x - window_x/2 + 64);
+    float vpos_y = 0 - (camera_center.y - window_y/2 + 64);
     int cur_anim = 0;
     int cur_frame = 0;
     // Draw all the floor:

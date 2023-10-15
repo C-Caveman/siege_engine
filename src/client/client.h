@@ -19,7 +19,7 @@ struct client_data {
     bool sprinting; // Desired movement speed.
     float aim_dir_rotation; // Desired auto rotation for aim.
     float aim_dir; // Desired aim direction.
-    vec2f aim_pos; // Desired aim position.
+    vec2i aim_pixel_pos; // Current pixel the cursor is on.
     bool quitting; // Quit button.
     // Current camera position:
     vec2f camera_pos; // Top-left corner of the camera.
