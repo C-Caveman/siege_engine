@@ -54,7 +54,7 @@ struct seg_health {      // Entity health.
 };
 enum MOVE_TYPES {MOVE_SNEAK, MOVE_WALK, MOVE_SPRINT, MOVE_DASH, NUM_MOVE_TYPES};
 struct seg_movetype {   // Entity movement speeds. (sneak/walk/sprint/dash)
-    uint8_t cur_movetype;   // Selected speed.
+    uint8_t movetype;   // Selected speed.
     uint8_t movetypes[NUM_MOVE_TYPES];    // Available speeds.
 };
 

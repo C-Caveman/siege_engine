@@ -23,6 +23,10 @@ float vec2f::vlen() {
         length -= 2;
     return length;
 }
+float vec2f::dist(vec2f &b) {
+    //vec2f a = vec2f {x, y};
+    return (float)(*this - b).vlen();
+}
 float vec2f::dot(vec2f& v) {
     return v.x*x + v.y*y;
 }

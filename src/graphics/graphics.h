@@ -24,6 +24,7 @@ extern int animation_index[NUM_ANIM];
 extern float min_frame_time;
 extern SDL_Renderer* renderer;
 extern SDL_Window* window;
+extern SDL_Rect window_size;
 extern SDL_Rect background;
 extern int fullscreen, window_x, window_y, fps_cap;
 extern int running;
@@ -36,10 +37,9 @@ extern int mouse_y;
 
 void init_graphics();
 void track_fps();
-void draw_background();
-void draw_ent_sprites(segment* ent_head);
-void draw_all_ents(segment* array, int array_len);
-void draw_chunk(chunk* chunk, vec2f camera_pos);
+void draw_ent_sprites(vec2f camera_pos, segment* ent_head);
+void draw_all_ents(vec2f camera_pos, segment* array, int array_len);
+void draw_chunk(vec2f camera_pos, vec2f camera_center, chunk* chunk);
 void present_frame();
 void cleanup_graphics();
 

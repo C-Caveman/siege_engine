@@ -1,9 +1,10 @@
 #include "input.h"
+#include "../graphics/graphics.h"
 #include "../audio/audio.h"
 
 #define ACCEL 1
 // give access to the var needed to quit the game
-extern bool running;
+//extern bool running;
 
 // give access to screen size data
 extern int window_x, window_y;
@@ -24,13 +25,9 @@ bool just_clicked = false;
 //TODO move this to the client datastructure
 int mouse_x = 0;
 int mouse_y = 0;
-bool m1_held = false;
 volatile float mouse_angle = 0;
 bool mouse_moved = false;
 
-
-//TODO replace old client system TODO
-extern client_data player_client;
 
 void client_input(client_data* client) {
     SDL_Event event;
@@ -65,26 +62,26 @@ void client_input(client_data* client) {
                     case SDLK_ESCAPE:
                     case SDLK_q:
                         running = false;
-                        player_client.quitting = true;
+                        client->quitting = true;
                         break;
                     
                     // movement with WASD
                     case SDLK_a:
-                        player_client.accel_dir.x -= 1;
+                        client->accel_dir.x -= 1;
                         break;
                     case SDLK_d:
-                        player_client.accel_dir.x += 1;
+                        client->accel_dir.x += 1;
                         break;
                     case SDLK_w:
-                        player_client.accel_dir.y -= 1;
+                        client->accel_dir.y -= 1;
                         break;
                     case SDLK_s:
-                        player_client.accel_dir.y += 1;
+                        client->accel_dir.y += 1;
                         break;
                         
                     // sprint
                     case 1073742049: // shift key
-                        player_client.sprinting = !player_client.sprinting;
+                        client->sprinting = !client->sprinting;
                         break;
                         
                     // sneak
@@ -95,13 +92,13 @@ void client_input(client_data* client) {
                     // aim left
                     case 1073741904: // left arrow
                         rotating -= 1; // TODO remove this old var TODO
-                        player_client.aim_dir_rotation -= 1;
+                        client->aim_dir_rotation -= 1;
                         break;
                         
                     // aim right
                     case 1073741903: // right arrow
                         rotating += 1;
-                        player_client.aim_dir_rotation += 1;
+                        client->aim_dir_rotation += 1;
                         break;
                     
                     // aim reverse (180 degree turn)
@@ -111,8 +108,24 @@ void client_input(client_data* client) {
                         printf("Rotating...\n");
                         Mix_PlayMusic(music, 0); //HACK
                         break;
+                    
+                    case SDLK_f:
+                        if (fullscreen) {
+                            SDL_SetWindowFullscreen(window, 0);
+                            SDL_SetWindowSize(window, 800, 800);
+                            window_x = 800;
+                            window_y = 800;
+                        }
+                        else {
+                            SDL_SetWindowSize(window, window_size.w,window_size.h);
+                            SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+                            window_x = window_size.w;
+                            window_y = window_size.h;
+                        }
+                        fullscreen = !fullscreen;
+                        break;
                         
-                    // end of key up processing
+                    // end of key down processing
                     default:
                         break;
                 }
@@ -127,28 +140,28 @@ void client_input(client_data* client) {
                 switch(event.key.keysym.sym) {                        
                     // WASD
                     case SDLK_a:
-                        player_client.accel_dir.x += 1;
+                        client->accel_dir.x += 1;
                         break;
                     case SDLK_d:
-                        player_client.accel_dir.x -= 1;
+                        client->accel_dir.x -= 1;
                         break;
                     case SDLK_w:
-                       player_client.accel_dir.y += 1;
+                       client->accel_dir.y += 1;
                         break;
                     case SDLK_s:
-                        player_client.accel_dir.y -= 1;
+                        client->accel_dir.y -= 1;
                         break;
                         
                     // aim left
                     case 1073741904: // left arrow
                         rotating += 1;
-                        player_client.aim_dir_rotation += 1;
+                        client->aim_dir_rotation += 1;
                         break;
                         
                     // aim right
                     case 1073741903: // right arrow
                         rotating -= 1;
-                        player_client.aim_dir_rotation -= 1;
+                        client->aim_dir_rotation -= 1;
                         break;
                         
                         
@@ -168,7 +181,7 @@ void client_input(client_data* client) {
             switch(event.button.button) {
                 case 1: // left click
                     //printf("Left click down.\n");
-                    m1_held = true;
+                    client->attacking = true;
                     SDL_GetMouseState(&mouse_x, &mouse_y);
                     //(int)view_x
                     /*
@@ -196,7 +209,7 @@ void client_input(client_data* client) {
             switch(event.button.button) {
                 case 1: // left click
                     //printf("Left click up.\n");
-                    m1_held = false;
+                    player_client.attacking = false;
                     break;
                 case 2: // middle click
                     //printf("Middle click up.\n");

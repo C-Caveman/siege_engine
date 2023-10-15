@@ -19,12 +19,14 @@ void ent_PLAYER::init() {
     if (DEBUG_ENTS)
         printf("Player entity initializing!\n");
     data[head].head.flags = DRAWABLE | ANIMATABLE | MOVABLE | COLLIDABLE | THINKABLE;
-    data[head].head.num_sprites = 2;
+    data[head].head.num_sprites = num_player_sprites;
     // Init the sprites:
     data[p_sprite_body_pos].pos.pos = vec2f{0,0};
     data[p_sprite_body_anim].anim.anim = rocket_tank;
     data[p_sprite_gun_pos].pos.pos = vec2f{0,0};
     data[p_sprite_gun_anim].anim.anim = gun_grenade;
+    // Sprint by default:
+    data[player_movetype].movetype.movetype = MOVE_SPRINT; // TODO connect this with the client object TODO
 }
 void ent_SCENERY::init() {
     if (DEBUG_ENTS)
@@ -43,7 +45,7 @@ void ent_EMPTY::think() {
     // Our work here is done.
 }
 void ent_PLAYER::think() {
-    data[p_sprite_gun_anim].anim.rotation = mouse_angle;
+    //data[p_sprite_gun_anim].anim.rotation = mouse_angle;
     /*
     data[player_dir].dir.dir = vec2f{(float)cos(mouse_angle/180*M_PI), (float)sin(mouse_angle/180*M_PI)};
     float friction = data[vel].vel.vel.vlen();

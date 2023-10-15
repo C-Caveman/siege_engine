@@ -4,14 +4,12 @@
 #include "server.h"
 #include <unistd.h> // testing memory leaks with sleep()
 
-extern bool m1_held;
 extern int mouse_angle;
 
 // entity and client data are in these arrays
 int num_entities = 0;
 int num_clients = 0;
 
-//TODO replace old client system TODO
 client_data player_client;
 
 // each entity gets a unique ID number
@@ -29,19 +27,16 @@ void server_config() {
     vars_from_file(config_fname);
 }
 
-void place_wall(chunk* chonk) {
+void place_wall(vec2f camera_center, chunk* chonk) {
     // No longer the start of a click. TODO rename and move to input.cpp TODO
-    m1_held = false;
-    // Adjusted player position (to get the center).
-    int camera_offset_x = (int)(view_x) + RSIZE/2;
-    int camera_offset_y = (int)(view_y) + RSIZE/2;
-    int selected_x = (camera_offset_x + mouse_x) / RSIZE;
-    int selected_y = (camera_offset_y + mouse_y) / RSIZE;
+    int selected_x = (camera_center.x + mouse_x) / RSIZE + 0.5;
+    int selected_y = (camera_center.y + mouse_y) / RSIZE + 0.5;
     if (selected_x < 0) selected_x = 0;
     if (selected_y < 0) selected_y = 0;
     if (selected_x > (CHUNK_WIDTH-1)) selected_x = (CHUNK_WIDTH-1);
     if (selected_y > (CHUNK_WIDTH-1)) selected_y = (CHUNK_WIDTH-1);
-    printf("Tile: (%d, %d)\n", selected_x, selected_y);
+    //printf("Tile: (%d, %d)\n", selected_x, selected_y);
+    //printf("Pos:  (%f, %f)\n", camera_center.x, camera_center.y);
     chonk->set_wall(selected_x,
                     selected_y,
                     wall_steel,wall_steel_side,16);
@@ -64,11 +59,21 @@ int main() {
     world test_world;
     chunk* chunk_0 = test_world.get_chunk(0,0);
     chunk_0->set_floors(floor_test);
+    /*
     chunk_0->set_floor(0,0, tiledark);
-    chunk_0->set_wall(1,4, wall_steel,wall_steel_side,8);
-    chunk_0->set_wall(3,4, wall_steel,wall_steel_side,8);
-    chunk_0->set_wall(7,7, wall_steel,wall_steel_side,8);
-    chunk_0->set_wall(8,7, wall_steel,wall_steel_side,16);
+    chunk_0->set_wall(1,4, wall_steel,wall_steel,8);
+    chunk_0->set_wall(3,4, wall_steel,wall_steel,8);
+    chunk_0->set_wall(7,7, wall_steel,wall_steel,64);
+    chunk_0->set_wall(8,7, wall_steel,wall_steel,16);
+    */
+    for (int y=0; y<CHUNK_WIDTH; y++) {
+        chunk_0->set_wall(0,y, wall_steel,wall_steel_side,16);
+        chunk_0->set_wall(CHUNK_WIDTH-1,y, wall_steel,wall_steel_side,16);
+    }
+    for (int x=0; x<CHUNK_WIDTH; x++) {
+        chunk_0->set_wall(x,0, wall_steel,wall_steel_side,16);
+        chunk_0->set_wall(x,CHUNK_WIDTH-1, wall_steel,wall_steel_side,16);
+    }
     
     
     
@@ -98,19 +103,29 @@ int main() {
         //
         view_x = p->data[pos].pos.pos.x - window_x/2 + RSIZE/2;
         view_y = p->data[pos].pos.pos.y - window_y/2 + RSIZE/2;
+        player_client.camera_pos = vec2f {p->data[pos].pos.pos.x - window_x/2 + RSIZE/2, p->data[pos].pos.pos.y - window_y/2 + RSIZE/2};
+        player_client.camera_center = vec2f {p->data[pos].pos.pos.x, p->data[pos].pos.pos.y};
         
-        if (m1_held)
-            place_wall(chunk_0);
+        if (player_client.attacking) {
+            //player_client.attacking = false;
+            place_wall(player_client.camera_center, chunk_0);
+        }
         
         //
-        // draw the world
+        // Draw the environment:
         //
-        draw_chunk(test_world.get_chunk(0,0), vec2f{view_x, view_y});
-        
+        draw_chunk(player_client.camera_pos, player_client.camera_center, test_world.get_chunk(0,0));
+
+        //
+        // Update and draw the entities:
+        //
         think_all_ents(entity_segment_array, SEGMENT_ARRAY_SIZE);
-        draw_all_ents(entity_segment_array, SEGMENT_ARRAY_SIZE);
+        draw_all_ents(player_client.camera_pos, entity_segment_array, SEGMENT_ARRAY_SIZE);
         move_ent((segment*) p);
-        
+
+        //
+        // Put the frame on the screen:
+        //
         present_frame();
     }
     printf("Server was running for %d seconds.\n", SDL_GetTicks() / 1000);

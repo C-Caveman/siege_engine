@@ -24,6 +24,7 @@ struct vec2f {
     void set_y(float new_val);
     float is_cardinal();
     float vlen();
+    float dist(vec2f &b);
     float dot(vec2f& v);
     void normalize();
     void semi_normalize(); // don't round x or y down to zero

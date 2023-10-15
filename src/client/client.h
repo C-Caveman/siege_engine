@@ -11,18 +11,19 @@ struct client_data {
     void update_player_entity();
     // Player entity:
     segment* player;
-    // Desired move direction:
-    vec2f accel_dir;
-    // Desired movement speed:
-    bool sprinting;
-    // Desired auto rotation for aim:
-    float aim_dir_rotation;
-    // Desired aim direction:
-    float aim_dir;
-    // Desired aim position:
-    vec2f aim_pos;
-    // Misc commands:
-    bool quitting;
+    //
+    // Current input state:
+    //
+    bool attacking;
+    vec2f accel_dir; // Desired move direction.
+    bool sprinting; // Desired movement speed.
+    float aim_dir_rotation; // Desired auto rotation for aim.
+    float aim_dir; // Desired aim direction.
+    vec2f aim_pos; // Desired aim position.
+    bool quitting; // Quit button.
+    // Current camera position:
+    vec2f camera_pos; // Top-left corner of the camera.
+    vec2f camera_center; // Center of the camera.
 };
 
 // TODO use these for packets TODO

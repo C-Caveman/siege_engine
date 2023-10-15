@@ -17,6 +17,7 @@ int animation_index[NUM_ANIM];
 float min_frame_time = 1000/60; // second / frames
 SDL_Renderer* renderer;
 SDL_Window* window;
+SDL_Rect window_size; // Dimensions of the screen. Set in the init_graphics() method.
 SDL_Rect background;
 int fullscreen, window_x, window_y, fps_cap;
 int running;
@@ -212,19 +213,17 @@ void init_graphics() {
         cout << "SDL init failed. " << SDL_GetError() << "\n";
     // Set the logical resolution:
     //SDL_RenderSetLogicalSize(renderer, 1920, 1080);
+    constexpr int displayIndex = 0;
+    if (SDL_GetDisplayBounds(displayIndex, &window_size) != 0)
+            printf("*** init_graphics error: %s\n", SDL_GetError());
     // make it fullscreen if config file says so
     if (fullscreen) {
-        // Find the screen's resolution:
-        SDL_Rect bounds;
-        int displayIndex = 0;
-        if (SDL_GetDisplayBounds(displayIndex, &bounds) != 0)
-            printf("*** init_graphics error: %s\n", SDL_GetError());
         // Set the resolution to that of the screen:
-        window_x = bounds.w;
-        window_y = bounds.h;
+        window_x = window_size.w;
+        window_y = window_size.h;
         if (SDL_CreateWindowAndRenderer(window_x, window_y, 0, &window, &renderer) != 0)
             cout << "SDL window/renderer init failed" << SDL_GetError() << "\n";
-        printf("\nResolution:\n        %dx%d\n", bounds.w, bounds.h);
+        printf("\nResolution:\n        %dx%d\n", window_size.w, window_size.h);
         SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
     }
     else {
@@ -266,48 +265,7 @@ void track_fps() {
     }
 }
 
-void draw_background() {
-    // draw a black background
-    //SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    //SDL_RenderFillRect(renderer, &background);
-    
-    // draw background textures
-    background.x = (-1)*(int)ceil((int)view_x % window_x);
-    background.y = (-1)*(int)ceil((int)view_y % window_x);
-    float center_x = background.x;
-    float center_y = background.y;
-    
-    // central background texture tile (there are nine in total)
-    SDL_RenderCopy(renderer, textures[BKGRND_TEX], NULL, &background);
-    
-    // the other background tiles
-    background.x = center_x + window_x;
-    background.y = center_y + window_x;
-    SDL_RenderCopy(renderer, textures[BKGRND_TEX], NULL, &background); // corner
-    background.x = center_x - window_x;
-    background.y = center_y + window_x;
-    SDL_RenderCopy(renderer, textures[BKGRND_TEX], NULL, &background); // corner
-    background.x = center_x + window_x;
-    background.y = center_y - window_x;
-    SDL_RenderCopy(renderer, textures[BKGRND_TEX], NULL, &background); // corner
-    background.x = center_x - window_x;
-    background.y = center_y - window_x;
-    SDL_RenderCopy(renderer, textures[BKGRND_TEX], NULL, &background); // corner
-    background.x = center_x + window_x;
-    background.y = center_y;
-    SDL_RenderCopy(renderer, textures[BKGRND_TEX], NULL, &background); // right
-    background.x = center_x - window_x;
-    background.y = center_y;
-    SDL_RenderCopy(renderer, textures[BKGRND_TEX], NULL, &background); // left
-    background.x = center_x;
-    background.y = center_y + window_x;
-    SDL_RenderCopy(renderer, textures[BKGRND_TEX], NULL, &background); // up
-    background.x = center_x;
-    background.y = center_y - window_x;
-    SDL_RenderCopy(renderer, textures[BKGRND_TEX], NULL, &background); // down
-}
-
-void draw_ent_sprites(segment* e) { // TODO use the animation flags / update anim loader TODO ;;
+void draw_ent_sprites(vec2f camera_pos, segment* e) { // TODO use the animation flags / update anim loader TODO ;;
     int num_sprites = e->head.num_sprites;
     vec2f p;
     uint32_t anim;
@@ -326,8 +284,8 @@ void draw_ent_sprites(segment* e) { // TODO use the animation flags / update ani
         rotation = e[basic_ent_size + i*sprite_size + sprite_animation_segment].anim.rotation;
         //flags = TODO use the animation flags TODO
         // Adjust for screen position:
-        ent_render_pos.x = p.x - view_x;
-        ent_render_pos.y = p.y - view_y;
+        ent_render_pos.x = p.x - camera_pos.x;
+        ent_render_pos.y = p.y - camera_pos.y;
         // Render the sprite:
         SDL_RenderCopyEx(renderer, 
                          textures[animation_index[anim]], 
@@ -338,7 +296,7 @@ void draw_ent_sprites(segment* e) { // TODO use the animation flags / update ani
                          SDL_FLIP_NONE);
     }
 }
-void draw_all_ents(segment* array, int array_len) { // ;;
+void draw_all_ents(vec2f camera_pos, segment* array, int array_len) { // ;;
     int i = 0;
     i = get_first_ent(array, array_len);
     while (i != -1) {
@@ -347,7 +305,7 @@ void draw_all_ents(segment* array, int array_len) { // ;;
                 printf("*** Invalid index given by get_next_ent() in draw_all_ents()\n");
             break;
         }
-        draw_ent_sprites(&array[i]);
+        draw_ent_sprites(camera_pos, &array[i]);
         i = get_next_ent(i, array, array_len);
     }
 }
@@ -368,7 +326,7 @@ void present_frame() {
     SDL_RenderPresent(renderer);
 }
 
-void draw_tile(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f scaled_view_pos) {
+void draw_tile_floor(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f camera_pos) {
     if (x < 0 || x > CHUNK_WIDTH-1 || y < 0 || y > CHUNK_WIDTH-1)
         return;
     struct tile t = tiles[y][x];
@@ -376,8 +334,8 @@ void draw_tile(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f scaled_vie
     int cur_frame = 0;
     SDL_Rect render_pos;
     render_pos.w = render_pos.h = RSIZE;
-    render_pos.x = scaled_view_pos.x + x * RSIZE;
-    render_pos.y = scaled_view_pos.y + y * RSIZE;
+    render_pos.x = -camera_pos.x + x * RSIZE;
+    render_pos.y = -camera_pos.y + y * RSIZE;
     SDL_Rect tile_pos = render_pos;
     // Draw floor:
     cur_anim = animation_index[t.floor_anim];
@@ -387,16 +345,31 @@ void draw_tile(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f scaled_vie
         NULL, 
         &render_pos
     );
+}
+
+void draw_tile_wall_side(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f camera_pos, vec2f camera_center) {
+    if (x < 0 || x > CHUNK_WIDTH-1 || y < 0 || y > CHUNK_WIDTH-1 || tiles[y][x].wall_height < 1)
+        return;
+    struct tile t = tiles[y][x];
+    int cur_anim = 0;
+    int cur_frame = 0;
+    SDL_Rect render_pos;
+    render_pos.w = render_pos.h = RSIZE;
+    render_pos.x = -camera_pos.x + x * RSIZE;
+    render_pos.y = -camera_pos.y + y * RSIZE;
+    SDL_Rect tile_pos = render_pos;
     // Draw wall:
     cur_anim = animation_index[t.wall_side_anim];
-    float offset_x = ((view_x+window_x/2-RSIZE) - view_x - (tile_pos.x))/(window_x)*10.0f;
-    float offset_y = ((view_y+window_y/2-RSIZE) - view_y - (tile_pos.y))/(window_y)*10.0f;
+    constexpr float TILE_SLIDE_INCREMENT = 50.0f;
+    vec2f offset = (vec2f{(float)x*RSIZE, (float)y*RSIZE} - camera_center) * TILE_SLIDE_INCREMENT / (window_size.w);
     render_pos.x = (view_x+window_x/2) - view_x;
     render_pos.y = (view_y+window_y/2) - view_y;
+    float growth = TILE_SLIDE_INCREMENT/14;
     for (int i=0; i<t.wall_height; i++) {
         render_pos = tile_pos;
-        render_pos.x = render_pos.x - offset_x*(i);
-        render_pos.y = render_pos.y - offset_y*(i);
+        render_pos.x = render_pos.x + offset.x*(i) - growth*i/2;
+        render_pos.y = render_pos.y + offset.y*(i) - growth*i/2;
+        render_pos.w = render_pos.h = RSIZE + growth*i;
         SDL_RenderCopy(
             renderer,
             textures[cur_anim+cur_frame],
@@ -404,11 +377,33 @@ void draw_tile(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f scaled_vie
             &render_pos
         );
     }
+}
+
+void draw_tile_wall_top(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f camera_pos, vec2f camera_center) {
+    if (x < 0 || x > CHUNK_WIDTH-1 || y < 0 || y > CHUNK_WIDTH-1 || tiles[y][x].wall_height < 1)
+        return;
+    struct tile t = tiles[y][x];
+    int cur_anim = 0;
+    int cur_frame = 0;
+    SDL_Rect render_pos;
+    render_pos.w = render_pos.h = RSIZE;
+    render_pos.x = -camera_pos.x + x * RSIZE;
+    render_pos.y = -camera_pos.y + y * RSIZE;
+    SDL_Rect tile_pos = render_pos;
+    // Draw wall:
+    cur_anim = animation_index[t.wall_side_anim];
+    constexpr float TILE_SLIDE_INCREMENT = 50.0f;
+    vec2f offset = (vec2f{(float)x*RSIZE, (float)y*RSIZE} - camera_center) * TILE_SLIDE_INCREMENT / (window_size.w);
+    render_pos.x = (view_x+window_x/2) - render_pos.x;
+    render_pos.y = (view_y+window_y/2) - render_pos.y;
+    float growth = TILE_SLIDE_INCREMENT/14;
+    // Draw the top of the wall:
     if (t.wall_height > 0) {
         cur_anim = animation_index[t.wall_top_anim];
         render_pos = tile_pos;
-        render_pos.x = render_pos.x - offset_x * t.wall_height;
-        render_pos.y = render_pos.y - offset_y * t.wall_height;
+        render_pos.x = render_pos.x + offset.x * t.wall_height - growth*t.wall_height/2;
+        render_pos.y = render_pos.y + offset.y * t.wall_height - growth*t.wall_height/2;
+        render_pos.w = render_pos.h = RSIZE + growth*t.wall_height;
         SDL_RenderCopy(
             renderer,
             textures[cur_anim],
@@ -418,9 +413,9 @@ void draw_tile(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f scaled_vie
     }
 }
 
-void draw_chunk(chunk* chunk, vec2f camera_pos) {
+void draw_chunk(vec2f camera_pos, vec2f camera_center, chunk* chunk) {
     // Convert the camera_pos to a chunk_pos:
-    vec2i chunk_pos = vec2i{(int)camera_pos.x/RSIZE, (int)camera_pos.y/RSIZE};
+    vec2i chunk_pos = vec2i{(int)camera_center.x/RSIZE, (int)camera_center.y/RSIZE};
     // Get a pointer to the chunk's tile array.
     struct tile (*tiles)[CHUNK_WIDTH] = chunk->get_tiles();
     SDL_Rect tile_pos;
@@ -433,6 +428,56 @@ void draw_chunk(chunk* chunk, vec2f camera_pos) {
     float vpos_y = 0 - (view_y - window_y/2 + 64);
     int cur_anim = 0;
     int cur_frame = 0;
+    // Draw all the floor:
+    for (int y=0; y<CHUNK_WIDTH; y++) {
+        for (int x=0; x<CHUNK_WIDTH; x++) {
+            draw_tile_floor(tiles, x, y, camera_pos);
+        }
+    }
+    //
+    // Draw from the outer edges, work inwards.
+    //
+    // Top:
+    for (int y=0; y<chunk_pos.y; y++) {
+        // Left:
+        for (int x=0; x<chunk_pos.x; x++) {
+            draw_tile_wall_side(tiles, x, y, camera_pos, camera_center);
+        }
+        // Right:
+        for (int x=CHUNK_WIDTH-1; x>chunk_pos.x; x--) {
+            draw_tile_wall_side(tiles, x, y, camera_pos, camera_center);
+        }
+    }
+    // Bottom:
+    for (int y=CHUNK_WIDTH-1; y>chunk_pos.y; y--) {
+        // Left:
+        for (int x=0; x<chunk_pos.x; x++) {
+            draw_tile_wall_side(tiles, x, y, camera_pos, camera_center);
+        }
+        // Right:
+        for (int x=CHUNK_WIDTH-1; x>chunk_pos.x; x--) {
+            draw_tile_wall_side(tiles, x, y, camera_pos, camera_center);
+        }
+    }
+    // Center left:
+    for (int x=0; x<chunk_pos.x; x++) {
+        draw_tile_wall_side(tiles, x, chunk_pos.y, camera_pos, camera_center);
+    }
+    // Center right:
+    for (int x=CHUNK_WIDTH-1; x>chunk_pos.x; x--) {
+        draw_tile_wall_side(tiles, x, chunk_pos.y, camera_pos, camera_center);
+    }
+    // Center top:
+    for (int y=0; y<chunk_pos.y; y++) {
+        draw_tile_wall_side(tiles, chunk_pos.x, y, camera_pos, camera_center);
+    }
+    // Center bottom:
+    for (int y=CHUNK_WIDTH-1; y>chunk_pos.y; y--) {
+        draw_tile_wall_side(tiles, chunk_pos.x, y, camera_pos, camera_center);
+    }
+    // Center:
+    draw_tile_wall_side(tiles, chunk_pos.x, chunk_pos.y, camera_pos, camera_center);
+    
     
     //
     // Draw from the outer edges, work inwards.
@@ -441,42 +486,48 @@ void draw_chunk(chunk* chunk, vec2f camera_pos) {
     for (int y=0; y<chunk_pos.y; y++) {
         // Left:
         for (int x=0; x<chunk_pos.x; x++) {
-            draw_tile(tiles, x, y, vec2f {vpos_x, vpos_y});
+            draw_tile_wall_top(tiles, x, y, camera_pos, camera_center);
         }
         // Right:
         for (int x=CHUNK_WIDTH-1; x>chunk_pos.x; x--) {
-            draw_tile(tiles, x, y, vec2f {vpos_x, vpos_y});
+            draw_tile_wall_top(tiles, x, y, camera_pos, camera_center);
         }
     }
     // Bottom:
     for (int y=CHUNK_WIDTH-1; y>chunk_pos.y; y--) {
         // Left:
         for (int x=0; x<chunk_pos.x; x++) {
-            draw_tile(tiles, x, y, vec2f {vpos_x, vpos_y});
+            draw_tile_wall_top(tiles, x, y, camera_pos, camera_center);
         }
         // Right:
         for (int x=CHUNK_WIDTH-1; x>chunk_pos.x; x--) {
-            draw_tile(tiles, x, y, vec2f {vpos_x, vpos_y});
+            draw_tile_wall_top(tiles, x, y, camera_pos, camera_center);
         }
     }
     // Center left:
     for (int x=0; x<chunk_pos.x; x++) {
-        draw_tile(tiles, x, chunk_pos.y, vec2f {vpos_x, vpos_y});
+        draw_tile_wall_top(tiles, x, chunk_pos.y, camera_pos, camera_center);
     }
     // Center right:
     for (int x=CHUNK_WIDTH-1; x>chunk_pos.x; x--) {
-        draw_tile(tiles, x, chunk_pos.y, vec2f {vpos_x, vpos_y});
+        draw_tile_wall_top(tiles, x, chunk_pos.y, camera_pos, camera_center);
     }
     // Center top:
     for (int y=0; y<chunk_pos.y; y++) {
-        draw_tile(tiles, chunk_pos.x, y, vec2f {vpos_x, vpos_y});
+        draw_tile_wall_top(tiles, chunk_pos.x, y, camera_pos, camera_center);
     }
     // Center bottom:
     for (int y=CHUNK_WIDTH-1; y>chunk_pos.y; y--) {
-        draw_tile(tiles, chunk_pos.x, y, vec2f {vpos_x, vpos_y});
+        draw_tile_wall_top(tiles, chunk_pos.x, y, camera_pos, camera_center);
     }
     // Center:
-    draw_tile(tiles, chunk_pos.x, chunk_pos.y, vec2f {vpos_x, vpos_y});
+    draw_tile_wall_top(tiles, chunk_pos.x, chunk_pos.y, camera_pos, camera_center);
+    // Draw the tops of the walls:
+    for (int y=0; y<CHUNK_WIDTH; y++) {
+        for (int x=0; x<CHUNK_WIDTH; x++) {
+            draw_tile_wall_top(tiles, x, y, camera_pos, camera_center);
+        }
+    }
 }
 
 
