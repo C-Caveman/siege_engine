@@ -45,7 +45,7 @@ struct seg_dir {         // Entity direction.
 struct seg_anim {        // Data for an entity's animation.
     uint16_t anim;       // Enum value of the animation. (animation data is stored elsewhere)
     uint8_t frame;       // current frame of animation.
-    uint8_t flags;       // Flags for changing how an animation is displayed.
+    uint8_t anim_tick;   // Tick the previous frame was drawn on.
     float rotation;      // Rotation of the sprite.
 };
 struct seg_health {      // Entity health.

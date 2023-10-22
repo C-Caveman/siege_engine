@@ -6,6 +6,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
+constexpr int ANIM_FPS = 4;
+constexpr int MS_PER_ANIM_FRAME = 1000 / ANIM_FPS;
 #define MAX_PATH_LEN 256
 char path[MAX_PATH_LEN]; // path to the executable
 SDL_Texture* textures[MAX_TEXTURES];
@@ -194,11 +196,14 @@ void track_fps() {
         //cout << "Delta time was: " << dt << "\n";
     }
 }
-
-void draw_ent_sprites(vec2f camera_pos, segment* e) { // TODO use the animation flags / update anim loader TODO ;;
+// Animate and draw all sprites possesed by an entity. ;;
+void draw_ent_sprites(vec2f camera_pos, segment* e) {
     int num_sprites = e->head.num_sprites;
     vec2f p;
     uint32_t anim;
+    int frame;
+    int tick;
+    int ms_since_last_frame;
     float rotation;
     SDL_Rect ent_render_pos;
     ent_render_pos.w = ent_render_pos.h = RSIZE;
@@ -207,17 +212,27 @@ void draw_ent_sprites(vec2f camera_pos, segment* e) { // TODO use the animation 
     if (DEBUG_GRAPHICS)
         printf("Num sprites in %s entity: %d\n", get_type_name(e->head.type), num_sprites);
     for (int i=0; i<num_sprites; i++) {
-        // Get sprite data:
-        p =        e[basic_ent_size + i*sprite_size + sprite_position_segment].pos.pos + ent_origin;
-        anim =     e[basic_ent_size + i*sprite_size + sprite_animation_segment].anim.anim;
+        // Get sprite data: (stored after the basic_ent segments)
+        anim = e[basic_ent_size + i*sprite_size + sprite_animation_segment].anim.anim;
+        p =    e[basic_ent_size + i*sprite_size + sprite_position_segment].pos.pos + ent_origin;
+        tick = e[basic_ent_size + i*sprite_size + sprite_animation_segment].anim.anim_tick;
         rotation = e[basic_ent_size + i*sprite_size + sprite_animation_segment].anim.rotation;
+        // Handle anim_tick overflowing back to lower values:
+        ms_since_last_frame = anim_tick - tick + (anim_tick < tick)*256;
+        // Update the frame if enough anim_ticks have passed since the last one:
+        if (ms_since_last_frame > MS_PER_ANIM_FRAME) {
+            e[basic_ent_size + i*sprite_size + sprite_animation_segment].anim.anim_tick = anim_tick;
+            e[basic_ent_size + i*sprite_size + sprite_animation_segment].anim.frame += 1;
+            e[basic_ent_size + i*sprite_size + sprite_animation_segment].anim.frame %= anim_data[anim].len;
+        }
+        frame = e[basic_ent_size + i*sprite_size + sprite_animation_segment].anim.frame;
         //flags = TODO use the animation flags TODO
         // Adjust for screen position:
         ent_render_pos.x = p.x - camera_pos.x;
         ent_render_pos.y = p.y - camera_pos.y;
         // Render the sprite:
         SDL_RenderCopyEx(renderer, 
-                         textures[anim_data[anim].texture_index], 
+                         textures[anim_data[anim].texture_index + frame],
                          NULL, 
                          &ent_render_pos, 
                          rotation, 

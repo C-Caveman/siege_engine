@@ -27,6 +27,7 @@ extern int fullscreen, window_x, window_y, fps_cap;
 extern int running;
 extern float last_frame_end, frame_time, frame_count, last_sec, fps;
 extern float dt;
+extern uint8_t anim_tick;
 extern float view_x; // camera position
 extern float view_y;
 extern int mouse_x;

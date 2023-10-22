@@ -14,6 +14,7 @@ client_data player_client;
 // each entity gets a unique ID number
 int id = 0;
 int new_id() {return ++id;}
+uint8_t anim_tick = 0;
 
 void server_config() {
     char varlist_fname[] = "config/vars_list.txt";
@@ -95,6 +96,7 @@ int main() {
     
     while (running) {
         dt = (SDL_GetTicks() - last_frame_end) / 1000;
+        anim_tick = SDL_GetTicks() % 256; // 8-bit timestamp for sprites to know when to go to the next frame.
         last_frame_end = SDL_GetTicks();
         track_fps();
         //
