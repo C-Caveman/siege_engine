@@ -87,8 +87,9 @@ int main() {
     player_client.player = (segment*)p;
     
     
-    //ent_SCENERY* s = (ent_SCENERY*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
-    //printf("*Type name: %s\n", get_type_name(p->data[0].head.type));
+    ent_SCENERY* s = (ent_SCENERY*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
+    s->data[pos].pos.pos = vec2f{RSIZE*1.5,RSIZE*1.5};
+    printf("*Type name: %s\n", get_type_name(s->data[head].head.type));
     
     //segment* test_ent = spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
     
@@ -100,21 +101,20 @@ int main() {
         // handle client inputs and movement
         //
         client_input(&player_client);
-        player_client.update_player_entity(); // <- new client system
+        player_client.update_player_entity(); // Apply client inputs to the player entity.
         //
         // update the player's camera position
         //
         player_client.camera_pos = vec2f {p->data[pos].pos.pos.x - window_x/2 + RSIZE/2, p->data[pos].pos.pos.y - window_y/2 + RSIZE/2};
         player_client.camera_center = vec2f {p->data[pos].pos.pos.x, p->data[pos].pos.pos.y};
-        
+
         if (player_client.attacking)
             place_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
-        
+
         //
         // Draw the environment:
         //
         draw_chunk(player_client.camera_pos, player_client.camera_center, test_world.get_chunk(0,0));
-
         //
         // Update and draw the entities:
         //
@@ -122,10 +122,7 @@ int main() {
         draw_all_ents(player_client.camera_pos, entity_segment_array, SEGMENT_ARRAY_SIZE);
         move_ent((segment*) p);
 
-        //
-        // Put the frame on the screen:
-        //
-        present_frame();
+        present_frame(); // Put the frame on the screen:
     }
     printf("Server was running for %d seconds.\n", SDL_GetTicks() / 1000);
     cleanup_graphics();

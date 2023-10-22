@@ -17,6 +17,7 @@ struct client_data {
     bool attacking;
     vec2f accel_dir; // Desired move direction.
     bool sprinting; // Desired movement speed.
+    float jerk; // Rate of acceleration.
     float aim_dir_rotation; // Desired auto rotation for aim.
     float aim_dir; // Desired aim direction.
     vec2i aim_pixel_pos; // Current pixel the cursor is on.
