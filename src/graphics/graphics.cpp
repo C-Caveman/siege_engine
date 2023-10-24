@@ -38,11 +38,11 @@ void skip_comment(FILE* fp) {
 void load_animations() {
     SDL_Surface* cur_surf;
     char tex_filename[64];
-    char fname_folder_name[] = "graphics/animations/";
-    char fname_bmp[] = ".bmp";
-    char frame_num_string[4];
+    //char fname_folder_name[] = "graphics/animations/";
+    //char fname_bmp[] = ".bmp";
+    //char frame_num_string[4];
     char* anim_name = 0;
-    int tex_name_end = 0;
+    //int tex_name_end = 0;
     int anim_name_len = 0;
     int num_frames = 0;
     int total_textures = 0;
@@ -280,7 +280,7 @@ void draw_tile_floor(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f came
     render_pos.w = render_pos.h = RSIZE;
     render_pos.x = -camera_pos.x + x * RSIZE;
     render_pos.y = -camera_pos.y + y * RSIZE;
-    SDL_Rect tile_pos = render_pos;
+    //SDL_Rect tile_pos = render_pos;
     // Draw floor:
     cur_anim = anim_data[t.floor_anim].texture_index;
     SDL_RenderCopy(
@@ -328,7 +328,7 @@ void draw_tile_wall_top(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f c
         return;
     struct tile t = tiles[y][x];
     int cur_anim = 0;
-    int cur_frame = 0;
+    //int cur_frame = 0;
     SDL_Rect render_pos;
     render_pos.w = render_pos.h = RSIZE;
     render_pos.x = -camera_pos.x + x * RSIZE;
@@ -362,16 +362,16 @@ void draw_chunk(vec2f camera_pos, vec2f camera_center, chunk* chunk) {
     vec2i chunk_pos = vec2i{(int)camera_center.x/RSIZE, (int)camera_center.y/RSIZE};
     // Get a pointer to the chunk's tile array.
     struct tile (*tiles)[CHUNK_WIDTH] = chunk->get_tiles();
-    SDL_Rect tile_pos;
+    //SDL_Rect tile_pos;
     SDL_Rect render_pos;
-    SDL_Rect offset;
+    //SDL_Rect offset;
     render_pos.x = 0;
     render_pos.y = 0;
     render_pos.w = render_pos.h = RSIZE;
-    float vpos_x = 0 - (camera_center.x - window_x/2 + 64);
-    float vpos_y = 0 - (camera_center.y - window_y/2 + 64);
-    int cur_anim = 0;
-    int cur_frame = 0;
+    //float vpos_x = 0 - (camera_center.x - window_x/2 + 64);
+    //float vpos_y = 0 - (camera_center.y - window_y/2 + 64);
+    //int cur_anim = 0;
+    //int cur_frame = 0;
     // Draw all the floor:
     for (int y=0; y<CHUNK_WIDTH; y++) {
         for (int x=0; x<CHUNK_WIDTH; x++) {

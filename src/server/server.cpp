@@ -17,7 +17,7 @@ int new_id() {return ++id;}
 uint8_t anim_tick = 0;
 
 void server_config() {
-    char varlist_fname[] = "config/vars_list.txt";
+    //char varlist_fname[] = "config/vars_list.txt";
     char config_fname[] = "config/config.txt";
     // debug print the config variable indicies are in their table
     //print_hashes(varlist_fname);
