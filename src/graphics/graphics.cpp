@@ -133,7 +133,7 @@ void init_fonts() {
     char font_relative_path[] = "/graphics/fonts/KronaOne-Regular.ttf";
     strncpy(font_path+base_path_len, 
             font_relative_path, 
-            sizeof(font_relative_path));
+            strlen(font_relative_path));
     font = TTF_OpenFont(font_path, 24);
     if (font == 0) {
         printf("Failed to load font: %s\n", TTF_GetError());
