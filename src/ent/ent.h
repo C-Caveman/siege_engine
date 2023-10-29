@@ -8,7 +8,6 @@
 #include <SDL2/SDL.h>
 
 #define RSIZE 128    // diameter of rectangular entities
-#define CIRCLE_R 64  // radius of circular entities
 
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -83,11 +82,11 @@ ENTITY STRUCTURE:
 
     > sprite 0 pos
     > sprite 0 anim
-    > sprite 0 rotation (only present when anim.flags &= ROTATABLE)
+    > sprite 0 rotation
     > ...
     > sprite n pos
     > sprite n anim
-    > sprite n rotation (only present when anim.flags &= ROTATABLE)
+    > sprite n rotation
 
     > ...
 
@@ -103,7 +102,7 @@ ENTITY UPDATE CYCLE:
     > Draw
         All of the entity's sprites.
 */
-// Define a list of entity types. Can be reformatted by redefining f().
+// Define a list of entity types. Can be reformatted by redefining f(). ;;
 #define MAX_ENTITY_TYPE_NAME_LEN 32
 #define ENTITY_TYPES_LIST \
     f(EMPTY) \
@@ -122,7 +121,7 @@ enum ent_basics_segments {////////////////// Basics of every entity.
     basic_ent_size
 };
 
-enum sprite_components {//////////////////// Sprite data (used by most entities).
+enum sprite_components {//////////////////// Sprite data (used by most entities). ;;
     sprite_position_segment,
     sprite_animation_segment,
     sprite_size
