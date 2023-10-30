@@ -7,7 +7,6 @@
 
 
 // Data stored for a particular animation.
-enum anim_flags {ANIM_LOOPING, ANIM_PAUSED,}; // TODO use these flags.
 struct anim_info {
     uint32_t texture_index;  // First frame in texture array.
     uint8_t  len;            // Number of frames.

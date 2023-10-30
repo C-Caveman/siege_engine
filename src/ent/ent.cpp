@@ -177,7 +177,7 @@ void despawn_ent(segment* ent_header) {
     int size = ent_header->head.size;
     if (DEBUG_ENTS)
         printf("Despawning ent of size %d\n", size);
-    memset(ent_header, 0, size*sizeof(segment));
+    memset((void*)ent_header, 0, size*sizeof(segment));
 }
 // Run the think() function for each entitiy in a segment array.
 void think_all_ents(segment* array, int array_len) {

@@ -47,6 +47,12 @@ struct seg_anim {        // Data for an entity's animation.
     uint8_t anim_tick;   // Tick the previous frame was drawn on.
     float rotation;      // Rotation of the sprite.
 };
+enum animation_flags {LOOPING, PAUSED,};
+struct seg_anim_flags {
+    uint8_t flags;       // Flags for sprite animation. Looping, stopped, ect.
+    uint8_t UNUSED;
+    uint16_t ALSO_UNUSED;// More things can be added to this segment.
+};
 struct seg_health {      // Entity health.
     int health;          // Health remaining.
     int status_flags;    // Status effects. (???on_fire,poisoned,ect.???)
@@ -60,14 +66,15 @@ struct seg_movetype {   // Entity movement speeds. (sneak/walk/sprint/dash)
 /////////////////////////////////////////////////////////////////////////////////////////
 // Allow arrays of different segments.
 union segment {
-    struct seg_head      head;
-    struct seg_pos       pos;
-    struct seg_cur_chunk cur_chunk;
-    struct seg_vel       vel;
-    struct seg_dir       dir;
-    struct seg_anim      anim;
-    struct seg_health    health;
-    struct seg_movetype  movetype;
+    struct seg_head       head;
+    struct seg_pos        pos;
+    struct seg_cur_chunk  cur_chunk;
+    struct seg_vel        vel;
+    struct seg_dir        dir;
+    struct seg_anim       anim;
+    struct seg_anim_flags flags;
+    struct seg_health     health;
+    struct seg_movetype   movetype;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -115,15 +122,17 @@ enum entity_types {
     NUM_ENT_TYPES
 };
 
-// Segments common to most entities.
-enum ent_basics_segments {////////////////// Basics of every entity.
+// Segments common to most entities. Segs assumed to be there if not explicitly excluded.
+enum ent_basics_segments {
     head, cur_chunk, pos, vel,
     basic_ent_size
 };
 
-enum sprite_components {//////////////////// Sprite data (used by most entities). ;;
-    sprite_position_segment,
-    sprite_animation_segment,
+// Textured, animated square assigned to an entity. ;;
+enum sprite_components {
+    sprite_pos_seg,
+    sprite_anim_seg,
+    sprite_flags_seg,
     sprite_size
 };
 
@@ -136,15 +145,15 @@ struct ent_EMPTY {
 
 enum player_segments {///////////////////// player
     player_end_of_basics=basic_ent_size-1,
-        p_sprite_body_pos,
-        p_sprite_body_anim,
-        p_sprite_gun_pos,
-        p_sprite_gun_anim,
-    player_dir,
+        // Sprites:
+        p_sprite_body_pos, p_sprite_body_anim, p_sprite_body_flags,
+        p_sprite_gun_pos, p_sprite_gun_anim, p_sprite_gun_flags,
+        p_end_of_sprites,
+    player_dir=p_end_of_sprites,
     player_movetype,
     player_size
 };
-#define num_player_sprites (p_sprite_gun_anim - player_end_of_basics)/2
+#define num_player_sprites (p_end_of_sprites - player_end_of_basics)/sprite_size
 struct ent_PLAYER {
     segment data[player_size];
     void init();
@@ -153,12 +162,13 @@ struct ent_PLAYER {
 
 enum scenery_segments {/////////////////// scenery
     scenery_end_of_basics=basic_ent_size-1,
-        scenery_sprite_pos,
-        scenery_sprite_anim,
-    more_scenery_stuff,
+        // Sprites:
+        scenery_sprite_pos, scenery_sprite_anim, scenery_sprite_flags,
+        scenery_end_of_sprites,
+    more_scenery_stuff=scenery_end_of_sprites,
     scenery_size
 };
-#define num_scenery_sprites (scenery_sprite_anim - scenery_end_of_basics)/2
+#define num_scenery_sprites (scenery_end_of_sprites - scenery_end_of_basics)/sprite_size
 struct ent_SCENERY {
     segment data[scenery_size];
     void init();
