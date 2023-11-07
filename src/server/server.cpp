@@ -27,7 +27,7 @@ void server_config() {
     vars_from_file(config_fname);
 }
 
-void place_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
+void build_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
     // No longer the start of a click. TODO rename and move to input.cpp TODO
     int selected_x = (camera_center.x + aim_pixel.x) / RSIZE + 0.5;
     int selected_y = (camera_center.y + aim_pixel.y) / RSIZE + 0.5;
@@ -44,6 +44,23 @@ void place_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
     chonk->set_wall(selected_x,
                     selected_y,
                     wall_steel,wall_steel_side,16);
+}
+void destroy_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
+    // No longer the start of a click. TODO rename and move to input.cpp TODO
+    int selected_x = (camera_center.x + aim_pixel.x) / RSIZE + 0.5;
+    int selected_y = (camera_center.y + aim_pixel.y) / RSIZE + 0.5;
+    if (selected_x < 0) selected_x = 0;
+    if (selected_y < 0) selected_y = 0;
+    if (selected_x > (CHUNK_WIDTH-1)) selected_x = (CHUNK_WIDTH-1);
+    if (selected_y > (CHUNK_WIDTH-1)) selected_y = (CHUNK_WIDTH-1);
+    if (chonk->tiles[selected_y][selected_x].wall_height <= 0)
+        return;
+    // Play a sound.
+    if (chonk->tiles[selected_y][selected_x].wall_height == 1)
+        Mix_PlayChannel(-1, sound, 0);
+    chonk->set_wall(selected_x,
+                    selected_y,
+                    wall_steel,wall_steel_side, chonk->tiles[selected_y][selected_x].wall_height - 1 );
 }
 
 int main() {
@@ -111,11 +128,14 @@ int main() {
         player_client.camera_center = vec2f {p->data[pos].pos.pos.x, p->data[pos].pos.pos.y};
 
         if (player_client.attacking)
-            place_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
+            destroy_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
+        if (player_client.building)
+            build_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
 
         //
         // Draw the environment:
         //
+        SDL_RenderClear(renderer);
         draw_chunk(player_client.camera_pos, player_client.camera_center, test_world.get_chunk(0,0));
         //
         // Update and draw the entities:

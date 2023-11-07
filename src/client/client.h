@@ -15,6 +15,7 @@ struct client_data {
     // Current input state:
     //
     bool attacking;
+    bool building;
     vec2f accel_dir; // Desired move direction.
     bool sprinting; // Desired movement speed.
     float jerk; // Rate of acceleration.

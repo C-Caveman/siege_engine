@@ -171,6 +171,7 @@ void client_input(client_data* client) {
                     break;
                 case 3: // right click
                     //printf("Right click down.\n");
+                    client->building = true;
                     break;
                 default:
                     break;
@@ -189,6 +190,7 @@ void client_input(client_data* client) {
                     break;
                 case 3: // right click
                     //printf("Right click up.\n");
+                    client->building = false;
                     break;
                 default:
                     break;
