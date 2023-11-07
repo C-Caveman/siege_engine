@@ -373,7 +373,7 @@ void draw_tile_wall_top(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f c
 
 void draw_chunk(vec2f camera_pos, vec2f camera_center, chunk* chunk) {
     // Convert the camera_pos to a chunk_pos:
-    vec2i chunk_pos = vec2i{(int)camera_center.x/RSIZE, (int)camera_center.y/RSIZE};
+    vec2i chunk_pos = vec2i{(int)(camera_center.x/RSIZE+0.5), (int)(camera_center.y/RSIZE+0.5)};
     // Get a pointer to the chunk's tile array.
     struct tile (*tiles)[CHUNK_WIDTH] = chunk->get_tiles();
     //SDL_Rect tile_pos;
