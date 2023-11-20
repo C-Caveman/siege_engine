@@ -382,10 +382,24 @@ void draw_chunk(vec2f camera_pos, vec2f camera_center, chunk* chunk) {
     render_pos.x = 0;
     render_pos.y = 0;
     render_pos.w = render_pos.h = RSIZE;
-    //float vpos_x = 0 - (camera_center.x - window_x/2 + 64);
-    //float vpos_y = 0 - (camera_center.y - window_y/2 + 64);
-    //int cur_anim = 0;
-    //int cur_frame = 0;
+    /* Tiles on the screen are split like this:
+
+      [Top Left]         [Top Right]
+                xxxx|xxxx
+                xxxx|xxxx
+                xxxx|xxxx
+  [Middle Left] ----+---- [Middle Right]
+                xxxx|xxxx
+                xxxx|xxxx
+                xxxx|xxxx
+   [Bottom Left]         [Bottom Right]
+
+      ==================================
+      Draw order for [Top Left]:
+      x...    .x..    ..x.    ...x    ....    ....
+      .... -> x... -> .x.. -> ..x. -> ...x -> ....
+      ....    ....    x...    .x..    ..x.    ...x
+    */
     // Draw all the floor:
     for (int y=0; y<CHUNK_WIDTH; y++) {
         for (int x=0; x<CHUNK_WIDTH; x++) {

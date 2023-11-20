@@ -1,0 +1,19 @@
+
+// Draw a diagonal strip of tiles.
+for (int i=0; i<CHUNK_WIDTH/2; i++) {
+    for (int j=0; j<i; j++) {
+        if (in_bounds(j, j+i))
+            draw(j, j+i);
+    }
+}
+
+
+constexpr int CHUNK_MIDDLE = CHUNK_WIDTH/2;
+// Draw a diamond loop of tiles.
+for (i=0; i<CHUNK_WIDTH; i++) {
+    // Converge after reaching the middle row.
+    d = (i < CHUNK_MIDDLE) ? (i) : (CHUNK_WIDTH-i);
+    // Diverge from the center column.
+    draw CHUNK_MIDDLE-d, i
+    draw CHUNK_MIDDLE+d, i
+}
