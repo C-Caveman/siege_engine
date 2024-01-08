@@ -305,9 +305,12 @@ void draw_tile_floor(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f came
     );
 }
 
+constexpr float TILE_SLIDE_INCREMENT = 20;
+//constexpr float growth = TILE_SLIDE_INCREMENT/window_x;
 void draw_tile_wall_side(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f camera_pos, vec2f camera_center) {
     if (x < 0 || x > CHUNK_WIDTH-1 || y < 0 || y > CHUNK_WIDTH-1 || tiles[y][x].wall_height < 1)
         return;
+    //float growth = 2;
     struct tile t = tiles[y][x];
     int cur_anim = 0;
     int cur_frame = 0;
@@ -318,16 +321,14 @@ void draw_tile_wall_side(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f 
     SDL_Rect tile_pos = render_pos;
     // Draw wall:
     cur_anim = anim_data[t.wall_side_anim].texture_index;
-    constexpr float TILE_SLIDE_INCREMENT = 50.0f;
     vec2f offset = (vec2f{(float)x*RSIZE, (float)y*RSIZE} - camera_center) * TILE_SLIDE_INCREMENT / (window_size.w);
     render_pos.x = (camera_center.x+window_x/2) - camera_center.x;
     render_pos.y = (camera_center.y+window_y/2) - camera_center.y;
-    float growth = TILE_SLIDE_INCREMENT/14;
     for (int i=0; i<t.wall_height; i++) {
         render_pos = tile_pos;
-        render_pos.x = render_pos.x + offset.x*(i) - growth*i/2;
-        render_pos.y = render_pos.y + offset.y*(i) - growth*i/2;
-        render_pos.w = render_pos.h = RSIZE + growth*i;
+        render_pos.x = render_pos.x + offset.x*(i) - i/2;
+        render_pos.y = render_pos.y + offset.y*(i) - i/2;
+        render_pos.w = render_pos.h = RSIZE + i;
         SDL_RenderCopy(
             renderer,
             textures[cur_anim+cur_frame],
@@ -340,6 +341,7 @@ void draw_tile_wall_side(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f 
 void draw_tile_wall_top(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f camera_pos, vec2f camera_center) {
     if (x < 0 || x > CHUNK_WIDTH-1 || y < 0 || y > CHUNK_WIDTH-1 || tiles[y][x].wall_height < 1)
         return;
+    //float growth = 1;
     struct tile t = tiles[y][x];
     int cur_anim = 0;
     //int cur_frame = 0;
@@ -350,18 +352,16 @@ void draw_tile_wall_top(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f c
     SDL_Rect tile_pos = render_pos;
     // Draw wall:
     cur_anim = anim_data[t.wall_side_anim].texture_index;
-    constexpr float TILE_SLIDE_INCREMENT = 50.0f;
     vec2f offset = (vec2f{(float)x*RSIZE, (float)y*RSIZE} - camera_center) * TILE_SLIDE_INCREMENT / (window_size.w);
     render_pos.x = (camera_center.x+window_x/2) - render_pos.x;
     render_pos.y = (camera_center.y+window_y/2) - render_pos.y;
-    float growth = TILE_SLIDE_INCREMENT/14;
     // Draw the top of the wall:
     if (t.wall_height > 0) {
         cur_anim = anim_data[t.wall_top_anim].texture_index;
         render_pos = tile_pos;
-        render_pos.x = render_pos.x + offset.x * t.wall_height - growth*t.wall_height/2;
-        render_pos.y = render_pos.y + offset.y * t.wall_height - growth*t.wall_height/2;
-        render_pos.w = render_pos.h = RSIZE + growth*t.wall_height;
+        render_pos.x = render_pos.x + offset.x * t.wall_height - t.wall_height/2;
+        render_pos.y = render_pos.y + offset.y * t.wall_height - t.wall_height/2;
+        render_pos.w = render_pos.h = RSIZE + t.wall_height;
         SDL_RenderCopy(
             renderer,
             textures[cur_anim],
@@ -372,6 +372,48 @@ void draw_tile_wall_top(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f c
 }
 
 void draw_chunk(vec2f camera_pos, vec2f camera_center, chunk* chunk) {
+    // Convert the camera_pos to a chunk_pos:
+    vec2i chunk_pos = vec2i{(int)(camera_center.x/RSIZE+0.5), (int)(camera_center.y/RSIZE+0.5)};
+    // Get a pointer to the chunk's tile array.
+    struct tile (*tiles)[CHUNK_WIDTH] = chunk->get_tiles();
+    //SDL_Rect tile_pos;
+    SDL_Rect render_pos;
+    //SDL_Rect offset;
+    render_pos.x = 0;
+    render_pos.y = 0;
+    render_pos.w = render_pos.h = RSIZE;
+    
+    
+    // Draw all the floor:
+    for (int y=0; y<CHUNK_WIDTH; y++) {
+        for (int x=0; x<CHUNK_WIDTH; x++) {
+            draw_tile_floor(tiles, x, y, camera_pos);
+        }
+    }
+    
+    
+    
+    //constexpr int CHUNK_MIDDLE = CHUNK_WIDTH/2;
+    int middle_x = chunk_pos.x;
+    int middle_y = chunk_pos.y;
+    for (int ring=CHUNK_WIDTH*2; ring>-1; ring--) {
+        // Draw a diamond loop of tiles.
+        int spread = 0; // Half the width of a given slice of the diamond.
+        for (int row=middle_y-ring; row<=middle_y+ring; row++) {
+            // Diverge from the center column.
+            draw_tile_wall_side(tiles, middle_x-spread, row, camera_pos, camera_center);
+            draw_tile_wall_top(tiles, middle_x-spread, row, camera_pos, camera_center);
+            //draw_tile_floor(tiles, x, y, camera_pos);
+            draw_tile_wall_side(tiles, middle_x+spread, row, camera_pos, camera_center);
+            draw_tile_wall_top(tiles, middle_x+spread, row, camera_pos, camera_center);
+            if (row < middle_y)
+                spread++;
+            else
+                spread--; // Converge after reaching the middle row.
+        }
+    }
+}
+void draw_chunk_old(vec2f camera_pos, vec2f camera_center, chunk* chunk) {
     // Convert the camera_pos to a chunk_pos:
     vec2i chunk_pos = vec2i{(int)(camera_center.x/RSIZE+0.5), (int)(camera_center.y/RSIZE+0.5)};
     // Get a pointer to the chunk's tile array.
