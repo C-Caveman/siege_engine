@@ -7,7 +7,7 @@
 #include "../graphics/animations.h"
 #include <SDL2/SDL.h>
 
-#define RSIZE 128    // diameter of rectangular entities
+#define RSIZE 80    // diameter of rectangular entities
 
 
 /////////////////////////////////////////////////////////////////////////////////////////

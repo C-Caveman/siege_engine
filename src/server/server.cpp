@@ -37,13 +37,13 @@ void build_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
     if (selected_y > (CHUNK_WIDTH-1)) selected_y = (CHUNK_WIDTH-1);
     //printf("Tile: (%d, %d)\n", selected_x, selected_y);
     //printf("Pos:  (%f, %f)\n", camera_center.x, camera_center.y);
-    if (chonk->tiles[selected_y][selected_x].wall_height > 0)
+    if (chonk->tiles[selected_y][selected_x].wall_height > 254)
         return;
     // Play a sound.
     Mix_PlayChannel(-1, sound, 0);
     chonk->set_wall(selected_x,
                     selected_y,
-                    wall_steel,wall_steel_side,16);
+                    wall_steel,wall_steel_side,chonk->tiles[selected_y][selected_x].wall_height + 1);
 }
 void destroy_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
     // No longer the start of a click. TODO rename and move to input.cpp TODO
