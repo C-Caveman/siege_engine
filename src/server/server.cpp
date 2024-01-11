@@ -63,6 +63,63 @@ void destroy_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
                     wall_steel,wall_steel_side, chonk->tiles[selected_y][selected_x].wall_height - 1 );
 }
 
+//TODO put this in ent.cpp
+bool occupied[9];
+void collide_wall(struct ent_PLAYER* p, chunk* c) {
+    vec2f position = p->data[pos].pos.pos + vec2f{RSIZE/2, RSIZE/2};
+    position = position / RSIZE;
+    //printf("Player pos: (%f, %f)\n", position.x, position.y);
+    bool occupied_copy[9];
+    int box = 0;
+    int top_left_x = (int)position.x-1;
+    int top_left_y = (int)position.y-1;
+    for (int i=0; i<10; i++) occupied_copy[i] = occupied[i];
+    for (int y=top_left_y; y<top_left_y+3; y++) {
+        for (int x=top_left_x; x<top_left_x+3; x++) {
+            if (x<0 || y<0 || x>=CHUNK_WIDTH || y>=CHUNK_WIDTH)
+                occupied[box] = 0;
+            else
+                occupied[box] = c->tiles[y][x].wall_height > 0;
+            box++;
+        }
+    }
+    for (int i=0; i<10; i++)
+        if (occupied_copy[i] == occupied[i])
+            box--;
+    /*
+    if (box == -1)
+        return;
+    printf("%d %d %d\n%d %d %d\n%d %d %d\n\n", occupied[0], occupied[1], occupied[2], 
+                                               occupied[3], occupied[4], occupied[5], 
+                                               occupied[6], occupied[7], occupied[8]);
+    */
+    // Determine which walls are colliding.
+    float x_offset = position.x-(int)position.x;
+    float y_offset = position.y-(int)position.y;
+    //printf("Tile-level offset: (%f, %f)\n", x_offset, y_offset);
+    // Push away from walls.
+    if (x_offset < 0.5 && occupied[3]) { // Left
+        p->data[pos].pos.pos.x = std::ceil(p->data[pos].pos.pos.x);
+        if (p->data[vel].vel.vel.x < 0)
+            p->data[vel].vel.vel.x = 0;
+    }
+    if (x_offset > 0.5 && occupied[5]) { // Right
+        p->data[pos].pos.pos.x = std::floor(p->data[pos].pos.pos.x);
+        if (p->data[vel].vel.vel.x > 0)
+            p->data[vel].vel.vel.x = 0;
+    }
+    if (y_offset < 0.5 && occupied[1]) { // Top
+        p->data[pos].pos.pos.y = std::ceil(p->data[pos].pos.pos.y);
+        if (p->data[vel].vel.vel.y < 0)
+            p->data[vel].vel.vel.y = 0;
+    }
+    if (y_offset > 0.5 && occupied[7]) { // Bottom
+        p->data[pos].pos.pos.y = std::floor(p->data[pos].pos.pos.y);
+        if (p->data[vel].vel.vel.y > 0)
+            p->data[vel].vel.vel.y = 0;
+    }
+}
+
 int main() {
     server_config();
     
@@ -80,13 +137,6 @@ int main() {
     world test_world;
     chunk* chunk_0 = test_world.get_chunk(0,0);
     chunk_0->set_floors(floor_test);
-    /*
-    chunk_0->set_floor(0,0, tiledark);
-    chunk_0->set_wall(1,4, wall_steel,wall_steel,8);
-    chunk_0->set_wall(3,4, wall_steel,wall_steel,8);
-    chunk_0->set_wall(7,7, wall_steel,wall_steel,64);
-    chunk_0->set_wall(8,7, wall_steel,wall_steel,16);
-    */
     for (int y=0; y<CHUNK_WIDTH; y++) {
         chunk_0->set_wall(0,y, wall_steel,wall_steel_side,16);
         chunk_0->set_wall(CHUNK_WIDTH-1,y, wall_steel,wall_steel_side,16);
@@ -104,11 +154,11 @@ int main() {
     ent_PLAYER* p = (ent_PLAYER*)spawn_ent(PLAYER, entity_segment_array, SEGMENT_ARRAY_SIZE);
     player_client.player = (segment*)p;
     
-    
+    /*
     ent_SCENERY* s = (ent_SCENERY*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
     s->data[pos].pos.pos = vec2f{RSIZE*1.5,RSIZE*1.5};
     printf("*Type name: %s\n", get_type_name(s->data[head].head.type));
-    
+    */
     //segment* test_ent = spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
     
     while (running) {
@@ -141,6 +191,7 @@ int main() {
         // Update and draw the entities:
         //
         think_all_ents(entity_segment_array, SEGMENT_ARRAY_SIZE);
+        collide_wall(p, chunk_0);
         draw_all_ents(player_client.camera_pos, entity_segment_array, SEGMENT_ARRAY_SIZE);
         move_ent((segment*) p);
 
