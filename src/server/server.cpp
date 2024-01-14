@@ -4,6 +4,7 @@
 #include "server.h"
 #include <unistd.h> // testing memory leaks with sleep()
 
+ent_SCENERY* s; //TODO annihilate this DEBUG HACK
 
 // entity and client data are in these arrays
 int num_entities = 0;
@@ -63,61 +64,69 @@ void destroy_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
                     wall_steel,wall_steel_side, chonk->tiles[selected_y][selected_x].wall_height - 1 );
 }
 
-//TODO put this in ent.cpp
-bool occupied[9];
+//TODO move this to ent.cpp
+constexpr float PLAYER_WIDTH = RSIZE;
+constexpr float MIN_SQUARE_DISTANCE = PLAYER_WIDTH/2 + RSIZE/2;
 void collide_wall(struct ent_PLAYER* p, chunk* c) {
-    vec2f position = p->data[pos].pos.pos + vec2f{RSIZE/2, RSIZE/2};
-    position = position / RSIZE;
-    //printf("Player pos: (%f, %f)\n", position.x, position.y);
-    bool occupied_copy[9];
-    int box = 0;
-    int top_left_x = (int)position.x-1;
-    int top_left_y = (int)position.y-1;
-    for (int i=0; i<10; i++) occupied_copy[i] = occupied[i];
-    for (int y=top_left_y; y<top_left_y+3; y++) {
-        for (int x=top_left_x; x<top_left_x+3; x++) {
-            if (x<0 || y<0 || x>=CHUNK_WIDTH || y>=CHUNK_WIDTH)
-                occupied[box] = 0;
-            else
-                occupied[box] = c->tiles[y][x].wall_height > 0;
-            box++;
+    vec2f* position = &p->data[pos].pos.pos;
+    vec2f centered_position = p->data[pos].pos.pos + vec2f{RSIZE/2, RSIZE/2};
+// Find the nearest tile corner: ----------------------------------------------------
+    vec2f nearest_corner = centered_position;
+    nearest_corner = nearest_corner / RSIZE;
+    nearest_corner = vec2f{std::floor(nearest_corner.x + 0.5f),std::floor(nearest_corner.y + 0.5f)};
+    nearest_corner = nearest_corner * RSIZE;
+// Find the four tiles touching that corner: ------------------------------------
+    vec2f tile_pos;
+    vec2i tile_index;
+    float sign_x = -1;
+    float sign_y = -1;
+    int num_adjacent = 0;
+// Check the number of adjacent tiles (maximum of 4)
+    for (int i=0; i<2; i++) {
+        for (int j=0; j<2; j++) {
+            tile_pos = nearest_corner + vec2f{RSIZE/2*sign_x, RSIZE/2*sign_y};
+            sign_x *= -1;
+            tile_pos = tile_pos / RSIZE;
+            tile_pos = vec2f{std::floor(tile_pos.x), std::floor(tile_pos.y)} * RSIZE;
+            tile_index = vec2i{int(tile_pos.x/RSIZE), int(tile_pos.y/RSIZE)};
+            if (tile_index.x < 0 || tile_index.x >= CHUNK_WIDTH || tile_index.y < 0 || tile_index.y >= CHUNK_WIDTH)
+                continue; // Invalid index, so skip the tile.
+            if (c->tiles[tile_index.y][tile_index.x].wall_height > 0)
+                num_adjacent++;
         }
+        sign_y *= -1;
     }
-    for (int i=0; i<10; i++)
-        if (occupied_copy[i] == occupied[i])
-            box--;
-    /*
-    if (box == -1)
-        return;
-    printf("%d %d %d\n%d %d %d\n%d %d %d\n\n", occupied[0], occupied[1], occupied[2], 
-                                               occupied[3], occupied[4], occupied[5], 
-                                               occupied[6], occupied[7], occupied[8]);
-    */
-    // Determine which walls are colliding.
-    float x_offset = position.x-(int)position.x;
-    float y_offset = position.y-(int)position.y;
-    //printf("Tile-level offset: (%f, %f)\n", x_offset, y_offset);
-    // Push away from walls.
-    if (x_offset < 0.5 && occupied[3]) { // Left
-        p->data[pos].pos.pos.x = std::ceil(p->data[pos].pos.pos.x);
-        if (p->data[vel].vel.vel.x < 0)
-            p->data[vel].vel.vel.x = 0;
+// Apply the collisions.
+    for (int i=0; i<2; i++) {
+        for (int j=0; j<2; j++) {
+            tile_pos = nearest_corner + vec2f{RSIZE/2*sign_x, RSIZE/2*sign_y};
+            sign_x *= -1;
+            tile_pos = tile_pos / RSIZE;
+            tile_pos = vec2f{std::floor(tile_pos.x), std::floor(tile_pos.y)} * RSIZE;
+            tile_index = vec2i{int(tile_pos.x/RSIZE), int(tile_pos.y/RSIZE)};
+            if (tile_index.x < 0 || tile_index.x >= CHUNK_WIDTH ||
+                tile_index.y < 0 || tile_index.y >= CHUNK_WIDTH ||
+                c->tiles[tile_index.y][tile_index.x].wall_height < 1
+            )
+                continue; // Skip the tile.
+// Square collision:
+            vec2f delta = *position - tile_pos;
+            if (abs(delta.x) < MIN_SQUARE_DISTANCE ||
+                abs(delta.y) < MIN_SQUARE_DISTANCE
+            ) {
+                float x_delta_sign = 1;
+                float y_delta_sign = 1;
+                if (delta.x < 0) x_delta_sign = -1;
+                if (delta.y < 0) y_delta_sign = -1;
+                if (abs(delta.x) > abs(delta.y))
+                    *position = *position + vec2f{x_delta_sign*MIN_SQUARE_DISTANCE-delta.x, 0};
+                else
+                    *position = *position + vec2f{0, y_delta_sign*MIN_SQUARE_DISTANCE-delta.y};
+            }
+        }
+        sign_y *= -1;
     }
-    if (x_offset > 0.5 && occupied[5]) { // Right
-        p->data[pos].pos.pos.x = std::floor(p->data[pos].pos.pos.x);
-        if (p->data[vel].vel.vel.x > 0)
-            p->data[vel].vel.vel.x = 0;
-    }
-    if (y_offset < 0.5 && occupied[1]) { // Top
-        p->data[pos].pos.pos.y = std::ceil(p->data[pos].pos.pos.y);
-        if (p->data[vel].vel.vel.y < 0)
-            p->data[vel].vel.vel.y = 0;
-    }
-    if (y_offset > 0.5 && occupied[7]) { // Bottom
-        p->data[pos].pos.pos.y = std::floor(p->data[pos].pos.pos.y);
-        if (p->data[vel].vel.vel.y > 0)
-            p->data[vel].vel.vel.y = 0;
-    }
+    
 }
 
 int main() {
@@ -152,13 +161,15 @@ int main() {
     constexpr int SEGMENT_ARRAY_SIZE = 4096;
     segment entity_segment_array[SEGMENT_ARRAY_SIZE];
     ent_PLAYER* p = (ent_PLAYER*)spawn_ent(PLAYER, entity_segment_array, SEGMENT_ARRAY_SIZE);
+    p->data[pos].pos.pos = vec2f{RSIZE,RSIZE};
     player_client.player = (segment*)p;
     
-    /*
-    ent_SCENERY* s = (ent_SCENERY*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
+    //
+    s = (ent_SCENERY*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
     s->data[pos].pos.pos = vec2f{RSIZE*1.5,RSIZE*1.5};
     printf("*Type name: %s\n", get_type_name(s->data[head].head.type));
-    */
+    //
+    
     //segment* test_ent = spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
     
     while (running) {
@@ -171,6 +182,7 @@ int main() {
         //
         client_input(&player_client);
         player_client.update_player_entity(); // Apply client inputs to the player entity.
+        collide_wall(p, chunk_0);
         //
         // update the player's camera position
         //
@@ -191,7 +203,7 @@ int main() {
         // Update and draw the entities:
         //
         think_all_ents(entity_segment_array, SEGMENT_ARRAY_SIZE);
-        collide_wall(p, chunk_0);
+        
         draw_all_ents(player_client.camera_pos, entity_segment_array, SEGMENT_ARRAY_SIZE);
         move_ent((segment*) p);
 

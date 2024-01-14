@@ -35,7 +35,7 @@ void ent_SCENERY::init() {
     data[head].head.num_sprites = num_scenery_sprites;
     // Init the sprites:
     data[scenery_sprite_pos].pos.pos = vec2f{0,0};
-    data[scenery_sprite_anim].anim.anim = floor_test; // Default sprite.
+    data[scenery_sprite_anim].anim.anim = sand; // Default sprite.
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////;;
