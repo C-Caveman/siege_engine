@@ -4,7 +4,7 @@
 #include "server.h"
 #include <unistd.h> // testing memory leaks with sleep()
 
-ent_SCENERY* s; //TODO annihilate this DEBUG HACK
+ent_SCENERY* s; //TODO annihilate this DEBUG HACK ----------------------------------
 
 // entity and client data are in these arrays
 int num_entities = 0;
@@ -38,7 +38,9 @@ void build_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
     if (selected_y > (CHUNK_WIDTH-1)) selected_y = (CHUNK_WIDTH-1);
     //printf("Tile: (%d, %d)\n", selected_x, selected_y);
     //printf("Pos:  (%f, %f)\n", camera_center.x, camera_center.y);
-    if (chonk->tiles[selected_y][selected_x].wall_height > 254)
+    if (chonk->tiles[selected_y][selected_x].wall_height > 254 ||
+        ( (int(camera_center.x/RSIZE) == selected_x) && (int(camera_center.y/RSIZE) == selected_y) )
+    )
         return;
     // Play a sound.
     Mix_PlayChannel(-1, sound, 0);
@@ -80,23 +82,27 @@ void collide_wall(struct ent_PLAYER* p, chunk* c) {
     vec2i tile_index;
     float sign_x = -1;
     float sign_y = -1;
-    int num_adjacent = 0;
-// Check the number of adjacent tiles (maximum of 4)
-    for (int i=0; i<2; i++) {
+// Find all the collisions: ----------------------------------------------------
+    bool collisions[2][2];
+    int num_collisions = 0;
+     for (int i=0; i<2; i++) {
         for (int j=0; j<2; j++) {
             tile_pos = nearest_corner + vec2f{RSIZE/2*sign_x, RSIZE/2*sign_y};
-            sign_x *= -1;
             tile_pos = tile_pos / RSIZE;
             tile_pos = vec2f{std::floor(tile_pos.x), std::floor(tile_pos.y)} * RSIZE;
             tile_index = vec2i{int(tile_pos.x/RSIZE), int(tile_pos.y/RSIZE)};
-            if (tile_index.x < 0 || tile_index.x >= CHUNK_WIDTH || tile_index.y < 0 || tile_index.y >= CHUNK_WIDTH)
-                continue; // Invalid index, so skip the tile.
-            if (c->tiles[tile_index.y][tile_index.x].wall_height > 0)
-                num_adjacent++;
+            if (tile_index.x < 0 || tile_index.x >= CHUNK_WIDTH ||
+                tile_index.y < 0 || tile_index.y >= CHUNK_WIDTH ||
+                c->tiles[tile_index.y][tile_index.x].wall_height < 1) 
+                 { collisions[i][j] = true; }
+            else { collisions[i][j] = false; num_collisions++; }
+            sign_x *= -1;
         }
         sign_y *= -1;
     }
-// Apply the collisions.
+    bool is_vertical_pair = (num_collisions == 2) && (collisions[0][0] == collisions[1][0]);
+    bool is_horizontal_pair = (num_collisions == 2) && (collisions[0][0] == collisions[0][1]);
+// Apply the collisions. ------------------------------------------------------------
     for (int i=0; i<2; i++) {
         for (int j=0; j<2; j++) {
             tile_pos = nearest_corner + vec2f{RSIZE/2*sign_x, RSIZE/2*sign_y};
@@ -109,24 +115,27 @@ void collide_wall(struct ent_PLAYER* p, chunk* c) {
                 c->tiles[tile_index.y][tile_index.x].wall_height < 1
             )
                 continue; // Skip the tile.
-// Square collision:
             vec2f delta = *position - tile_pos;
-            if (abs(delta.x) < MIN_SQUARE_DISTANCE ||
-                abs(delta.y) < MIN_SQUARE_DISTANCE
-            ) {
+            bool in_square = abs(delta.x) < MIN_SQUARE_DISTANCE && abs(delta.y) < MIN_SQUARE_DISTANCE;
+            bool in_diamond = abs(delta.x) + abs(delta.y) > RSIZE*1.2;
+            if (in_square) {
                 float x_delta_sign = 1;
                 float y_delta_sign = 1;
                 if (delta.x < 0) x_delta_sign = -1;
                 if (delta.y < 0) y_delta_sign = -1;
-                if (abs(delta.x) > abs(delta.y))
+// Circle-Push ----------------------------------------------------------------------------
+                if (in_diamond && num_collisions == 1) {
+                    if (delta.vlen() < RSIZE) { *position = *position + delta.normalized()*(RSIZE-delta.vlen()); }
+                }
+// Square-Push ----------------------------------------------------------------------------
+                else if (abs(delta.x) > abs(delta.y) && !is_horizontal_pair)
                     *position = *position + vec2f{x_delta_sign*MIN_SQUARE_DISTANCE-delta.x, 0};
-                else
+                else if (!is_vertical_pair)
                     *position = *position + vec2f{0, y_delta_sign*MIN_SQUARE_DISTANCE-delta.y};
             }
         }
         sign_y *= -1;
     }
-    
 }
 
 int main() {
