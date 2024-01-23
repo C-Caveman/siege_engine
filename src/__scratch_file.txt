@@ -8,12 +8,116 @@ for (int i=0; i<CHUNK_WIDTH/2; i++) {
 }
 
 
-constexpr int CHUNK_MIDDLE = CHUNK_WIDTH/2;
 // Draw a diamond loop of tiles.
+constexpr int CHUNK_MIDDLE = CHUNK_WIDTH/2;
 for (i=0; i<CHUNK_WIDTH; i++) {
     // Converge after reaching the middle row.
-    d = (i < CHUNK_MIDDLE) ? (i) : (CHUNK_WIDTH-i);
+    int d = (i < CHUNK_MIDDLE) ? (i) : (CHUNK_WIDTH-i);
     // Diverge from the center column.
-    draw CHUNK_MIDDLE-d, i
-    draw CHUNK_MIDDLE+d, i
+    draw_tile_wall(CHUNK_MIDDLE-d, i);
+    draw_tile_wall(CHUNK_MIDDLE+d, i);
 }
+
+
+// ************************************************************************************** //
+
+
+// ENTITY HANDLES -------------------------------------------------------------;;
+typedef struct handle {
+    int16_t i,     // Segment index.
+    int16_t users, // Num ents using this handle.
+    int alive      // Whether the entity is marked for deletion.
+};
+constexpr int NUM_HANDLES = 2048;
+struct handle handles[NUM_HANDLES];
+
+// Give a handle to an entity. ---------------------------------------------------
+handle* get_handle(ent* e) {
+    // Iterate to first available handle.
+    int h = -1;
+    for (int i=0; i<NUM_HANDLES; i++)
+        { if (handles[i].users == 0) {h=i; break;} }
+    if (h == -1)
+        { printf("\n*** Ran out of handles!!!\n"); exit(-1); }
+    handels[h].users = 1;
+    handels[h].i = e; //TODO set as entity's header segment index!
+    handels[h].alive = 1;
+    return h;
+}
+
+// Get an entity pointer from a handle. -----------------------------------------
+int use_handle(int) {
+    if (handles[i].alive == 0) { handles[i].users--; return handles[i].i; }
+    else { return -1; }
+}
+
+// 
+
+
+
+// ************************************************************************************** //
+
+
+enum segment_types {
+    SEG_HEAD, SEG_POS, SEG_CHUNK, SEG_VEL, SEG_DIR, SEG_ANIM, SEG_HEALTH, SEG_MOVETYPE,
+};
+
+constexpr uint8_t HEADER_BYTE = 255; // Marker for identifying header segments.
+enum ent_flags {DRAWABLE, ANIMATABLE, MOVABLE, COLLIDABLE, DAMAGABLE, THINKABLE};
+
+struct animation {       // Data for an entity's animation.
+    uint16_t id;         // Enum value of the animation. (animation data is stored elsewhere)
+    uint8_t frame;       // current frame of animation.
+    uint8_t anim_tick;   // Tick the previous frame was drawn on.
+    uint8_t flags;       // Flags for sprite animation. Looping, stopped, ect.
+    float rotation;      // Rotation of the sprite.
+};
+enum animation_flags {LOOPING, PAUSED,};
+struct seg_anim_flags {
+    uint8_t flags;       // Flags for sprite animation. Looping, stopped, ect.
+    uint8_t UNUSED;
+    uint16_t ALSO_UNUSED;// More things can be added to this segment.
+};
+
+
+#define ENT_BASICS      \
+    uint8_t type;       \
+    uint8_t num_sprites;\
+    uint16_t size;      \
+    uint16_t handle;    \
+    int flags;          \
+    vec2f pos;          \
+    vec2f vel;          \
+    vec2f dir;          \
+    vec2i chunk;        \
+    int health;
+
+
+struct ent_basic { ENT_BASICS; };
+
+enum sprites {MONKEY, BANNANA, NUM_SPRITES};
+struct my_entity {
+    ENT_BASICS;
+    struct sprites[NUM_SPRITES];
+    int var_specific_to_this_entity_type;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

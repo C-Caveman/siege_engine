@@ -10,7 +10,7 @@
 struct client_data {
     void update_player_entity();
     // Player entity:
-    segment* player;
+    struct ent_player* player;
     //
     // Current input state:
     //

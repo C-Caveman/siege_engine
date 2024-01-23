@@ -4,7 +4,8 @@
 #include "server.h"
 #include <unistd.h> // testing memory leaks with sleep()
 
-ent_SCENERY* s; //TODO annihilate this DEBUG HACK ----------------------------------
+constexpr int ENTITY_BYTES_ARRAY = 8192;
+    char entity_bytes_array[ENTITY_BYTES_ARRAY] = {0};
 
 // entity and client data are in these arrays
 int num_entities = 0;
@@ -43,7 +44,8 @@ void build_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
     )
         return;
     // Play a sound.
-    Mix_PlayChannel(-1, sound, 0);
+    if (chonk->tiles[selected_y][selected_x].wall_height == 0)
+        { Mix_PlayChannel(-1, sound, 0); }
     chonk->set_wall(selected_x,
                     selected_y,
                     wall_steel,wall_steel_side,chonk->tiles[selected_y][selected_x].wall_height + 1);
@@ -69,9 +71,9 @@ void destroy_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
 //TODO move this to ent.cpp
 constexpr float PLAYER_WIDTH = RSIZE;
 constexpr float MIN_SQUARE_DISTANCE = PLAYER_WIDTH/2 + RSIZE/2;
-void collide_wall(struct ent_PLAYER* p, chunk* c) {
-    vec2f* position = &p->data[pos].pos.pos;
-    vec2f centered_position = p->data[pos].pos.pos + vec2f{RSIZE/2, RSIZE/2};
+void collide_wall(struct ent_player* p, chunk* c) {
+    vec2f* position = &p->pos;
+    vec2f centered_position = p->pos + vec2f{RSIZE/2, RSIZE/2};
 // Find the nearest tile corner: ----------------------------------------------------
     vec2f nearest_corner = centered_position;
     nearest_corner = nearest_corner / RSIZE;
@@ -163,24 +165,15 @@ int main() {
         chunk_0->set_wall(x,0, wall_steel,wall_steel_side,16);
         chunk_0->set_wall(x,CHUNK_WIDTH-1, wall_steel,wall_steel_side,16);
     }
-    
-    
-    
-    
-    constexpr int SEGMENT_ARRAY_SIZE = 4096;
-    segment entity_segment_array[SEGMENT_ARRAY_SIZE];
-    ent_PLAYER* p = (ent_PLAYER*)spawn_ent(PLAYER, entity_segment_array, SEGMENT_ARRAY_SIZE);
-    p->data[pos].pos.pos = vec2f{RSIZE,RSIZE};
-    player_client.player = (segment*)p;
+    ent_player* p = (struct ent_player*)spawn_ent(player_type, entity_bytes_array, ENTITY_BYTES_ARRAY);
+    p->pos = vec2f{RSIZE,RSIZE};
+    player_client.player = (struct ent_player*)p;
     
     //
-    s = (ent_SCENERY*)spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
-    s->data[pos].pos.pos = vec2f{RSIZE*1.5,RSIZE*1.5};
-    printf("*Type name: %s\n", get_type_name(s->data[head].head.type));
+    ent_scenery* s = (ent_scenery*)spawn_ent(scenery_type, entity_bytes_array, ENTITY_BYTES_ARRAY);
+    s->pos = vec2f{RSIZE*1.5,RSIZE*1.5};
+    printf("*Type name: '%s'\n", get_type_name(s->type));
     //
-    
-    //segment* test_ent = spawn_ent(SCENERY, entity_segment_array, SEGMENT_ARRAY_SIZE);
-    
     while (running) {
         dt = (SDL_GetTicks() - last_frame_end) / 1000;
         anim_tick = SDL_GetTicks() % 256; // 8-bit timestamp for sprites to know when to go to the next frame.
@@ -195,8 +188,8 @@ int main() {
         //
         // update the player's camera position
         //
-        player_client.camera_pos = vec2f {p->data[pos].pos.pos.x - window_x/2 + RSIZE/2, p->data[pos].pos.pos.y - window_y/2 + RSIZE/2};
-        player_client.camera_center = vec2f {p->data[pos].pos.pos.x, p->data[pos].pos.pos.y};
+        player_client.camera_pos = vec2f {p->pos.x - window_x/2 + RSIZE/2, p->pos.y - window_y/2 + RSIZE/2};
+        player_client.camera_center = vec2f {p->pos.x, p->pos.y};
 
         if (player_client.attacking)
             destroy_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
@@ -211,10 +204,10 @@ int main() {
         //
         // Update and draw the entities:
         //
-        think_all_ents(entity_segment_array, SEGMENT_ARRAY_SIZE);
+        think_all_ents(entity_bytes_array, ENTITY_BYTES_ARRAY);
         
-        draw_all_ents(player_client.camera_pos, entity_segment_array, SEGMENT_ARRAY_SIZE);
-        move_ent((segment*) p);
+        draw_all_ents(player_client.camera_pos, entity_bytes_array, ENTITY_BYTES_ARRAY);
+        move_ent((struct ent_basics*) p);
 
         present_frame(); // Put the frame on the screen:
     }
