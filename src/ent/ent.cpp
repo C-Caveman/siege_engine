@@ -6,12 +6,12 @@ extern volatile int mouse_x;
 extern volatile int mouse_y;
 extern float dt; // Delta time.
 
-//=============================================================// ENTITY HANDLES //
-// Handle 0 is off-limits.
-struct handle handles[NUM_HANDLES] = { {nullptr,1,false}, {} };
-handle_index claim_handle(struct ent_basics* e) { // Give a handle to an entity.
-    // Iterate to first available handle.
-    handle_index h = -1;
+struct handle_info handles[NUM_HANDLES] = { //=================================// ENTITY HANDLES //
+    {nullptr,1,true}, // Handle 0 is the Null handle.
+    {}
+};
+handle claim_handle(struct ent_basics* e) { //-------- Bind a handle to an entity.
+    handle h = -1;
     for (int i=0; i<NUM_HANDLES; i++) {
         if (handles[i].copies == 0) {h=i; break;}
     }
@@ -22,29 +22,35 @@ handle_index claim_handle(struct ent_basics* e) { // Give a handle to an entity.
     printf("Handle %d claimed by a '%s' ent.\n", h, get_type_name(handles[h].ent->type));
     return h;
 }
-handle_index copy_handle(handle_index i) { // Copy another entity's handle.
-    if (i == 0) { printf("copy_handle() called on handle 0!\n"); exit(-1); }
-    if (handles[i].claimed == true)
-        { handles[i].copies++; return i; }
-    else
-        { return -1; }
+void unclaim_handle(handle i) { //-------------------- Unbind a handle (not a copy of one).
+    if (i != 0) { //Null handle.
+        handles[i].claimed = 0;
+        handles[i].copies--;
+    }
+    if (DEBUG_ENT_HANDLES) { printf("Unclaimed handle %d. Copies = %d.\n", i, handles[i].copies); }
 }
-struct ent_basics* get_ent(handle_index i) {
+handle copy_handle(handle i) { //--------------------- Copy a bound handle (another entity's handle).
+    if (handles[i].claimed == true && i != 0)
+        { handles[i].copies++; }
+    else
+        { i = 0; } //Null handle.
+    if (DEBUG_ENT_HANDLES) { printf("Copied handle %d. Now has %d copies.\n", i, handles[i].copies); }
+    return i;
+}
+handle uncopy_handle(handle i) { //------------------- Uncopy a bound handle, replace with null.
+    if (i != 0) { handles[i].copies--; } //Null handle cannot be destroyed.
+    return 0;
+}
+struct ent_basics*  get_ent(handle i) { //------------ Get an entity by its handle.
     if (i == 0) { printf("get_ent() called on handle 0!\n"); exit(-1); }
     if (handles[i].claimed == 1)
         { return handles[i].ent; }
     else
         { handles[i].copies--; return nullptr; }
-}
-void release_handle(handle_index i) {
-    if (i == 0) { printf("release_handle() called on handle 0!\n"); exit(-1); }
-    handles[i].claimed = 0;
-    handles[i].copies--;
-}//----------------------------------------------------------------------------------
+}//============================================================================================//
 
 void ent_player::init() { //======================================// Initialize an entity. //
-    if (DEBUG_ENTS)
-        printf("Player entity initializing!\n");
+    if (DEBUG_ENTS) { printf("Player entity initializing!\n"); }
     flags = DRAWABLE | ANIMATABLE | MOVABLE | COLLIDABLE | THINKABLE;
     pos = vec2f{0,0};
     // Init the sprites:
@@ -61,9 +67,9 @@ void ent_scenery::init() {
     pos = vec2f{0,0};
     num_sprites = NUM_SCENERY_SPRITES;
     sprites[SCENERY_SPRITE].anim = sand;
-}//--------------------------------------------------------------------------------------------
+}//==========================================================================================//
 
-//--------------------------------------------------------------------- Update an entity for the next frame.
+//=======================================================// Update an entity for the next frame. //
 void ent_player::think() {
     //data[p_sprite_gun_anim].anim.rotation = mouse_angle;
     /*
@@ -77,12 +83,13 @@ void ent_player::think() {
     */
 }
 void ent_scenery::think() {}
+//==============================================================================================//
 
-//--------------------------- Entity management functions. (spawning, despawning, getting next ent in array, ect.)
-#undef f
-#define f(x) #x, 
-// This macro formats the ENTITY_TYPES_LIST into an array of strings.
+//======================// Entity management functions. (spawn, despawn, get_next, ect.) //
+// X macro for ENTITY_TYPES_LIST:
+#define expand(x) #x, 
 char entity_type_names[NUM_ENT_TYPES][MAX_ENTITY_TYPE_NAME_LEN] = { ENTITY_TYPES_LIST };
+#undef expand
 // Return the name for a given entity type.
 char* get_type_name(int type) {
     return entity_type_names[type];
@@ -91,11 +98,10 @@ char* get_type_name(int type) {
 int get_ent_size(int type) {
     int size = -1;
     switch (type) {
-    // This macro formats the entity types list into a series of case statements.
-    // Each case statement sets the appropriate size for that entity type.
-    #undef f
-    #define f(x) case x##_type:  size = sizeof(struct ent_##x); break; 
+    // X macro for ENTITY_TYPES_LIST:
+    #define expand(x) case x##_type:  size = sizeof(struct ent_##x); break; 
     ENTITY_TYPES_LIST
+    #undef expand
     default:
         printf("*** Unknown entity type in get_ent_size()\n");
         exit(-1);
@@ -168,14 +174,13 @@ void* spawn_ent(int type, char* array, int array_len) {
     array[i] = HEADER_BYTE;
     new_entity->type = type;
     new_entity->size = required_space;
-    new_entity->handle = claim_handle((struct ent_basics*)&array[i]);
+    new_entity->h = claim_handle((struct ent_basics*)&array[i]);
     // Initialize the entity.
     switch (type) {
-        // This macro formats the entity types list into a series of case statements.
-        // Each case statement calls the appropriate init() function for the entity type.
-        #undef f
-        #define f(x) case x##_type:  ((struct ent_##x *)(&array[i])) -> init(); break; 
+        // X macro for ENTITY_TYPES_LIST:
+        #define expand(x) case x##_type:  ((struct ent_##x *)(&array[i])) -> init(); break; 
         ENTITY_TYPES_LIST
+        #undef expand
         default:
             printf("*** spawn_ent() error: invalid entity type: %d", type);
             exit(-1);
@@ -183,10 +188,11 @@ void* spawn_ent(int type, char* array, int array_len) {
     return &array[i];
 }
 // Remove an entity from an entity segment array. TODO ent-specific cleanup TODO
-void despawn_ent(void* ent) {
-    int size = ((struct ent_basics*)ent)->size;
+void despawn_ent(struct ent_basics* ent) {
+    unclaim_handle(ent->h);
+    int size = ent->size;
     if (DEBUG_ENTS) { printf("Despawning ent of size %d\n", size); }
-    memset(ent, 0, size*sizeof(char));
+    memset((void*)ent, 0, size*sizeof(char));
 }
 // Run the think() function for each entitiy in a segment array.
 void think_all_ents(char* array, int array_len) {
@@ -202,11 +208,10 @@ void think_all_ents(char* array, int array_len) {
         type = ((struct ent_basics*)&array[i])->type;
         //printf("Thinking entity type: '%s' at index %d.\n", get_type_name(type), i);
         switch (type) {
-            // This macro formats the entity types list into a series of case statements.
-            // Each case statement calls the appropriate think() function for the entity type.
-            #undef f
-            #define f(x) case x##_type:  ((struct ent_##x *)(&array[i])) -> think(); break; 
+            // X macro for ENTITY_TYPES_LIST:
+            #define expand(x) case x##_type:  ((struct ent_##x *)(&array[i])) -> think(); break; 
             ENTITY_TYPES_LIST
+            #undef expand
             default:
                 printf("*** entity at %d not recognized in think_all_ents().\n",  i);
                 exit(-1);
@@ -216,13 +221,10 @@ void think_all_ents(char* array, int array_len) {
 }
 // Update an ent's position based on its velocity:
 void move_ent(struct ent_basics* e) {
-    vec2f v = e->vel;
-    vec2f p = e->pos;
-    e->pos = p + v*dt;
+    e->pos = e->pos + (e->vel * dt);
     // Apply friction:
-    float friction = v.vlen();
-    if (friction < 0) { friction = 0; }
-    friction = (friction * friction) / 10000; //TODO clean this up a lot
-    e->vel = v - (v.normalized() * friction);
+    float friction = e->vel.vlen();
+    friction = (friction * friction) / 10000;
+    e->vel = e->vel - (e->vel.normalized() * friction);
     if (e->vel.vlen() < 5) { e->vel = vec2f{0,0}; } // Minimum vel.
-}
+}//==========================================================================================//

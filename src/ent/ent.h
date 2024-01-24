@@ -29,14 +29,28 @@ ENTITY UPDATE CYCLE:
         All of the entity's sprites.
 */
 
+//======================================================================// ENTITY_TYPES_LIST //
+#define MAX_ENTITY_TYPE_NAME_LEN 32
+// This is an X macro. Redefine expand() to change how the list expands.
+#define ENTITY_TYPES_LIST \
+    expand(player) \
+    expand(scenery)
+//===========================================================================================//
+enum entity_types { // Using the X macro to get an enum:
+    #define expand(name) name##_type, 
+    ENTITY_TYPES_LIST
+    #undef expand
+    NUM_ENT_TYPES
+};
+
 //================================================= Required components of every entity.
-#define handle_index int16_t
+typedef int16_t handle;
 #define ENT_BASICS       \
     char header_byte;    \
     uint8_t type;        \
     uint8_t num_sprites; \
     uint16_t size;       \
-    handle_index handle; \
+    handle h;            \
     int flags;           \
     vec2f pos;           \
     vec2f vel;           \
@@ -59,16 +73,16 @@ struct sprite {
 
 
 //==== HANDLE ========================================================= HANDLE
-struct handle {
+struct handle_info {
     struct ent_basics* ent; // Entity who owns this handle.
     int16_t copies;         // Num ents using this handle.
     bool claimed;           // Whether the entity is marked for deletion.
 };
 #define NUM_HANDLES 2048
-extern struct handle handles[NUM_HANDLES];
-handle_index claim_handle(struct ent_basics* e);
-handle_index copy_handle(handle_index i);
-struct ent_basics* get_ent(handle_index i);
+extern struct handle_info handles[NUM_HANDLES];
+handle claim_handle(struct ent_basics* e);
+handle copy_handle(handle i);
+struct ent_basics* get_ent(handle i);
 //-----------------------------------------------------------------------------
 
 
@@ -101,41 +115,16 @@ struct ent_scenery {
     void think();
 };
 
-// ENTITY_TYPES_LIST is an expansion macro
-// used to generate an array of type names in ent.cpp (and the enum below). ;;
-#define MAX_ENTITY_TYPE_NAME_LEN 32
-#define ENTITY_TYPES_LIST \
-    f(player) \
-    f(scenery)
-#undef f
-#define f(x) x##_type, 
-enum entity_types {
-    ENTITY_TYPES_LIST
-    NUM_ENT_TYPES
-};
-
-
-/*
-enum scenery_segments {/////////////////// scenery
-    scenery_end_of_basics=basic_ent_size-1,
-        // Sprites:
-        scenery_sprite_pos, scenery_sprite_anim, scenery_sprite_flags,
-        scenery_end_of_sprites,
-    more_scenery_stuff=scenery_end_of_sprites,
-    scenery_size
-};
-*/
-
-//--------------------------------------------------------------- Generic entity functions.
+//============================================================// Generic entity functions. //
 void* spawn_ent(int type, char* array, int array_len);
-void despawn_ent(void* ent);
+void despawn_ent(struct ent_basics* ent);
 void think_all_ents(char* array, int array_len);
 char* get_type_name(int type);
 int get_ent_size(int type);
 int get_first_ent(char* array, int array_len);
 int get_next_ent(int i, char* array, int array_len);
 void move_ent(struct ent_basics* ent);
-//-----------------------------------------------------------------------------------------
+//=========================================================================================//
 
 
 

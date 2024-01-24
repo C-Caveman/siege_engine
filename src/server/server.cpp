@@ -167,11 +167,6 @@ int main() {
     }
     // --------------------------------------------------------------------------- Spawn some entities.
     ent_player* p = (struct ent_player*)spawn_ent(player_type, entity_bytes_array, ENTITY_BYTES_ARRAY);
-    printf("    p->handle:%d\n    get_ent(p->handle)->header_byte:%c\n    type:'%s'\n",
-           p->handle,
-           get_ent(p->handle)->header_byte,
-           get_type_name(get_ent(p->handle)->type)
-           );
     p->pos = vec2f{RSIZE,RSIZE};
     player_client.player = (struct ent_player*)p;
     ent_scenery* s = (ent_scenery*)spawn_ent(scenery_type, entity_bytes_array, ENTITY_BYTES_ARRAY);
@@ -184,7 +179,7 @@ int main() {
         last_frame_end = SDL_GetTicks();
         track_fps();
         //
-        // handle client inputs and movement
+        // client inputs and movement
         //
         client_input(&player_client);
         player_client.update_player_entity(); // Apply client inputs to the player entity.

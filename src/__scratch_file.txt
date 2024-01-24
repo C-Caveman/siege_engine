@@ -24,7 +24,7 @@ for (i=0; i<CHUNK_WIDTH; i++) {
 
 // ENTITY HANDLES -------------------------------------------------------------;;
 typedef struct handle {
-    int16_t i,     // Segment index.
+    int16_t i,     // Index in entity byte array.
     int16_t users, // Num ents using this handle.
     int alive      // Whether the entity is marked for deletion.
 };

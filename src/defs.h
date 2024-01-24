@@ -5,6 +5,7 @@
 // Debug flags:
 #define DEBUG_ENTS 0
 #define DEBUG_ENT_SPAWNING 0
+#define DEBUG_ENT_HANDLES 1
 #define DEBUG_GRAPHICS 0
 #define DEBUG_GRAPHICS_LOADING 0
 
