@@ -10,7 +10,7 @@
 #define RSIZE 80    // diameter of rectangular entities
 
 /*
-------------------------------------------------------------------- ENTITY STRUCTURE
+=================================================================== ENTITY STRUCTURE
     1: ENT_BASICS
     2: struct sprite sprites[NUM_SPRITES_THIS_ENT_HAS]
     3: <your vars here>
@@ -29,21 +29,23 @@ ENTITY UPDATE CYCLE:
         All of the entity's sprites.
 */
 
-// Required components of every entity <================================================
-#define ENT_BASICS      \
-    char header_byte;   \
-    uint8_t type;       \
-    uint8_t num_sprites;\
-    uint16_t size;      \
-    uint16_t handle;    \
-    int flags;          \
-    vec2f pos;          \
-    vec2f vel;          \
-    vec2f dir;          \
-    vec2i chunk;        \
+//================================================= Required components of every entity.
+#define handle_index int16_t
+#define ENT_BASICS       \
+    char header_byte;    \
+    uint8_t type;        \
+    uint8_t num_sprites; \
+    uint16_t size;       \
+    handle_index handle; \
+    int flags;           \
+    vec2f pos;           \
+    vec2f vel;           \
+    vec2f dir;           \
+    vec2i chunk;         \
     int health;
-struct ent_basics { ENT_BASICS }; // ====================================================
+struct ent_basics { ENT_BASICS };
 enum ent_flags {DRAWABLE, ANIMATABLE, MOVABLE, COLLIDABLE, THINKABLE, };
+//--------------------------------------------------------------------------------------
 enum sprite_flags {LOOPING, PAUSED, };
 #define HEADER_BYTE 'H'
 struct sprite {
@@ -54,6 +56,21 @@ struct sprite {
     vec2f pos;           // Offset from the ent origin
     float rotation;
 };
+
+
+//==== HANDLE ========================================================= HANDLE
+struct handle {
+    struct ent_basics* ent; // Entity who owns this handle.
+    int16_t copies;         // Num ents using this handle.
+    bool claimed;           // Whether the entity is marked for deletion.
+};
+#define NUM_HANDLES 2048
+extern struct handle handles[NUM_HANDLES];
+handle_index claim_handle(struct ent_basics* e);
+handle_index copy_handle(handle_index i);
+struct ent_basics* get_ent(handle_index i);
+//-----------------------------------------------------------------------------
+
 
 //------------------------------------------------------------------- Example entity.
 enum example_sprites {FIRST_SPRITE, SECOND_SPRITE, NUM_EXAMPLE_SPRITES};

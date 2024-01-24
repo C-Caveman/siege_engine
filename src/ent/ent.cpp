@@ -6,11 +6,43 @@ extern volatile int mouse_x;
 extern volatile int mouse_y;
 extern float dt; // Delta time.
 
-// Used to give each spawned entity a unique id number.
-uint16_t unique_entity_id = 0;
+//=============================================================// ENTITY HANDLES //
+// Handle 0 is off-limits.
+struct handle handles[NUM_HANDLES] = { {nullptr,1,false}, {} };
+handle_index claim_handle(struct ent_basics* e) { // Give a handle to an entity.
+    // Iterate to first available handle.
+    handle_index h = -1;
+    for (int i=0; i<NUM_HANDLES; i++) {
+        if (handles[i].copies == 0) {h=i; break;}
+    }
+    if (h == -1) { printf("\n*** Ran out of handles!!!\n"); exit(-1); }
+    handles[h].copies = 1;
+    handles[h].ent = e;
+    handles[h].claimed = 1;
+    printf("Handle %d claimed by a '%s' ent.\n", h, get_type_name(handles[h].ent->type));
+    return h;
+}
+handle_index copy_handle(handle_index i) { // Copy another entity's handle.
+    if (i == 0) { printf("copy_handle() called on handle 0!\n"); exit(-1); }
+    if (handles[i].claimed == true)
+        { handles[i].copies++; return i; }
+    else
+        { return -1; }
+}
+struct ent_basics* get_ent(handle_index i) {
+    if (i == 0) { printf("get_ent() called on handle 0!\n"); exit(-1); }
+    if (handles[i].claimed == 1)
+        { return handles[i].ent; }
+    else
+        { handles[i].copies--; return nullptr; }
+}
+void release_handle(handle_index i) {
+    if (i == 0) { printf("release_handle() called on handle 0!\n"); exit(-1); }
+    handles[i].claimed = 0;
+    handles[i].copies--;
+}//----------------------------------------------------------------------------------
 
-//---------------------------------------- Initialize an entity (to the default values for its type).
-void ent_player::init() {
+void ent_player::init() { //======================================// Initialize an entity. //
     if (DEBUG_ENTS)
         printf("Player entity initializing!\n");
     flags = DRAWABLE | ANIMATABLE | MOVABLE | COLLIDABLE | THINKABLE;
@@ -29,7 +61,7 @@ void ent_scenery::init() {
     pos = vec2f{0,0};
     num_sprites = NUM_SCENERY_SPRITES;
     sprites[SCENERY_SPRITE].anim = sand;
-}
+}//--------------------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------- Update an entity for the next frame.
 void ent_player::think() {
@@ -136,8 +168,7 @@ void* spawn_ent(int type, char* array, int array_len) {
     array[i] = HEADER_BYTE;
     new_entity->type = type;
     new_entity->size = required_space;
-    new_entity->handle = unique_entity_id; // TODO add a handle here!
-    unique_entity_id += 1; // Make sure the next entity id number is different. TODO ensure unique
+    new_entity->handle = claim_handle((struct ent_basics*)&array[i]);
     // Initialize the entity.
     switch (type) {
         // This macro formats the entity types list into a series of case statements.

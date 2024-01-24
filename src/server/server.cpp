@@ -5,7 +5,7 @@
 #include <unistd.h> // testing memory leaks with sleep()
 
 constexpr int ENTITY_BYTES_ARRAY = 8192;
-    char entity_bytes_array[ENTITY_BYTES_ARRAY] = {0};
+char entity_bytes_array[ENTITY_BYTES_ARRAY] = {0};
 
 // entity and client data are in these arrays
 int num_entities = 0;
@@ -165,15 +165,19 @@ int main() {
         chunk_0->set_wall(x,0, wall_steel,wall_steel_side,16);
         chunk_0->set_wall(x,CHUNK_WIDTH-1, wall_steel,wall_steel_side,16);
     }
+    // --------------------------------------------------------------------------- Spawn some entities.
     ent_player* p = (struct ent_player*)spawn_ent(player_type, entity_bytes_array, ENTITY_BYTES_ARRAY);
+    printf("    p->handle:%d\n    get_ent(p->handle)->header_byte:%c\n    type:'%s'\n",
+           p->handle,
+           get_ent(p->handle)->header_byte,
+           get_type_name(get_ent(p->handle)->type)
+           );
     p->pos = vec2f{RSIZE,RSIZE};
     player_client.player = (struct ent_player*)p;
-    
-    //
     ent_scenery* s = (ent_scenery*)spawn_ent(scenery_type, entity_bytes_array, ENTITY_BYTES_ARRAY);
     s->pos = vec2f{RSIZE*1.5,RSIZE*1.5};
     printf("*Type name: '%s'\n", get_type_name(s->type));
-    //
+    // --------------------------------------------------------------------------- Game loop.
     while (running) {
         dt = (SDL_GetTicks() - last_frame_end) / 1000;
         anim_tick = SDL_GetTicks() % 256; // 8-bit timestamp for sprites to know when to go to the next frame.
