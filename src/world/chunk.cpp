@@ -1,8 +1,6 @@
 // defines tiles, groups of tiles, ect.
 #include "chunk.h" 
 
-struct tile (*chunk::get_tiles())[CHUNK_WIDTH] {return tiles;}
-
 void chunk::set_floors(int floor_anim) {
     for (int i=0; i<CHUNK_WIDTH; i++) {
         for (int j=0; j<CHUNK_WIDTH; j++)

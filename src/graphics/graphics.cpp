@@ -369,176 +369,49 @@ void draw_chunk(vec2f camera_pos, vec2f camera_center, chunk* chunk) {
     // Convert the camera_pos to a chunk_pos:
     vec2i chunk_pos = vec2i{(int)(camera_center.x/RSIZE+0.5), (int)(camera_center.y/RSIZE+0.5)};
     // Get a pointer to the chunk's tile array.
-    struct tile (*tiles)[CHUNK_WIDTH] = chunk->get_tiles();
+    struct tile (*tiles)[CHUNK_WIDTH] = chunk->tiles;
     //SDL_Rect tile_pos;
     SDL_Rect render_pos;
     //SDL_Rect offset;
     render_pos.x = 0;
     render_pos.y = 0;
     render_pos.w = render_pos.h = RSIZE;
-    
-    
-    // Draw all the floor:
-    for (int y=0; y<CHUNK_WIDTH; y++) {
+    for (int y=0; y<CHUNK_WIDTH; y++) { //----------------------------------- Draw all the floor.
         for (int x=0; x<CHUNK_WIDTH; x++) {
             draw_tile_floor(tiles, x, y, camera_pos);
         }
     }
-    
-    
-    
-    //constexpr int CHUNK_MIDDLE = CHUNK_WIDTH/2;
     int middle_x = chunk_pos.x;
     int middle_y = chunk_pos.y;
     for (int ring=CHUNK_WIDTH*2; ring>-1; ring--) {
-        // Draw a diamond loop of tiles.
+        //------------------------------------------------------------------- Draw a diamond loop of tiles.
         int spread = 0; // Half the width of a given slice of the diamond.
         for (int row=middle_y-ring; row<=middle_y+ring; row++) {
-            // Diverge from the center column.
-            draw_tile_wall_side(tiles, middle_x-spread, row, camera_pos, camera_center);
+            draw_tile_wall_side(tiles, middle_x-spread, row, camera_pos, camera_center); //-- Left side.
             draw_tile_wall_top(tiles, middle_x-spread, row, camera_pos, camera_center);
-            //draw_tile_floor(tiles, x, y, camera_pos);
-            draw_tile_wall_side(tiles, middle_x+spread, row, camera_pos, camera_center);
+            draw_tile_wall_side(tiles, middle_x+spread, row, camera_pos, camera_center); //-- Right side.
             draw_tile_wall_top(tiles, middle_x+spread, row, camera_pos, camera_center);
-            if (row < middle_y)
+            for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //-------------------------------- Draw the entities here.
+                if (    row > -1 && row < CHUNK_WIDTH &&
+                        (middle_x-spread) > -1 && (middle_x-spread) < CHUNK_WIDTH &&
+                        chunk->tiles[row][middle_x-spread].ents[i] != 0) {
+                    struct ent_basics* e = get_ent(chunk->tiles[row][middle_x-spread].ents[i]);
+                    if (e != nullptr) { draw_ent_sprites(camera_pos, e); }
+                }
+                if (    row > -1 && row < CHUNK_WIDTH &&
+                        (middle_x+spread) > -1 && (middle_x+spread) < CHUNK_WIDTH &&
+                        chunk->tiles[row][middle_x+spread].ents[i] != 0) {
+                    struct ent_basics* e = get_ent(chunk->tiles[row][middle_x+spread].ents[i]);
+                    if (e != nullptr) { draw_ent_sprites(camera_pos, e); }
+                }
+            }
+            if (row < middle_y) //----- Diverge before reaching the middle row.
                 spread++;
             else
-                spread--; // Converge after reaching the middle row.
+                spread--; //----------- Converge after reaching the middle row.
         }
     }
 }
-void draw_chunk_old(vec2f camera_pos, vec2f camera_center, chunk* chunk) {
-    // Convert the camera_pos to a chunk_pos:
-    vec2i chunk_pos = vec2i{(int)(camera_center.x/RSIZE+0.5), (int)(camera_center.y/RSIZE+0.5)};
-    // Get a pointer to the chunk's tile array.
-    struct tile (*tiles)[CHUNK_WIDTH] = chunk->get_tiles();
-    //SDL_Rect tile_pos;
-    SDL_Rect render_pos;
-    //SDL_Rect offset;
-    render_pos.x = 0;
-    render_pos.y = 0;
-    render_pos.w = render_pos.h = RSIZE;
-    /* Tiles on the screen are split like this:
-
-      [Top Left]         [Top Right]
-                xxxx|xxxx
-                xxxx|xxxx
-                xxxx|xxxx
-  [Middle Left] ----+---- [Middle Right]
-                xxxx|xxxx
-                xxxx|xxxx
-                xxxx|xxxx
-   [Bottom Left]         [Bottom Right]
-
-      ==================================
-      Draw order for [Top Left]:
-      x...    .x..    ..x.    ...x    ....    ....
-      .... -> x... -> .x.. -> ..x. -> ...x -> ....
-      ....    ....    x...    .x..    ..x.    ...x
-    */
-    // Draw all the floor:
-    for (int y=0; y<CHUNK_WIDTH; y++) {
-        for (int x=0; x<CHUNK_WIDTH; x++) {
-            draw_tile_floor(tiles, x, y, camera_pos);
-        }
-    }
-    //
-    // Draw from the outer edges, work inwards.
-    //
-    // Top:
-    for (int y=0; y<chunk_pos.y; y++) {
-        // Left:
-        for (int x=0; x<chunk_pos.x; x++) {
-            draw_tile_wall_side(tiles, x, y, camera_pos, camera_center);
-        }
-        // Right:
-        for (int x=CHUNK_WIDTH-1; x>chunk_pos.x; x--) {
-            draw_tile_wall_side(tiles, x, y, camera_pos, camera_center);
-        }
-    }
-    // Bottom:
-    for (int y=CHUNK_WIDTH-1; y>chunk_pos.y; y--) {
-        // Left:
-        for (int x=0; x<chunk_pos.x; x++) {
-            draw_tile_wall_side(tiles, x, y, camera_pos, camera_center);
-        }
-        // Right:
-        for (int x=CHUNK_WIDTH-1; x>chunk_pos.x; x--) {
-            draw_tile_wall_side(tiles, x, y, camera_pos, camera_center);
-        }
-    }
-    // Center left:
-    for (int x=0; x<chunk_pos.x; x++) {
-        draw_tile_wall_side(tiles, x, chunk_pos.y, camera_pos, camera_center);
-    }
-    // Center right:
-    for (int x=CHUNK_WIDTH-1; x>chunk_pos.x; x--) {
-        draw_tile_wall_side(tiles, x, chunk_pos.y, camera_pos, camera_center);
-    }
-    // Center top:
-    for (int y=0; y<chunk_pos.y; y++) {
-        draw_tile_wall_side(tiles, chunk_pos.x, y, camera_pos, camera_center);
-    }
-    // Center bottom:
-    for (int y=CHUNK_WIDTH-1; y>chunk_pos.y; y--) {
-        draw_tile_wall_side(tiles, chunk_pos.x, y, camera_pos, camera_center);
-    }
-    // Center:
-    draw_tile_wall_side(tiles, chunk_pos.x, chunk_pos.y, camera_pos, camera_center);
-    
-    
-    //
-    // Draw from the outer edges, work inwards.
-    //
-    // Top:
-    for (int y=0; y<chunk_pos.y; y++) {
-        // Left:
-        for (int x=0; x<chunk_pos.x; x++) {
-            draw_tile_wall_top(tiles, x, y, camera_pos, camera_center);
-        }
-        // Right:
-        for (int x=CHUNK_WIDTH-1; x>chunk_pos.x; x--) {
-            draw_tile_wall_top(tiles, x, y, camera_pos, camera_center);
-        }
-    }
-    // Bottom:
-    for (int y=CHUNK_WIDTH-1; y>chunk_pos.y; y--) {
-        // Left:
-        for (int x=0; x<chunk_pos.x; x++) {
-            draw_tile_wall_top(tiles, x, y, camera_pos, camera_center);
-        }
-        // Right:
-        for (int x=CHUNK_WIDTH-1; x>chunk_pos.x; x--) {
-            draw_tile_wall_top(tiles, x, y, camera_pos, camera_center);
-        }
-    }
-    // Center left:
-    for (int x=0; x<chunk_pos.x; x++) {
-        draw_tile_wall_top(tiles, x, chunk_pos.y, camera_pos, camera_center);
-    }
-    // Center right:
-    for (int x=CHUNK_WIDTH-1; x>chunk_pos.x; x--) {
-        draw_tile_wall_top(tiles, x, chunk_pos.y, camera_pos, camera_center);
-    }
-    // Center top:
-    for (int y=0; y<chunk_pos.y; y++) {
-        draw_tile_wall_top(tiles, chunk_pos.x, y, camera_pos, camera_center);
-    }
-    // Center bottom:
-    for (int y=CHUNK_WIDTH-1; y>chunk_pos.y; y--) {
-        draw_tile_wall_top(tiles, chunk_pos.x, y, camera_pos, camera_center);
-    }
-    // Center:
-    draw_tile_wall_top(tiles, chunk_pos.x, chunk_pos.y, camera_pos, camera_center);
-    // Draw the tops of the walls:
-    for (int y=0; y<CHUNK_WIDTH; y++) {
-        for (int x=0; x<CHUNK_WIDTH; x++) {
-            draw_tile_wall_top(tiles, x, y, camera_pos, camera_center);
-        }
-    }
-}
-
-
 void cleanup_graphics() {
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

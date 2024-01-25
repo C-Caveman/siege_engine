@@ -10,9 +10,7 @@
 #include "../client/client.h"
 #include "../ent/actions.h"
 
-//TODO set up data structures for handling server data
-extern int num_entities;
-extern struct ent entities[MAX_ENTS];
+
 extern int num_clients;
 extern struct client clients[MAX_CLIENTS]; //TODO move server constants
 

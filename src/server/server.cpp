@@ -4,9 +4,6 @@
 #include "server.h"
 #include <unistd.h> // testing memory leaks with sleep()
 
-constexpr int ENTITY_BYTES_ARRAY = 8192;
-char entity_bytes_array[ENTITY_BYTES_ARRAY] = {0};
-
 // entity and client data are in these arrays
 int num_entities = 0;
 int num_clients = 0;
@@ -140,22 +137,54 @@ void collide_wall(struct ent_player* p, chunk* c) {
     }
 }
 
+void move_all_ents(char* array, int array_len) {
+    struct ent_basics* e;
+    for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
+        if (array[i] != HEADER_BYTE) {
+            if (DEBUG_ENTS) { printf("*** Invalid index given by get_next_ent() in move_all_ents()\n"); }
+            break;
+        }
+        //---------------------------------- move the entity, record its position in the chunk
+        e = (struct ent_basics*)&array[i];
+        vec2i old_tile = e->tile; //--------------------------------------------------------------- Tile it was on. TODO record the old/new chunk
+        move_ent(e);
+        vec2f scaled_pos = e->pos / RSIZE;
+        vec2i new_tile =
+            vec2i{ (int)std::floor(scaled_pos.x + 0.5), (int)std::floor(scaled_pos.y + 0.5) }; //-- Tile it's on now.
+        e->tile = new_tile;
+        //----------------------------------------------------------------------------------------- Different tile? Valid old tile?
+        if ( (new_tile != old_tile) &&
+              old_tile.x > -1 && old_tile.x < CHUNK_WIDTH && old_tile.y > -1 && old_tile.y < CHUNK_WIDTH
+        ) {
+            if (DEBUG_ENT_HANDLES) {
+                std::cout << old_tile << " -> " << new_tile << " '" << get_type_name(e->type) << "' \n";
+                for (int i=0; i<MAX_ENTS_PER_TILE; i++)
+                    { printf("    Handle %d = %d\n", i, main_world->chunks[e->chunk.y][e->chunk.x].tiles[old_tile.y][old_tile.x].ents[i]); }
+                printf("\n");
+            }
+            for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
+                if (main_world->chunks[e->chunk.y][e->chunk.x].tiles[old_tile.y][old_tile.x].ents[i] == e->h) //---- Remove handle from old tile.
+                    { main_world->chunks[e->chunk.y][e->chunk.x].tiles[old_tile.y][old_tile.x].ents[i] = 0; break; }
+            }
+            for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
+                if (main_world->chunks[e->chunk.y][e->chunk.x].tiles[new_tile.y][new_tile.x].ents[i] == 0) //------ Store handle in currrent tile.
+                    { main_world->chunks[e->chunk.y][e->chunk.x].tiles[new_tile.y][new_tile.x].ents[i] = e->h; break; }
+            }
+        }
+    }
+}
+
 int main() {
     server_config();
-    
-    
-    //
-    // start the game
-    //
+    //===========================================================// Initialize everything. //
     running = 1;
     init_graphics();
+    //SDL_RenderSetScale(renderer, 0.5f, 0.5f); //------------------- Zoom in/out TODO properly center/scale everything TODO
     init_audio();
-    
-    //
-    // build an example world of entities
-    //
-    world test_world;
-    chunk* chunk_0 = test_world.get_chunk(0,0);
+    struct world test_world;
+    main_world = &test_world;
+    //======================================================================================// Place tiles. //
+    chunk* chunk_0 = &test_world.chunks[0][0];
     chunk_0->set_floors(floor_test);
     for (int y=0; y<CHUNK_WIDTH; y++) {
         chunk_0->set_wall(0,y, wall_steel,wall_steel_side,16);
@@ -164,50 +193,39 @@ int main() {
     for (int x=0; x<CHUNK_WIDTH; x++) {
         chunk_0->set_wall(x,0, wall_steel,wall_steel_side,16);
         chunk_0->set_wall(x,CHUNK_WIDTH-1, wall_steel,wall_steel_side,16);
-    }
-    // --------------------------------------------------------------------------- Spawn some entities.
-    ent_player* p = (struct ent_player*)spawn_ent(player_type, entity_bytes_array, ENTITY_BYTES_ARRAY);
+    } //====================================================================================// Spawn entities. //
+    ent_player* p = (struct ent_player*)spawn_ent(player_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
     p->pos = vec2f{RSIZE,RSIZE};
     player_client.player = (struct ent_player*)p;
-    ent_scenery* s = (ent_scenery*)spawn_ent(scenery_type, entity_bytes_array, ENTITY_BYTES_ARRAY);
+    ent_scenery* s = (ent_scenery*)spawn_ent(scenery_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
     s->pos = vec2f{RSIZE*1.5,RSIZE*1.5};
     printf("*Type name: '%s'\n", get_type_name(s->type));
-    // --------------------------------------------------------------------------- Game loop.
-    while (running) {
+    while (running) { //=====================================================================================// GAME LOOP //
         dt = (SDL_GetTicks() - last_frame_end) / 1000;
         anim_tick = SDL_GetTicks() % 256; // 8-bit timestamp for sprites to know when to go to the next frame.
         last_frame_end = SDL_GetTicks();
         track_fps();
-        //
-        // client inputs and movement
-        //
+        //=====================================================================// Client inputs and movement. //
         client_input(&player_client);
         player_client.update_player_entity(); // Apply client inputs to the player entity.
         collide_wall(p, chunk_0);
-        //
-        // update the player's camera position
-        //
-        player_client.camera_pos = vec2f {p->pos.x - window_x/2 + RSIZE/2, p->pos.y - window_y/2 + RSIZE/2};
-        player_client.camera_center = vec2f {p->pos.x, p->pos.y};
-
+        //=======================================================================// Update the player's camera position. //
+        player_client.camera_pos =
+            vec2f {p->pos.x - window_x/2 + RSIZE/2, p->pos.y - window_y/2 + RSIZE/2};
+        player_client.camera_center =
+            vec2f {p->pos.x, p->pos.y};
+        //=======================================================================// Building/Destroying tiles. //
         if (player_client.attacking)
             destroy_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
         if (player_client.building)
             build_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
-
-        //
-        // Draw the environment:
-        //
+        //=========================================================================// Draw the environment. //
         SDL_RenderClear(renderer);
-        draw_chunk(player_client.camera_pos, player_client.camera_center, test_world.get_chunk(0,0));
-        //
-        // Update and draw the entities:
-        //
-        think_all_ents(entity_bytes_array, ENTITY_BYTES_ARRAY);
-        
-        draw_all_ents(player_client.camera_pos, entity_bytes_array, ENTITY_BYTES_ARRAY);
-        move_ent((struct ent_basics*) p);
-
+        draw_chunk(player_client.camera_pos, player_client.camera_center, &test_world.chunks[0][0]);
+        //===========================================================================// Update and draw the entities. //
+        think_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+        //draw_all_ents(player_client.camera_pos, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+        move_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         present_frame(); // Put the frame on the screen:
     }
     printf("Server was running for %d seconds.\n", SDL_GetTicks() / 1000);

@@ -5,18 +5,6 @@
 // Vector of 2 floats:
 //
 
-//vec2f::vec2f() : x(0), y(0) {}
-//vec2f::vec2f(float new_x, float new_y) : x(new_x), y(new_y) {}
-//vec2f::~vec2f() {}
-
-float vec2f::get_x() {return x;}
-float vec2f::get_y() {return y;}
-void vec2f::set_x(float new_val) {x = new_val;}
-void vec2f::set_y(float new_val) {y = new_val;}
-
-float vec2f::is_cardinal() {
-    return (this->x && this->y);
-}
 float vec2f::vlen() {
     float length = sqrt(x*x + y*y);
     if (this->x && this->y && length > 2)
@@ -114,6 +102,12 @@ bool vec2f::operator == (const vec2f& v) {
     else
         return false;
 }
+bool vec2f::operator != (const vec2f& v) {
+    if (x != v.x || y != v.y)
+        return true;
+    else
+        return false;
+}
 ostream& operator << (ostream& os, const vec2f& v)
 {
     os << "(" << v.x << ", " << v.y << ")";
@@ -155,6 +149,12 @@ void vec2i::operator = (const vec2i& v) {
 }
 bool vec2i::operator == (const vec2i& v) {
     if (x == v.x && y == v.y)
+        return true;
+    else
+        return false;
+}
+bool vec2i::operator != (const vec2i& v) {
+    if (x != v.x || y != v.y)
         return true;
     else
         return false;

@@ -87,7 +87,7 @@ void ent_scenery::think() {}
 
 //======================// Entity management functions. (spawn, despawn, get_next, ect.) //
 // X macro for ENTITY_TYPES_LIST:
-#define expand(x) #x, 
+#define expand(name) #name, 
 char entity_type_names[NUM_ENT_TYPES][MAX_ENTITY_TYPE_NAME_LEN] = { ENTITY_TYPES_LIST };
 #undef expand
 // Return the name for a given entity type.
@@ -99,7 +99,7 @@ int get_ent_size(int type) {
     int size = -1;
     switch (type) {
     // X macro for ENTITY_TYPES_LIST:
-    #define expand(x) case x##_type:  size = sizeof(struct ent_##x); break; 
+    #define expand(name) case name##_type:  size = sizeof(struct ent_##name); break; 
     ENTITY_TYPES_LIST
     #undef expand
     default:
@@ -110,17 +110,14 @@ int get_ent_size(int type) {
 }
 // Return index of the next entity's first byte. Returns -1 if there are no more entities.
 int get_next_ent(int i, char* array, int array_len) {
-    // Is byte i the head of an entity?
     if (array[i] == HEADER_BYTE) {
         int ent_size = ((struct ent_basics*)&array[i])->size;
         i += ent_size; // Skip past this entity.
         if (DEBUG_ENTS) { printf("get_next_ent() entity at %d. Size is %d.\n", i, ent_size); }
     }
-    // Increment i until reaching the next entity:
-    while (i < array_len && array[i] != HEADER_BYTE) {
-        //if (array[i] != 0) { printf("Found %c\n", array[i]); exit(-1); }
-        if (DEBUG_ENTS) { printf("get_next_ent() skipping past %d.\n", i); }
+    while (array[i] != HEADER_BYTE && i < array_len) { // Increment i until reaching the next entity.
         i += 1;
+        if (DEBUG_ENTS) { printf("get_next_ent() skipping past %d.\n", i); }
     }
     if (i >= array_len-1) // Out of bounds.
         i = -1;
@@ -178,7 +175,7 @@ void* spawn_ent(int type, char* array, int array_len) {
     // Initialize the entity.
     switch (type) {
         // X macro for ENTITY_TYPES_LIST:
-        #define expand(x) case x##_type:  ((struct ent_##x *)(&array[i])) -> init(); break; 
+        #define expand(name) case name##_type:  ((struct ent_##name *)(&array[i])) -> init(); break; 
         ENTITY_TYPES_LIST
         #undef expand
         default:
@@ -197,9 +194,7 @@ void despawn_ent(struct ent_basics* ent) {
 // Run the think() function for each entitiy in a segment array.
 void think_all_ents(char* array, int array_len) {
     int type;
-    int i = 0;
-    i = get_first_ent(array, array_len);
-    while (i != -1) {
+    for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
         if (array[i] != HEADER_BYTE) {
             if (DEBUG_ENTS) { printf("*** Invalid index given by get_next_ent() in think_all_ents()\n"); }
             break;
@@ -209,18 +204,16 @@ void think_all_ents(char* array, int array_len) {
         //printf("Thinking entity type: '%s' at index %d.\n", get_type_name(type), i);
         switch (type) {
             // X macro for ENTITY_TYPES_LIST:
-            #define expand(x) case x##_type:  ((struct ent_##x *)(&array[i])) -> think(); break; 
+            #define expand(name) case name##_type:  ((struct ent_##name *)(&array[i])) -> think(); break; 
             ENTITY_TYPES_LIST
             #undef expand
             default:
                 printf("*** entity at %d not recognized in think_all_ents().\n",  i);
                 exit(-1);
         }
-        i = get_next_ent(i, array, array_len);
     }
 }
-// Update an ent's position based on its velocity:
-void move_ent(struct ent_basics* e) {
+void move_ent(struct ent_basics* e) { //------------ Update an ent's position based on its velocity:
     e->pos = e->pos + (e->vel * dt);
     // Apply friction:
     float friction = e->vel.vlen();
