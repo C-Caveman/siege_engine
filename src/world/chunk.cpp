@@ -1,5 +1,5 @@
 // defines tiles, groups of tiles, ect.
-#include "chunk.h" 
+#include "../defs.h" 
 
 void chunk::set_floors(int floor_anim) {
     for (int i=0; i<CHUNK_WIDTH; i++) {

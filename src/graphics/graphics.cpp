@@ -148,7 +148,7 @@ void init_graphics() {
     // initialize the window
     //
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
-        cout << "SDL init failed. " << SDL_GetError() << "\n";
+        std::cout << "SDL init failed. " << SDL_GetError() << "\n";
     // Set the logical resolution:
     //SDL_RenderSetLogicalSize(renderer, 1920, 1080);
     constexpr int displayIndex = 0;
@@ -160,14 +160,14 @@ void init_graphics() {
         window_x = window_size.w;
         window_y = window_size.h;
         if (SDL_CreateWindowAndRenderer(window_x, window_y, 0, &window, &renderer) != 0)
-            cout << "SDL window/renderer init failed" << SDL_GetError() << "\n";
+            std::cout << "SDL window/renderer init failed" << SDL_GetError() << "\n";
         printf("\nResolution:\n        %dx%d\n", window_size.w, window_size.h);
         SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
     }
     else {
         // Make a window with the configured size:
         if (SDL_CreateWindowAndRenderer(window_x, window_y, 0, &window, &renderer) != 0)
-            cout << "SDL window/renderer init failed" << SDL_GetError() << "\n";
+            std::cout << "SDL window/renderer init failed" << SDL_GetError() << "\n";
     }
     SDL_SetWindowTitle(window, "Hello SDL!");
     // set the framerate via the config
@@ -192,8 +192,8 @@ void track_fps() {
         last_sec = last_frame_end;
         fps = frame_count;
         frame_count = 0;
-        //cout << "One second has passed, fps = " << fps << "\n";
-        //cout << "Delta time was: " << dt << "\n";
+        //std::cout << "One second has passed, fps = " << fps << "\n";
+        //std::cout << "Delta time was: " << dt << "\n";
     }
 }
 // Animate and draw all sprites possesed by an entity. ;;

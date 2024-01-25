@@ -185,11 +185,15 @@ void* spawn_ent(int type, char* array, int array_len) {
     return &array[i];
 }
 // Remove an entity from an entity segment array. TODO ent-specific cleanup TODO
-void despawn_ent(struct ent_basics* ent) {
-    unclaim_handle(ent->h);
-    int size = ent->size;
+void despawn_ent(struct ent_basics* e) {
+    tile* old_tile = &main_world->chunks[e->chunk.y][e->chunk.x].tiles[e->tile.y][e->tile.x];
+    for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
+        if (old_tile->ents[i] == e->h) { old_tile->ents[i] = 0; } //---- Remove handle from old tile.
+    }
+    unclaim_handle(e->h);
+    int size = e->size;
     if (DEBUG_ENTS) { printf("Despawning ent of size %d\n", size); }
-    memset((void*)ent, 0, size*sizeof(char));
+    memset((void*)e, 0, size*sizeof(char));
 }
 // Run the think() function for each entitiy in a segment array.
 void think_all_ents(char* array, int array_len) {
@@ -220,4 +224,4 @@ void move_ent(struct ent_basics* e) { //------------ Update an ent's position ba
     friction = (friction * friction) / 10000;
     e->vel = e->vel - (e->vel.normalized() * friction);
     if (e->vel.vlen() < 5) { e->vel = vec2f{0,0}; } // Minimum vel.
-}//==========================================================================================//
+}

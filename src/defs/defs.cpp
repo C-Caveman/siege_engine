@@ -108,7 +108,7 @@ bool vec2f::operator != (const vec2f& v) {
     else
         return false;
 }
-ostream& operator << (ostream& os, const vec2f& v)
+std::ostream& operator << (std::ostream& os, const vec2f& v)
 {
     os << "(" << v.x << ", " << v.y << ")";
     return os;
@@ -159,7 +159,7 @@ bool vec2i::operator != (const vec2i& v) {
     else
         return false;
 }
-ostream& operator << (ostream& os, const vec2i& v)
+std::ostream& operator << (std::ostream& os, const vec2i& v)
 {
     os << "(" << v.x << ", " << v.y << ")";
     return os;

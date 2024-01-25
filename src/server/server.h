@@ -2,10 +2,10 @@
 #ifndef SERVER
 #define SERVER
 
+#include "../defs.h"
 #include "../audio/audio.h"
 #include "../graphics/graphics.h"
 #include "../input/input.h"
-#include "../world/world.h"
 #include "../config/config.h"
 #include "../client/client.h"
 #include "../ent/actions.h"
