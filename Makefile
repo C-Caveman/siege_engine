@@ -33,9 +33,9 @@ o/graphics.o: src/graphics/graphics.cpp src/graphics/graphics.h src/graphics/ani
 	${CC} ${CFLAGS} -c src/graphics/graphics.cpp -o o/graphics.o
 o/input.o: src/input/input.cpp src/input/input.h o/ent.o o/defs.o
 	${CC} ${CFLAGS} -c src/input/input.cpp -o o/input.o
-o/world.o: src/world/world.cpp src/world/world.h o/ent.o o/defs.o o/chunk.o
+o/world.o: src/world/world.cpp src/defs.h o/ent.o o/defs.o o/chunk.o
 	${CC} ${CFLAGS} -c src/world/world.cpp -o o/world.o
-o/chunk.o: src/world/chunk.cpp src/world/chunk.h
+o/chunk.o: src/world/chunk.cpp src/defs.h
 	${CC} ${CFLAGS} -c src/world/chunk.cpp -o o/chunk.o
 o/actions.o: src/ent/actions.cpp src/ent/actions.h o/defs.o src/server/server_constants.h
 	${CC} ${CFLAGS} -c src/ent/actions.cpp -o o/actions.o
