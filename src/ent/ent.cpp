@@ -167,15 +167,13 @@ void* spawn_ent(int type, char* array, int array_len) {
     }
     // Initialize the entity's header info:
     struct ent_basics* new_entity = (struct ent_basics*)&array[i];
-    //new_entity->header_byte = HEADER_BYTE;
-    array[i] = HEADER_BYTE;
+    new_entity->header_byte = HEADER_BYTE;
     new_entity->type = type;
     new_entity->size = required_space;
     new_entity->h = claim_handle((struct ent_basics*)&array[i]);
     // Initialize the entity.
     switch (type) {
-        // X macro for ENTITY_TYPES_LIST:
-        #define expand(name) case name##_type:  ((struct ent_##name *)(&array[i])) -> init(); break; 
+        #define expand(name) case name##_type:  ((struct ent_##name *)(&array[i]))->init(); break; //--- Init the entity.
         ENTITY_TYPES_LIST
         #undef expand
         default:
@@ -187,8 +185,9 @@ void* spawn_ent(int type, char* array, int array_len) {
 // Remove an entity from an entity segment array. TODO ent-specific cleanup TODO
 void despawn_ent(struct ent_basics* e) {
     tile* old_tile = &main_world->chunks[e->chunk.y][e->chunk.x].tiles[e->tile.y][e->tile.x];
+    bool old_tile_was_valid = (e->tile.x > -1 && e->tile.x < CHUNK_WIDTH && e->tile.y > -1 && e->tile.y < CHUNK_WIDTH);
     for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
-        if (old_tile->ents[i] == e->h) { old_tile->ents[i] = 0; } //---- Remove handle from old tile.
+        if (old_tile_was_valid && old_tile->ents[i] == e->h) { old_tile->ents[i] = 0; } //---- Remove handle from old tile.
     }
     unclaim_handle(e->h);
     int size = e->size;

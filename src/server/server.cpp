@@ -71,17 +71,14 @@ constexpr float MIN_SQUARE_DISTANCE = PLAYER_WIDTH/2 + RSIZE/2;
 void collide_wall(struct ent_player* p, chunk* c) {
     vec2f* position = &p->pos;
     vec2f centered_position = p->pos + vec2f{RSIZE/2, RSIZE/2};
-// Find the nearest tile corner: ----------------------------------------------------
     vec2f nearest_corner = centered_position;
     nearest_corner = nearest_corner / RSIZE;
-    nearest_corner = vec2f{std::floor(nearest_corner.x + 0.5f),std::floor(nearest_corner.y + 0.5f)};
+    nearest_corner = vec2f{std::floor(nearest_corner.x + 0.5f),std::floor(nearest_corner.y + 0.5f)}; //--- Nearest corner.
     nearest_corner = nearest_corner * RSIZE;
-// Find the four tiles touching that corner: ------------------------------------
-    vec2f tile_pos;
+    vec2f tile_pos;//------------------------------------------------------------------------------------- Adjacent tiles.
     vec2i tile_index;
     float sign_x = -1;
     float sign_y = -1;
-// Find all the collisions: ----------------------------------------------------
     bool collisions[2][2];
     int num_collisions = 0;
      for (int i=0; i<2; i++) {
@@ -101,8 +98,7 @@ void collide_wall(struct ent_player* p, chunk* c) {
     }
     bool is_vertical_pair = (num_collisions == 2) && (collisions[0][0] == collisions[1][0]);
     bool is_horizontal_pair = (num_collisions == 2) && (collisions[0][0] == collisions[0][1]);
-// Apply the collisions. ------------------------------------------------------------
-    for (int i=0; i<2; i++) {
+    for (int i=0; i<2; i++) { // -------------------------------------------------------------- Apply the collisions.
         for (int j=0; j<2; j++) {
             tile_pos = nearest_corner + vec2f{RSIZE/2*sign_x, RSIZE/2*sign_y};
             sign_x *= -1;
@@ -122,12 +118,10 @@ void collide_wall(struct ent_player* p, chunk* c) {
                 float y_delta_sign = 1;
                 if (delta.x < 0) x_delta_sign = -1;
                 if (delta.y < 0) y_delta_sign = -1;
-// Circle-Push ----------------------------------------------------------------------------
-                if (in_diamond && num_collisions == 1) {
+                if (in_diamond && num_collisions == 1) { //------------------------------------- Circle-style collision on tile corners.
                     if (delta.vlen() < RSIZE) { *position = *position + delta.normalized()*(RSIZE-delta.vlen()); }
                 }
-// Square-Push ----------------------------------------------------------------------------
-                else if (abs(delta.x) > abs(delta.y) && !is_horizontal_pair)
+                else if (abs(delta.x) > abs(delta.y) && !is_horizontal_pair) //----------------- Square-style collision on tile sides.
                     *position = *position + vec2f{x_delta_sign*MIN_SQUARE_DISTANCE-delta.x, 0};
                 else if (!is_vertical_pair)
                     *position = *position + vec2f{0, y_delta_sign*MIN_SQUARE_DISTANCE-delta.y};
@@ -136,14 +130,10 @@ void collide_wall(struct ent_player* p, chunk* c) {
         sign_y *= -1;
     }
 }
-
 void move_all_ents(char* array, int array_len) {
     struct ent_basics* e;
     for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
-        if (array[i] != HEADER_BYTE) {
-            if (DEBUG_ENTS) { printf("*** Invalid index given by get_next_ent() in move_all_ents()\n"); }
-            break;
-        }
+        if (array[i] != HEADER_BYTE) { printf("*** Invalid index given by get_next_ent() in move_all_ents()\n"); exit(-1); }
         //---------------------------------- move the entity, record its position in the chunk
         e = (struct ent_basics*)&array[i];
         vec2i old_tile = e->tile; //--------------------------------------------------------------- Tile it was on. TODO record the old/new chunk
@@ -152,28 +142,21 @@ void move_all_ents(char* array, int array_len) {
         vec2i new_tile =
             vec2i{ (int)std::floor(scaled_pos.x + 0.5), (int)std::floor(scaled_pos.y + 0.5) }; //-- Tile it's on now.
         e->tile = new_tile;
-        //----------------------------------------------------------------------------------------- Different tile? Valid old tile?
-        if ( (new_tile != old_tile) &&
-              old_tile.x > -1 && old_tile.x < CHUNK_WIDTH && old_tile.y > -1 && old_tile.y < CHUNK_WIDTH
-        ) {
-            if (DEBUG_ENT_HANDLES) {
-                std::cout << old_tile << " -> " << new_tile << " '" << get_type_name(e->type) << "' \n";
-                for (int i=0; i<MAX_ENTS_PER_TILE; i++)
-                    { printf("    Handle %d = %d\n", i, main_world->chunks[e->chunk.y][e->chunk.x].tiles[old_tile.y][old_tile.x].ents[i]); }
-                printf("\n");
+        //----------------------------------------------------------------------------------------------------------- Are we on a different tile?
+        bool old_tile_was_valid = (old_tile.x > -1 && old_tile.x < CHUNK_WIDTH && old_tile.y > -1 && old_tile.y < CHUNK_WIDTH);
+        bool new_tile_was_valid = (new_tile.x > -1 && new_tile.x < CHUNK_WIDTH && new_tile.y > -1 && new_tile.y < CHUNK_WIDTH);
+        tile* old_tile_ptr = &main_world->chunks[e->chunk.y][e->chunk.x].tiles[old_tile.y][old_tile.x];
+        tile* new_tile_ptr = &main_world->chunks[e->chunk.y][e->chunk.x].tiles[new_tile.y][new_tile.x];
+        if (new_tile != old_tile) {
+            for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------------------------------------- Remove handle from old tile.
+                if (old_tile_was_valid && old_tile_ptr->ents[i] == e->h) { old_tile_ptr->ents[i] = 0; }
             }
-            for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
-                if (main_world->chunks[e->chunk.y][e->chunk.x].tiles[old_tile.y][old_tile.x].ents[i] == e->h) //---- Remove handle from old tile.
-                    { main_world->chunks[e->chunk.y][e->chunk.x].tiles[old_tile.y][old_tile.x].ents[i] = 0; break; }
-            }
-            for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
-                if (main_world->chunks[e->chunk.y][e->chunk.x].tiles[new_tile.y][new_tile.x].ents[i] == 0) //------ Store handle in currrent tile.
-                    { main_world->chunks[e->chunk.y][e->chunk.x].tiles[new_tile.y][new_tile.x].ents[i] = e->h; break; }
-            }
+            for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------------------------------------ Store handle in currrent tile.
+                if (new_tile_was_valid && new_tile_ptr->ents[i] == 0) { new_tile_ptr->ents[i] = e->h; break; }
+            } //----------------------------- NOTE: copy_handle() isn't used on e->h here because tile->ents[i]==e->h gets cleaned up continuously.
         }
     }
 }
-
 int main() {
     server_config();
     //===========================================================// Initialize everything. //
