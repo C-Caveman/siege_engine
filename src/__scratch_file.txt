@@ -105,6 +105,50 @@ struct my_entity {
 
 
 
+// ************************************************************************************** //
+
+
+//===================================================================// RAYCASTING //
+#define MAX_RAYCAST_DISTANCE 1024
+tile* cast_ray(chunk* chunk, vec2f pos, vec2f dir) {
+    tile* cur_tile = nullptr;
+    vec2i tile_pos;
+    dir = dir.normalized();
+    for (int i=0; i<MAX_RAYCAST_DISTANCE; i++) {
+        pos = pos + dir * RSIZE/4; //------------- Step forward.
+        tile_pos = vec2i{ (int)std::floor(pos.x/RSIZE + 0.5), (int)std::floor(pos.y/RSIZE + 0.5) }; //-- Cur tile.
+        if (tile_pos.x < 0 || tile_pos.x >= CHUNK_WIDTH || tile_pos.y < 0 || tile_pos.y >= CHUNK_WIDTH) { break; }
+        cur_tile = chunk->tiles[tile_pos.y][tile_pos.x];
+        bool hit_wall = (cur_tile.wall_height > 0);
+        if (hit_wall) { return cur_tile; }
+    }
+    return nullptr;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

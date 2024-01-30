@@ -42,22 +42,19 @@ handle              uncopy_handle(handle i); //----------- Delete a handle to an
     expand(player) \
     expand(scenery)
 // ENTITY_TYPES_LIST is an X macro. Redefine expand() to change how the list expands.
-enum entity_types {
-    #define expand(name) name##_type, 
-    ENTITY_TYPES_LIST
-    #undef expand
-    NUM_ENT_TYPES
-};
+#define expand(name) name##_type, 
+enum entity_types { ENTITY_TYPES_LIST    NUM_ENT_TYPES };
+#undef expand
 //======= ENTITIES ====================================================================================// ENTITIES //
-enum example_sprites {FIRST_SPRITE, SECOND_SPRITE, NUM_EXAMPLE_SPRITES}; //---------- Example entity.
+enum example_sprites {FIRST_SPRITE, SECOND_SPRITE, NUM_EXAMPLE_SPRITES}; //---------- EXAMPLE ENTITY.
 struct ent_example {
     ENT_BASICS //---------------------------------------------- !!! REQUIRED !!!
     struct sprite sprites[NUM_EXAMPLE_SPRITES]; //------------- !!! REQUIRED !!!
-    // <your variables here>
+    //--------------------------------------------------------- <your variables here>
 
     void init(); //-------------------------------------------- !!! REQUIRED !!!
     void think(); //------------------------------------------- !!! REQUIRED !!!
-    // <your functions here>
+    //--------------------------------------------------------- <your functions here>
 };
 enum player_sprites {PLAYER_BODY, PLAYER_GUN, NUM_PLAYER_SPRITES}; //---------------- Player entity.
 enum move_types {MOVE_SNEAK, MOVE_WALK, MOVE_SPRINT, MOVE_DASH, NUM_MOVE_TYPES};
@@ -74,6 +71,7 @@ enum scenery_sprites {SCENERY_SPRITE, NUM_SCENERY_SPRITES}; //------------------
 struct ent_scenery {
     ENT_BASICS
     struct sprite sprites[NUM_PLAYER_SPRITES];
+    handle fren;
 
     void init();
     void think();

@@ -387,10 +387,6 @@ void draw_chunk(vec2f camera_pos, vec2f camera_center, chunk* chunk) {
         //------------------------------------------------------------------- Draw a diamond loop of tiles.
         int spread = 0; // Half the width of a given slice of the diamond.
         for (int row=middle_y-ring; row<=middle_y+ring; row++) {
-            draw_tile_wall_side(tiles, middle_x-spread, row, camera_pos, camera_center); //-- Left side.
-            draw_tile_wall_top(tiles, middle_x-spread, row, camera_pos, camera_center);
-            draw_tile_wall_side(tiles, middle_x+spread, row, camera_pos, camera_center); //-- Right side.
-            draw_tile_wall_top(tiles, middle_x+spread, row, camera_pos, camera_center);
             for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //-------------------------------- Draw the entities here.
                 if (    row > -1 && row < CHUNK_WIDTH &&
                         (middle_x-spread) > -1 && (middle_x-spread) < CHUNK_WIDTH &&
@@ -405,6 +401,10 @@ void draw_chunk(vec2f camera_pos, vec2f camera_center, chunk* chunk) {
                     if (e != nullptr) { draw_ent_sprites(camera_pos, e); }
                 }
             }
+            draw_tile_wall_side(tiles, middle_x-spread, row, camera_pos, camera_center); //-- Left side.
+            draw_tile_wall_top(tiles, middle_x-spread, row, camera_pos, camera_center);
+            draw_tile_wall_side(tiles, middle_x+spread, row, camera_pos, camera_center); //-- Right side.
+            draw_tile_wall_top(tiles, middle_x+spread, row, camera_pos, camera_center);
             if (row < middle_y) //----- Diverge before reaching the middle row.
                 spread++;
             else

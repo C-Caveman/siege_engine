@@ -157,6 +157,22 @@ void move_all_ents(char* array, int array_len) {
         }
     }
 }
+//===================================================================// RAYCASTING //
+#define MAX_RAYCAST_DISTANCE 128
+tile* cast_ray(chunk* chunk, vec2f pos, vec2f dir) {
+    tile* cur_tile = nullptr;
+    vec2i tile_pos;
+    dir = dir.normalized();
+    for (int i=0; i<MAX_RAYCAST_DISTANCE; i++) {
+        pos = pos + dir * RSIZE/4; //------------- Step forward.
+        tile_pos = vec2i{ (int)std::floor(pos.x/RSIZE + 0.5), (int)std::floor(pos.y/RSIZE + 0.5) }; //-- Cur tile.
+        if (tile_pos.x < 0 || tile_pos.x >= CHUNK_WIDTH || tile_pos.y < 0 || tile_pos.y >= CHUNK_WIDTH) { break; }
+        cur_tile = &chunk->tiles[tile_pos.y][tile_pos.x];
+        bool hit_wall = (cur_tile->wall_height > 0);
+        if (hit_wall) { return cur_tile; }
+    }
+    return nullptr;
+}
 int main() {
     server_config();
     //===========================================================// Initialize everything. //
@@ -181,7 +197,8 @@ int main() {
     p->pos = vec2f{RSIZE,RSIZE};
     player_client.player = (struct ent_player*)p;
     ent_scenery* s = (ent_scenery*)spawn_ent(scenery_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-    s->pos = vec2f{RSIZE*1.5,RSIZE*1.5};
+    s->pos = vec2f{RSIZE*1.5, RSIZE*CHUNK_WIDTH/2};
+    s->fren = p->h;
     printf("*Type name: '%s'\n", get_type_name(s->type));
     while (running) { //=====================================================================================// GAME LOOP //
         dt = (SDL_GetTicks() - last_frame_end) / 1000;
@@ -192,14 +209,18 @@ int main() {
         client_input(&player_client);
         player_client.update_player_entity(); // Apply client inputs to the player entity.
         collide_wall(p, chunk_0);
+        collide_wall((struct ent_player*)s, chunk_0);
         //=======================================================================// Update the player's camera position. //
         player_client.camera_pos =
             vec2f {p->pos.x - window_x/2 + RSIZE/2, p->pos.y - window_y/2 + RSIZE/2};
         player_client.camera_center =
             vec2f {p->pos.x, p->pos.y};
         //=======================================================================// Building/Destroying tiles. //
-        if (player_client.attacking)
+        if (player_client.attacking) {
             destroy_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
+            tile* timmy = cast_ray(chunk_0, p->pos, vec2f{cos(player_client.aim_dir/180*(float)M_PI), sin(player_client.aim_dir/180*(float)M_PI)});
+            if (timmy != nullptr) { timmy->wall_height = 0; player_client.attacking = 0; }
+        }
         if (player_client.building)
             build_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
         //=========================================================================// Draw the environment. //

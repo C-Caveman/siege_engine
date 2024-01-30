@@ -42,14 +42,12 @@ handle uncopy_handle(handle i) { //------------------- Uncopy a bound handle, re
     return 0;
 }
 struct ent_basics*  get_ent(handle i) { //------------ Get an entity by its handle.
-    if (i == 0) { printf("get_ent() called on handle 0!\n"); exit(-1); }
     if (handles[i].claimed == 1)
         { return handles[i].ent; }
     else
         { handles[i].copies--; return nullptr; }
-}//============================================================================================//
-
-void ent_player::init() { //======================================// Initialize an entity. //
+}//===============================================================================// INITIALIZE AN ENTITY. //
+void ent_player::init() {
     if (DEBUG_ENTS) { printf("Player entity initializing!\n"); }
     flags = DRAWABLE | ANIMATABLE | MOVABLE | COLLIDABLE | THINKABLE;
     pos = vec2f{0,0};
@@ -64,28 +62,17 @@ void ent_scenery::init() {
     if (DEBUG_ENTS)
         printf("Scenery ent initializing!\n");
     flags = DRAWABLE | ANIMATABLE;
-    pos = vec2f{0,0};
     num_sprites = NUM_SCENERY_SPRITES;
     sprites[SCENERY_SPRITE].anim = sand;
-}//==========================================================================================//
-
-//=======================================================// Update an entity for the next frame. //
+}//==============================================================================// UPDATE AN ENTITY FOR THE NEXT FRAME. //
 void ent_player::think() {
-    //data[p_sprite_gun_anim].anim.rotation = mouse_angle;
-    /*
-    data[player_dir].dir.dir = vec2f{(float)cos(mouse_angle/180*M_PI), (float)sin(mouse_angle/180*M_PI)};
-    float friction = data[vel].vel.vel.vlen();
-    if (friction < 1.0)
-        friction = 0;
-    friction = (friction * friction) / 20000;
-    data[vel].vel.vel = (data[vel].vel.vel + data[player_dir].dir.dir * 10) - (data[vel].vel.vel.normalized() * friction);
-    //vec2f{(float)mouse_x, (float)mouse_y};
-    */
 }
-void ent_scenery::think() {}
-//==============================================================================================//
-
-//======================// Entity management functions. (spawn, despawn, get_next, ect.) //
+void ent_scenery::think() {
+    ent_basics* e = get_ent(fren);
+    if (e != nullptr) { vel = vel + ( e->pos-pos ).normalized() * 15; } //- Follow the player.
+    vel = vel * 1.1; //---------------------------------------------------- Slip around.
+}
+//=====================================================// Entity management functions. (spawn, despawn, get_next, ect.) //
 // X macro for ENTITY_TYPES_LIST:
 #define expand(name) #name, 
 char entity_type_names[NUM_ENT_TYPES][MAX_ENTITY_TYPE_NAME_LEN] = { ENTITY_TYPES_LIST };
