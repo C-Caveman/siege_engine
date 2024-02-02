@@ -7,6 +7,7 @@
 
 // each animation loaded by the game (filenames)
 #define ANIMATION_LIST(DO) \
+    DO(floor_test) \
     DO(rocket_tank) \
     DO(gun_0) \
     DO(gun_chaingun) \
@@ -20,7 +21,6 @@
     DO(knight_1) \
     DO(wall_steel) \
     DO(wall_steel_side) \
-    DO(floor_test) \
 
 #define MAKE_ENUM(x) x, 
 enum animation_ids {

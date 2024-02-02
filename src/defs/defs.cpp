@@ -78,7 +78,7 @@ vec2f vec2f::floor() { // Round down to the nearest whole number.
     return vec2f {std::floor(x), std::floor(y)};
 }
 vec2i vec2f::to_int() { // Convert to vec2i
-    return vec2i {(int)x, (int)y};
+    return vec2i {(int)std::floor(x), (int)std::floor(y)};
 }
 
 void vec2f::print() {

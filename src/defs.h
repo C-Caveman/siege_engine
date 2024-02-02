@@ -92,7 +92,7 @@ struct sprite {
 };
 //================================================================// Tiles, Chunks, and Worlds //
 #define MAX_ENTS_PER_TILE 4
-#define CHUNK_WIDTH 16
+#define CHUNK_WIDTH 5
 #define CHUNK_DIAMETER (RSIZE * CHUNK_WIDTH)
 struct tile { //-------------------------------------- Square tile containing a wall/floor.
     unsigned char flags, health, wall_height, unused;

@@ -63,7 +63,7 @@ void ent_scenery::init() {
         printf("Scenery ent initializing!\n");
     flags = DRAWABLE | ANIMATABLE;
     num_sprites = NUM_SCENERY_SPRITES;
-    sprites[SCENERY_SPRITE].anim = sand;
+    sprites[SCENERY_SPRITE].anim = rocket_tank;
 }//==============================================================================// UPDATE AN ENTITY FOR THE NEXT FRAME. //
 void ent_player::think() {
 }

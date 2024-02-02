@@ -130,15 +130,15 @@ void collide_wall(struct ent_player* p, chunk* c) {
         sign_y *= -1;
     }
 }
+/*
+> Save the current pos.
+> Update the position.
+> Check if we entered a new tile.
+    > Move our handle from the old to the new tile.
+> Check if we entered a new chunk.
+    > Update our chunk.
+*/
 void move_all_ents(char* array, int array_len) {
-    /*
-    > Save the current pos.
-    > Update the position.
-    > Check if we entered a new tile.
-        > Move our handle from the old to the new tile.
-    > Check if we entered a new chunk.
-        > Update our chunk.
-    */
     struct ent_basics* e;
     for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
         if (array[i] != HEADER_BYTE) { printf("*** Invalid index given by get_next_ent() in move_all_ents()\n"); exit(-1); }
@@ -150,27 +150,23 @@ void move_all_ents(char* array, int array_len) {
         e->chunk = ( (e->pos+vec2f{RSIZE/2,RSIZE/2}) / RSIZE / CHUNK_WIDTH ).to_int();
         vec2f floored = e->pos - (e->chunk * RSIZE * CHUNK_WIDTH).to_float();
         e->tile = (floored / RSIZE + vec2f{0.5,0.5}).to_int();
-        if (!e->tile.in_bounds(0,CHUNK_WIDTH)) { e->tile = old_tile; } //------------ Safety fallback.
+        //if (!e->tile.in_bounds(0,CHUNK_WIDTH-1)) { e->tile = old_tile; } //------------ Safety fallback.
         bool changed_tile = (e->tile != old_tile); //--------------------------------------------------------------- New tile?
-        bool old_chunk_was_valid = old_chunk.in_bounds(0, WORLD_WIDTH);
-        bool new_chunk_was_valid = e->chunk.in_bounds(0, WORLD_WIDTH);
+        bool old_tile_was_valid = old_tile.in_bounds(0, CHUNK_WIDTH-1);
+        bool new_tile_was_valid = e->tile.in_bounds(0, CHUNK_WIDTH-1);
+        bool old_chunk_was_valid = old_chunk.in_bounds(0, WORLD_WIDTH-1) && old_tile_was_valid;
+        bool new_chunk_was_valid = e->chunk.in_bounds(0, WORLD_WIDTH-1) && new_tile_was_valid;
         tile* old_tile_ptr = &main_world->chunks[old_chunk.y][old_chunk.x].tiles[old_tile.y][old_tile.x];
         tile* new_tile_ptr = &main_world->chunks[e->chunk.y][e->chunk.x].tiles[e->tile.y][e->tile.x];
         if (changed_tile) {
             for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------------------------------------- Remove handle from old tile.
-                if (old_chunk_was_valid && old_tile_ptr->ents[i] == e->h) { old_tile_ptr->ents[i] = 0; old_tile_ptr->floor_anim = stone; }
+                if (old_chunk_was_valid && old_tile_ptr->ents[i] == e->h) { old_tile_ptr->ents[i] = 0; old_tile_ptr->floor_anim = stonedk; }
             }
             for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------------------------------------ Store handle in new tile.
                 if (new_chunk_was_valid && new_tile_ptr->ents[i] == 0) { new_tile_ptr->ents[i] = e->h; break; }
             } //----- NOTE: copy_handle() isn't used on e->h here. Use it for sharing e->h with other ents.
-            for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
-                if (old_chunk_was_valid && old_tile_ptr->ents[i] != 0) { old_tile_ptr->floor_anim = sand; } //------------------------- DBG
-            }
-            for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
-                if (new_chunk_was_valid && new_tile_ptr->ents[i] != 0) { new_tile_ptr->floor_anim = sand; } //------------------------- DBG
-            }
         }
-        if (changed_tile && e->type == player_type) { std::cout << "Tile: " << e->tile << "\nChunk: " << e->chunk << "\n\n";}
+        //if (changed_tile && e->type == player_type) { std::cout << "Tile: " << e->tile << "\nChunk: " << e->chunk << "\n\n";}
     }
 }
 //===================================================================// RAYCASTING TODO shortest axis TODO //
@@ -241,21 +237,20 @@ int main() {
             build_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
         //=========================================================================// Draw the environment. //
         SDL_RenderClear(renderer);
-        for (int y=-1; y<2; y++) {
-            for (int x=-1; x<2; x++) {
-                if ( (p->chunk + vec2i{x,y}).in_bounds(0,WORLD_WIDTH) )
+        vec2i order[9] = {
+            {-1,1}, {1,1}, {-1,-1}, {1,-1}, //- Corners.
+            {-1,0}, {0,1}, {1,0}, {0,-1}, //--- Sides.
+            {0,0} //--------------------------- Middle.
+        };
+        for (int i=0; i<9; i++) {
+            vec2i next_chunk = p->chunk + order[i];
+            if ( next_chunk.in_bounds(0,WORLD_WIDTH) ) {
                 draw_chunk(
                     player_client.camera_pos, player_client.camera_center,
-                    &test_world.chunks[p->chunk.y+y][p->chunk.x+x],
-                    vec2i{p->chunk.x+x, p->chunk.y+y});
+                    &test_world.chunks[next_chunk.y][next_chunk.x],
+                    vec2i{next_chunk.x, next_chunk.y});
             }
         }
-        /*
-        draw_chunk(player_client.camera_pos, player_client.camera_center, &test_world.chunks[0][1], vec2i{1,0});
-        draw_chunk(player_client.camera_pos, player_client.camera_center, &test_world.chunks[1][1], vec2i{1,1});
-        draw_chunk(player_client.camera_pos, player_client.camera_center, &test_world.chunks[0][1], vec2i{1,0});
-        draw_chunk(player_client.camera_pos, player_client.camera_center, &test_world.chunks[0][0], vec2i{0,0});
-        */
         //===========================================================================// Update and draw the entities. //
         think_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         //draw_all_ents(player_client.camera_pos, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); // NO LONGER USED?
