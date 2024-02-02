@@ -11,12 +11,13 @@
 
 #include <iostream>
 #include <cstring>
-
+struct vec2f;
+struct vec2i;
 //=================== Vectors =========================================// Vectors //
 struct vec2f {
     float x;
     float y;
-    // ---------------------------------------------------- vec2f functions
+    //----------------------------------------------------- vec2f functions
     float vlen();
     float dist(vec2f &b);
     float dot(vec2f& v);
@@ -24,6 +25,8 @@ struct vec2f {
     void semi_normalize(); // don't round x or y down to zero
     vec2f normalized();
     vec2f semi_normalized();
+    vec2f floor();
+    vec2i to_int();
     void print();
     //---------------------------------------------------- operator overloading
     vec2f operator + (const vec2f& v);
@@ -41,6 +44,9 @@ struct vec2f {
 struct vec2i {
     int x;
     int y;
+    //---------------------------------------------------- vec2i functions
+    vec2f to_float();
+    bool in_bounds(int min, int max);
     //---------------------------------------------------- operator overloading
     vec2i operator + (const vec2i& v);
     vec2i operator - (const vec2i& v);
@@ -87,6 +93,7 @@ struct sprite {
 //================================================================// Tiles, Chunks, and Worlds //
 #define MAX_ENTS_PER_TILE 4
 #define CHUNK_WIDTH 16
+#define CHUNK_DIAMETER (RSIZE * CHUNK_WIDTH)
 struct tile { //-------------------------------------- Square tile containing a wall/floor.
     unsigned char flags, health, wall_height, unused;
     handle ents[MAX_ENTS_PER_TILE];
@@ -100,6 +107,7 @@ struct chunk { //------------------------------------- 16x16 region of tiles
     void set_wall(int x, int y, int wall_top_anim, int wall_side_anim, unsigned char wall_height);
 };
 #define WORLD_WIDTH 16
+#define WORLD_DIAMETER (CHUNK_DIAMETER * WORLD_WIDTH)
 #define MAX_WORLD_NAME_LEN 64
 #define MAX_ENTS 2048 //  temp value
 #define MAX_CLIENTS 1 // temp value

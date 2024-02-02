@@ -128,9 +128,17 @@ tile* cast_ray(chunk* chunk, vec2f pos, vec2f dir) {
 
 
 
+// ************************************************************************************** //
 
 
+//==========================================================// Draw nearby chunks. //
 
+vec2i c = p->chunk;
+for (int y=c.y-1; y<c.y+2; y++) {
+    for (int x=c.x-1; y<c.x+2; y++) {
+        if (vec2i{x,y}.in_bounds(0,WORLD_WIDTH)) { draw_chunk(p, vec2i{x,y}) }
+    }
+}
 
 
 

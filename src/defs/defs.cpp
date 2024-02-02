@@ -74,6 +74,12 @@ vec2f vec2f::semi_normalized() {
         new_vec.y = -1;
     return new_vec;
 }
+vec2f vec2f::floor() { // Round down to the nearest whole number.
+    return vec2f {std::floor(x), std::floor(y)};
+}
+vec2i vec2f::to_int() { // Convert to vec2i
+    return vec2i {(int)x, (int)y};
+}
 
 void vec2f::print() {
     printf("(%f, %f)", x, y);
@@ -123,15 +129,18 @@ vec2f vec2f::operator / (const float& scale){
 }
 
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-// Vector of 2 ints:
-//
-//vec2i::vec2i() : x(0), y(0) {}
-//vec2i::vec2i(int new_x, int new_y) : x(new_x), y(new_y) {}
-//vec2i::~vec2i() {}
+//==============================================================================// Vec2i Functions //
+vec2f vec2i::to_float() { //----------------- Convert to vec2f
+    return vec2f {(float)x, (float)y};
+}
+bool vec2i::in_bounds(int min, int max) { //-------- Check if within [min,max]
+    if (x >= min && x <= max && y >= min && y <= max)
+        { return true; }
+    else
+        { return false; }
+}
 
-// operator overloading
-vec2i vec2i::operator + (const vec2i& v) {
+vec2i vec2i::operator + (const vec2i& v) { //----------------- Operator overloading.
     return vec2i{x + v.x, y + v.y};
 }
 vec2i vec2i::operator - (const vec2i& v){
