@@ -2,10 +2,9 @@
 o/*.o 
 ex
 # don't track graphics
-animations/*
-!animations/missing/0.bmp
-graphics/WIP_graphics/
-*.bmp
+graphics/animations/*
+!graphics/animations/missing/
+!graphics/animations/ADD_YOUR_OWN_ANIMATIONS.txt
 *.ase
 # don't track sounds
 *.ogg
