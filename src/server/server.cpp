@@ -245,7 +245,16 @@ int main() {
         for (int i=0; i<9; i++) {
             vec2i next_chunk = p->chunk + order[i];
             if ( next_chunk.in_bounds(0,WORLD_WIDTH) ) {
-                draw_chunk(
+                draw_chunk_floor(
+                    player_client.camera_pos, player_client.camera_center,
+                    &test_world.chunks[next_chunk.y][next_chunk.x],
+                    vec2i{next_chunk.x, next_chunk.y});
+            }
+        }
+        for (int i=0; i<9; i++) {
+            vec2i next_chunk = p->chunk + order[i];
+            if ( next_chunk.in_bounds(0,WORLD_WIDTH) ) {
+                draw_chunk_other(
                     player_client.camera_pos, player_client.camera_center,
                     &test_world.chunks[next_chunk.y][next_chunk.x],
                     vec2i{next_chunk.x, next_chunk.y});

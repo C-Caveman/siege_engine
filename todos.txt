@@ -1,5 +1,3 @@
-Raycasting
-
 AI state machines.
 
 Design document.

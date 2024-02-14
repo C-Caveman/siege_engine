@@ -360,28 +360,32 @@ void draw_tile_wall_top(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f c
         );
     }
 }
-
-void draw_chunk(vec2f camera_pos, vec2f camera_center, chunk* chunk, vec2i chunk_index) {
-    // Convert the camera_pos to a chunk_pos:
+void draw_chunk_floor(vec2f camera_pos, vec2f camera_center, chunk* chunk, vec2i chunk_index) {
+    camera_pos = camera_pos - chunk_index.to_float()*RSIZE*CHUNK_WIDTH; //------ Offset by chunk index.
+    struct tile (*tiles)[CHUNK_WIDTH] = chunk->tiles;
+    for (int y=0; y<CHUNK_WIDTH; y++) { //----------------------------------- Draw all the floor.
+        for (int x=0; x<CHUNK_WIDTH; x++) { draw_tile_floor(tiles, x, y, camera_pos); }
+    }
+}
+void draw_chunk_other(vec2f camera_pos, vec2f camera_center, chunk* chunk, vec2i chunk_index) {
     vec2i chunk_pos = ( (camera_center/RSIZE) +vec2f{0.5,0.5} ).to_int();
     vec2f old_camera = camera_pos;
     camera_pos = camera_pos - chunk_index.to_float()*RSIZE*CHUNK_WIDTH; //------ Offset by chunk index.
-    // Get a pointer to the chunk's tile array.
     struct tile (*tiles)[CHUNK_WIDTH] = chunk->tiles;
-    //SDL_Rect tile_pos;
     SDL_Rect render_pos;
-    //SDL_Rect offset;
     render_pos.x = 0;
     render_pos.y = 0;
     render_pos.w = render_pos.h = RSIZE;
+    /*
     bool has_ent = false;
     for (int y=0; y<CHUNK_WIDTH; y++) { //----------------------------------- Draw all the floor.
         for (int x=0; x<CHUNK_WIDTH; x++) {
             has_ent = false;
             for (int i=0; i<MAX_ENTS_PER_TILE; i++) { if (tiles[y][x].ents[i] != 0) { has_ent = true; } }
-            if (!has_ent) { draw_tile_floor(tiles, x, y, camera_pos); }
+            if (!has_ent || true) { draw_tile_floor(tiles, x, y, camera_pos); }
         }
     }
+    */
     int middle_x = chunk_pos.x - chunk_index.x*CHUNK_WIDTH;
     int middle_y = chunk_pos.y - chunk_index.y*CHUNK_WIDTH;
     for (int ring=CHUNK_WIDTH*2; ring>-1; ring--) { //--------------------- Draw a diamond loop of tiles.
