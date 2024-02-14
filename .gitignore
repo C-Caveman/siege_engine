@@ -5,11 +5,11 @@ ex
 graphics/animations/*
 !graphics/animations/missing/
 !graphics/animations/ADD_YOUR_OWN_ANIMATIONS.txt
-*.ase
 # don't track sounds
-*.ogg
-*.wav
-*.mp3
+audio/*
+!/audio/ADD_AUDIO.txt
+!/audio/sfx/ADD_SFX.txt
+!/audio/music/ADD_AUDIO.txt
 # don't track garbage data
 sup.log
 sup_list.supp
