@@ -34,15 +34,26 @@ void skip_comment(FILE* fp) {
         c = fgetc(fp);
 }
 
+bool load_frame(char* tex_filename, SDL_Surface* cur_surf, int* num_frames, int* total_textures) {
+    if (access(tex_filename, F_OK) == 0)
+        { cur_surf = SDL_LoadBMP(tex_filename); }
+    else
+        { return false; }
+    SDL_SetColorKey(cur_surf, SDL_TRUE, SDL_MapRGB(cur_surf->format, 0, 0, 0));
+    textures[*total_textures] = SDL_CreateTextureFromSurface(renderer, cur_surf);
+    if (cur_surf != 0) { SDL_FreeSurface(cur_surf); }
+    if (!textures[*total_textures])
+        { return false; }
+    *num_frames = *num_frames + 1;
+    *total_textures = *total_textures + 1;
+    return true;
+}
+
 // get all the textures for each animation loaded into the game
 void load_animations() {
-    SDL_Surface* cur_surf;
+    SDL_Surface* cur_surf = 0;
     char tex_filename[64];
-    //char fname_folder_name[] = "graphics/animations/";
-    //char fname_bmp[] = ".bmp";
-    //char frame_num_string[4];
     char* anim_name = 0;
-    //int tex_name_end = 0;
     int anim_name_len = 0;
     int num_frames = 0;
     int total_textures = 0;
@@ -55,55 +66,19 @@ void load_animations() {
         // get every frame of the current animation
         //printf("Loading animation %.*s at idx %d, tex_index=%d\n", anim_name_len, anim_name, total_textures, i);
         while (1) {
-            // build the filename for the current animation frame
             snprintf(tex_filename, sizeof(tex_filename), "graphics/animations/%.*s/%d.bmp", anim_name_len, anim_name, num_frames);
-            // check if the next frame exists
             if (access(tex_filename, F_OK) == 0) {
-                // load the image into a surface
-                cur_surf = SDL_LoadBMP(tex_filename);
-                //printf("Loading frame %d of %.*s at idx %d, i=%d\n", num_frames, ANIM_NAME_LEN, anim_name, total_textures, i);
+                bool loaded_tex = load_frame(tex_filename, cur_surf, &num_frames, &total_textures);
+                if (!loaded_tex) { printf("*** Couldn't load texture %s!\n", tex_filename); exit(-1); }
             }
-            else {
-                if (DEBUG_GRAPHICS_LOADING) {
-                    printf("Didn't find texture: %s, i=%d\n", tex_filename, i);
-                    printf("Loaded %d frames of %.*s, i=%d\n", num_frames, anim_name_len, anim_name, i);
-                }
+            else if (num_frames == 0) { //---------------------------------------------------------- No frames! Load the placeholder texture instead!
                 snprintf(tex_filename, sizeof(tex_filename), "graphics/animations/missing/0.bmp");
-                cur_surf = SDL_LoadBMP(tex_filename);
-                if (!cur_surf) { printf("*** Couldn't load missing texture!\n"); break; }
-                SDL_SetColorKey(cur_surf, SDL_TRUE, SDL_MapRGB(cur_surf->format, 0, 0, 0));
-                textures[total_textures] = SDL_CreateTextureFromSurface(renderer, cur_surf);
-                if (!textures[total_textures]) { printf("***Failed to load texture %s\n", tex_filename); }
-                num_frames++;
-                total_textures++;
-                if (cur_surf != 0) { SDL_FreeSurface(cur_surf); }
-                break;
+                bool loaded_missing_tex = load_frame(tex_filename, cur_surf, &num_frames, &total_textures);
+                if (!loaded_missing_tex) { printf("*** Couldn't load missing texture!\n"); }
             }
-            if (!cur_surf) {
-                printf("*** Texture loading error.\n");
-                printf("Loaded %d frames of %s, i=%d\n", num_frames, anim_name, i);
-                break;
-            }
-            // set black pixels as transparent
-            SDL_SetColorKey(cur_surf, SDL_TRUE, SDL_MapRGB(cur_surf->format, 0, 0, 0));
-            // convert the surface to a texture, then store it
-            textures[total_textures] = SDL_CreateTextureFromSurface(renderer, cur_surf);
-            if (!textures[total_textures])
-                printf("***Failed to load texture %s\n", tex_filename);
-            num_frames++;
-            total_textures++;
-            if (cur_surf != 0) { // free the surface used to load the current texture
-                SDL_FreeSurface(cur_surf);
-            }
-            if (total_textures >= MAX_TEXTURES) {
-                printf("*** Error: MAX_TEXTURES exceeded in load_animations.\n");
-                exit(-1);
-            }
+            else { break; }
         }
-        if (num_frames == 0) {
-            printf("*** Error: animation graphics/animations/%.*s is missing!\n", ANIM_NAME_LEN, anim_name);
-            exit(-1);
-        }
+        if (total_textures >= MAX_TEXTURES) { printf("*** Error: MAX_TEXTURES (%d) exceeded in load_animations.\n", MAX_TEXTURES); exit(-1); }
         anim_data[i].len = num_frames;
     }
     if (DEBUG_GRAPHICS_LOADING)
