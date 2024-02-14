@@ -68,6 +68,15 @@ void load_animations() {
                     printf("Didn't find texture: %s, i=%d\n", tex_filename, i);
                     printf("Loaded %d frames of %.*s, i=%d\n", num_frames, anim_name_len, anim_name, i);
                 }
+                snprintf(tex_filename, sizeof(tex_filename), "graphics/animations/missing/0.bmp");
+                cur_surf = SDL_LoadBMP(tex_filename);
+                if (!cur_surf) { printf("*** Couldn't load missing texture!\n"); break; }
+                SDL_SetColorKey(cur_surf, SDL_TRUE, SDL_MapRGB(cur_surf->format, 0, 0, 0));
+                textures[total_textures] = SDL_CreateTextureFromSurface(renderer, cur_surf);
+                if (!textures[total_textures]) { printf("***Failed to load texture %s\n", tex_filename); }
+                num_frames++;
+                total_textures++;
+                if (cur_surf != 0) { SDL_FreeSurface(cur_surf); }
                 break;
             }
             if (!cur_surf) {
