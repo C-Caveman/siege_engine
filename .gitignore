@@ -2,7 +2,8 @@
 o/*.o 
 ex
 # don't track graphics
-animations
+animations/*
+!animations/missing
 graphics/WIP_graphics/
 *.bmp
 *.ase
