@@ -2,12 +2,7 @@
 o/*.o 
 ex
 #=========================================// Don't track game assets. //
-assets/*
-!assets/graphics/animations/missing/
-!assets/graphics/animations/ADD_YOUR_OWN_ANIMATIONS.txt
-!assets/audio/ADD_AUDIO.txt
-!assets/audio/sfx/ADD_SFX.txt
-!assets/audio/music/ADD_MUSIC.txt
+assets
 #=========================================// Don't track logs. //
 sup.log
 sup_list.supp

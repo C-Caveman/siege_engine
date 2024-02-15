@@ -72,9 +72,9 @@ void load_animations() {
                 if (!loaded_tex) { printf("*** Couldn't load texture %s!\n", tex_filename); exit(-1); }
             }
             else if (num_frames == 0) { //---------------------------------------------------------- No frames! Load the placeholder texture instead!
-                snprintf(tex_filename, sizeof(tex_filename), "assets/graphics/animations/missing/0.bmp");
+                snprintf(tex_filename, sizeof(tex_filename), "placeholders/missing_texture.bmp");
                 bool loaded_missing_tex = load_frame(tex_filename, cur_surf, &num_frames, &total_textures);
-                if (!loaded_missing_tex) { printf("*** Couldn't load missing texture!\n"); }
+                if (!loaded_missing_tex) { printf("*** Couldn't load placeholder/missing_texture.bmp!\n"); exit(-1); }
             }
             else { break; }
         }
@@ -110,19 +110,12 @@ void init_fonts() {
         printf("Failed to load SDL2_ttf library: %s\n", TTF_GetError());
         exit(1);
     }
-    // build a path to the font file
-    char font_path[MAX_PATH_LEN * 2];
-    strncpy(font_path, path, MAX_PATH_LEN);
-    int base_path_len = strnlen(font_path, MAX_PATH_LEN);
-    char font_relative_path[] = "/graphics/fonts/KronaOne-Regular.ttf";
-    strncpy(font_path+base_path_len, 
-            font_relative_path, 
-            strlen(font_relative_path));
+    char font_path[] = "assets/graphics/fonts/KronaOne-Regular.ttf";
     font = TTF_OpenFont(font_path, 24);
-    if (font == 0) {
-        printf("Failed to load font: %s\n", TTF_GetError());
-        printf("Path to font tried: %s\n", font_path);
-    }
+    if (font == 0) { printf("Failed to load font %s\n%s\n", font_path, TTF_GetError()); }
+    char font_placeholder_path[] = "placeholders/KronaOne-Regular.ttf";
+    font = TTF_OpenFont(font_placeholder_path, 24);
+    if (font == 0) { printf("Failed to load font %s\n%s\n", font_placeholder_path, TTF_GetError()); exit(-1); }
 }
 
 void init_graphics() {
