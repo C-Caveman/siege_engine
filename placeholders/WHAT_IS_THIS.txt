@@ -1,1 +1,5 @@
+This directory holds all placeholder assets.
+
 If a texture, sound, or font can't be found, a placeholder from here is used.
+
+The real assets belong in the assets/ directory (it follows the same structure as this one).

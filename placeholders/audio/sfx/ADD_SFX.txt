@@ -1,0 +1,5 @@
+Put your sound effects in assets/audio/sfx/, and load them into the game with:
+    Mix_Chunk* my_sound = Mix_LoadWAV("assets/audio/sfx/MY_SOUND_EFFECT.wav");
+
+Play your sound effect with:
+    Mix_PlayChannel(-1, my_sound, 0);

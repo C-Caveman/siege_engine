@@ -72,9 +72,9 @@ void load_animations() {
                 if (!loaded_tex) { printf("*** Couldn't load texture %s!\n", tex_filename); exit(-1); }
             }
             else if (num_frames == 0) { //---------------------------------------------------------- No frames! Load the placeholder texture instead!
-                snprintf(tex_filename, sizeof(tex_filename), "placeholders/missing_texture.bmp");
+                snprintf(tex_filename, sizeof(tex_filename), "placeholders/graphics/animations/missing_animation/0.bmp");
                 bool loaded_missing_tex = load_frame(tex_filename, cur_surf, &num_frames, &total_textures);
-                if (!loaded_missing_tex) { printf("*** Couldn't load placeholder/missing_texture.bmp!\n"); exit(-1); }
+                if (!loaded_missing_tex) { printf("*** Couldn't load %s!\n", tex_filename); exit(-1); }
             }
             else { break; }
         }
@@ -113,7 +113,7 @@ void init_fonts() {
     char font_path[] = "assets/graphics/fonts/KronaOne-Regular.ttf";
     font = TTF_OpenFont(font_path, 24);
     if (font == 0) { printf("Failed to load font %s\n%s\n", font_path, TTF_GetError()); }
-    char font_placeholder_path[] = "placeholders/KronaOne-Regular.ttf";
+    char font_placeholder_path[] = "placeholders/graphics/fonts/KronaOne-Regular.ttf";
     font = TTF_OpenFont(font_placeholder_path, 24);
     if (font == 0) { printf("Failed to load font %s\n%s\n", font_placeholder_path, TTF_GetError()); exit(-1); }
 }

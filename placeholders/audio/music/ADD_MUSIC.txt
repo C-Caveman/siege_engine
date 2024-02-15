@@ -1,0 +1,5 @@
+Put your music in assets/audio/music/, and load it into the game with:
+    Mix_Music* my_music = Mix_LoadMUS("assets/audio/music/MY_MUSIC_FILE.ogg");
+
+Play your music with:
+    Mix_PlayMusic(my_music, 0);

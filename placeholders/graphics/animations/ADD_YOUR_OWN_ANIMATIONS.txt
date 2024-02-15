@@ -1,0 +1,4 @@
+Each animation is a sequence of .bmp files from 0.bmp to n.bmp
+
+File names in the enum from src/animations.h will be checked for in assets/graphics/animations
+and will be available to use from any source file that includes src/animations.h
