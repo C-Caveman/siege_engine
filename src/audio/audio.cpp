@@ -9,11 +9,11 @@ void init_audio() {
         exit(-1);
     }
     Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024);
-    music = Mix_LoadMUS("audio/music/brown.ogg");
+    music = Mix_LoadMUS("assets/audio/music/brown.ogg");
     if (!music) {
         printf("*** init_audio failed: %s\n", Mix_GetError());
     }
-    sound = Mix_LoadWAV("audio/sfx/thud.wav");
+    sound = Mix_LoadWAV("assets/audio/sfx/thud.wav");
     if (!sound) {
         printf("*** init_audio failed: %s\n", Mix_GetError());
     }

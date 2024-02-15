@@ -66,13 +66,13 @@ void load_animations() {
         // get every frame of the current animation
         //printf("Loading animation %.*s at idx %d, tex_index=%d\n", anim_name_len, anim_name, total_textures, i);
         while (1) {
-            snprintf(tex_filename, sizeof(tex_filename), "graphics/animations/%.*s/%d.bmp", anim_name_len, anim_name, num_frames);
+            snprintf(tex_filename, sizeof(tex_filename), "assets/graphics/animations/%.*s/%d.bmp", anim_name_len, anim_name, num_frames);
             if (access(tex_filename, F_OK) == 0) {
                 bool loaded_tex = load_frame(tex_filename, cur_surf, &num_frames, &total_textures);
                 if (!loaded_tex) { printf("*** Couldn't load texture %s!\n", tex_filename); exit(-1); }
             }
             else if (num_frames == 0) { //---------------------------------------------------------- No frames! Load the placeholder texture instead!
-                snprintf(tex_filename, sizeof(tex_filename), "graphics/animations/missing/0.bmp");
+                snprintf(tex_filename, sizeof(tex_filename), "assets/graphics/animations/missing/0.bmp");
                 bool loaded_missing_tex = load_frame(tex_filename, cur_surf, &num_frames, &total_textures);
                 if (!loaded_missing_tex) { printf("*** Couldn't load missing texture!\n"); }
             }

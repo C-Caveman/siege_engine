@@ -1,5 +1,0 @@
-Put your music here, and load it into the game with:
-    Mix_Music* my_music = Mix_LoadMUS("audio/music/my_music_name");
-
-Play your music with:
-    Mix_PlayMusic(my_music, 0);

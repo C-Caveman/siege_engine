@@ -1,16 +1,14 @@
-# don't track .o files or executables
+#=========================================// Don't track .o files or executables. //
 o/*.o 
 ex
-# don't track graphics
-graphics/animations/*
-!graphics/animations/missing/
-!graphics/animations/ADD_YOUR_OWN_ANIMATIONS.txt
-# don't track sounds
-audio/*
-!/audio/ADD_AUDIO.txt
-!/audio/sfx/ADD_SFX.txt
-!/audio/music/ADD_AUDIO.txt
-# don't track garbage data
+#=========================================// Don't track game assets. //
+assets/*
+!assets/graphics/animations/missing/
+!assets/graphics/animations/ADD_YOUR_OWN_ANIMATIONS.txt
+!assets/audio/ADD_AUDIO.txt
+!assets/audio/sfx/ADD_SFX.txt
+!assets/audio/music/ADD_MUSIC.txt
+#=========================================// Don't track logs. //
 sup.log
 sup_list.supp
 valgrind_log.txt
