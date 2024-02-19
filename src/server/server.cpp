@@ -171,19 +171,40 @@ void move_all_ents(char* array, int array_len) {
 }
 //===================================================================// RAYCASTING TODO shortest axis TODO //
 #define MAX_RAYCAST_DISTANCE 128
-tile* cast_ray(chunk* chunk, vec2f pos, vec2f dir) {
+tile* cast_ray(chunk chunks[WORLD_WIDTH][WORLD_WIDTH], vec2f pos, vec2f dir) {
     tile* cur_tile = nullptr;
     vec2i tile_pos;
+    vec2i chunk_pos;
+    vec2i chunk_tile;
     dir = dir.normalized();
     for (int i=0; i<MAX_RAYCAST_DISTANCE; i++) {
         pos = pos + dir * RSIZE/4; //------------- Step forward.
         tile_pos = vec2i{ (int)std::floor(pos.x/RSIZE + 0.5), (int)std::floor(pos.y/RSIZE + 0.5) }; //-- Cur tile.
-        if (tile_pos.x < 0 || tile_pos.x >= CHUNK_WIDTH || tile_pos.y < 0 || tile_pos.y >= CHUNK_WIDTH) { break; }
-        cur_tile = &chunk->tiles[tile_pos.y][tile_pos.x];
+        chunk_pos = vec2i{ tile_pos.x/CHUNK_WIDTH, tile_pos.y/CHUNK_WIDTH }; //-- Cur chunk.
+        chunk_tile = vec2i{ tile_pos.x%CHUNK_WIDTH, tile_pos.y%CHUNK_WIDTH }; //-- Position in chunk.
+        if (!chunk_pos.in_bounds(0, WORLD_WIDTH-1) || !chunk_tile.in_bounds(0, CHUNK_WIDTH-1)) { break; }
+        cur_tile = &chunks[chunk_pos.y][chunk_pos.x].tiles[chunk_tile.y][chunk_tile.x];
         bool hit_wall = (cur_tile->wall_height > 0);
         if (hit_wall) { return cur_tile; }
     }
     return nullptr;
+}
+tile* cast_ray_pre_impact(chunk chunks[WORLD_WIDTH][WORLD_WIDTH], vec2f pos, vec2f dir) {
+    tile* cur_tile = nullptr;
+    vec2i tile_pos;
+    vec2i chunk_pos;
+    vec2i chunk_tile;
+    dir = dir.normalized();
+    for (int i=0; i<MAX_RAYCAST_DISTANCE; i++) {
+        pos = pos + dir * RSIZE/4; //------------- Step forward.
+        tile_pos = vec2i{ (int)std::floor(pos.x/RSIZE + 0.5), (int)std::floor(pos.y/RSIZE + 0.5) }; //-- Cur tile.
+        chunk_pos = vec2i{ tile_pos.x/CHUNK_WIDTH, tile_pos.y/CHUNK_WIDTH }; //-- Cur chunk.
+        chunk_tile = vec2i{ tile_pos.x%CHUNK_WIDTH, tile_pos.y%CHUNK_WIDTH }; //-- Position in chunk.
+        if (!chunk_pos.in_bounds(0, WORLD_WIDTH-1) || !chunk_tile.in_bounds(0, CHUNK_WIDTH-1) || !tile_pos.in_bounds(0,WORLD_WIDTH*CHUNK_WIDTH-1) || chunks[chunk_pos.y][chunk_pos.x].tiles[chunk_tile.y][chunk_tile.x].wall_height > 0) { break; }
+        cur_tile = &chunks[chunk_pos.y][chunk_pos.x].tiles[chunk_tile.y][chunk_tile.x];
+    }
+    if (chunk_pos.in_bounds(0, WORLD_WIDTH-1) && chunk_tile.in_bounds(0, CHUNK_WIDTH-1)) { return cur_tile; }
+    else { return nullptr; }
 }
 int main() {
     server_config();
@@ -196,6 +217,7 @@ int main() {
     main_world = &test_world;
     //======================================================================================// Place tiles. //
     chunk* chunk_0 = &test_world.chunks[0][0];
+    test_world.chunks[1][0].tiles[4][4].wall_height = 16;
     chunk_0->set_floors(floor_test);
     for (int y=0; y<CHUNK_WIDTH; y++) {
         chunk_0->set_wall(0,y, wall_steel,wall_steel_side,16);
@@ -229,14 +251,16 @@ int main() {
             vec2f {p->pos.x, p->pos.y};
         //=======================================================================// Building/Destroying tiles. //
         if (player_client.attacking) {
-            destroy_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
-            tile* timmy = cast_ray(chunk_0, p->pos, vec2f{cos(player_client.aim_dir/180*(float)M_PI), sin(player_client.aim_dir/180*(float)M_PI)});
+            //destroy_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
+            tile* timmy = cast_ray(test_world.chunks, p->pos, vec2f{cos(player_client.aim_dir/180*(float)M_PI), sin(player_client.aim_dir/180*(float)M_PI)});
             if (timmy != nullptr) { timmy->wall_height = 0; player_client.attacking = 0; }
         }
-        if (player_client.building)
-            build_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
-        //=========================================================================// Draw the environment. //
-        SDL_RenderClear(renderer);
+        if (player_client.building) {
+            //build_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
+            tile* timmy = cast_ray_pre_impact(test_world.chunks, p->pos, vec2f{cos(player_client.aim_dir/180*(float)M_PI), sin(player_client.aim_dir/180*(float)M_PI)});
+            if (timmy != nullptr) { timmy->wall_height = 16; player_client.building = 0; }
+        }
+        SDL_RenderClear(renderer); //=========================================================================// Draw the environment. //
         vec2i order[9] = {
             {-1,1}, {1,1}, {-1,-1}, {1,-1}, //- Corners.
             {-1,0}, {0,1}, {1,0}, {0,-1}, //--- Sides.

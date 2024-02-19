@@ -1,3 +1,7 @@
+Move to new config system.
+
+Audio enum and loader.
+
 AI state machines.
 
 Design document.
