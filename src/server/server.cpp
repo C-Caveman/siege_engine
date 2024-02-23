@@ -68,8 +68,7 @@ void destroy_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
 //TODO move this to ent.cpp
 constexpr float PLAYER_WIDTH = RSIZE;
 constexpr float MIN_SQUARE_DISTANCE = PLAYER_WIDTH/2 + RSIZE/2;
-void collide_wall(struct ent_basics* e, vec2i chunk_index) {
-    chunk* c = &main_world->chunks[chunk_index.y][chunk_index.x];
+void collide_wall(struct ent_basics* e) {
     vec2f* position = &e->pos;
     vec2f centered_position = e->pos + vec2f{RSIZE/2, RSIZE/2};
     vec2f nearest_corner = centered_position;
@@ -86,9 +85,11 @@ void collide_wall(struct ent_basics* e, vec2i chunk_index) {
         for (int j=0; j<2; j++) {
             tile_pos = nearest_corner + vec2f{RSIZE/2*sign_x, RSIZE/2*sign_y};
             tile_index = (tile_pos / RSIZE).to_int();  //vec2i{int(tile_pos.x/RSIZE), int(tile_pos.y/RSIZE)} % CHUNK_WIDTH;
-            if (tile_index.in_bounds(0, CHUNK_WIDTH-1) && c->tiles[tile_index.y][tile_index.x].wall_height > 0)
-                 { collisions[i][j] = true; num_collisions++; }
-            else { collisions[i][j] = false; }
+            tile* cur_tile = main_world->get_tile(tile_index);
+            if (cur_tile != nullptr && cur_tile->wall_height >= 1)
+                { collisions[i][j] = true; num_collisions++; }
+            else
+                { collisions[i][j] = false; }
             sign_x *= -1;
         }
         sign_y *= -1;
@@ -102,8 +103,9 @@ void collide_wall(struct ent_basics* e, vec2i chunk_index) {
             sign_x *= -1;
             tile_pos = tile_pos / RSIZE;
             tile_pos = vec2f{std::floor(tile_pos.x), std::floor(tile_pos.y)} * RSIZE;
-            tile_index = vec2i{int(tile_pos.x/RSIZE), int(tile_pos.y/RSIZE)} % CHUNK_WIDTH;
-            if (c->tiles[tile_index.y][tile_index.x].wall_height <= 0) { continue; } // Skip the tile.
+            tile_index = vec2i{int(tile_pos.x/RSIZE), int(tile_pos.y/RSIZE)};
+            tile* cur_tile = main_world->get_tile(tile_index);
+            if (cur_tile == nullptr || cur_tile->wall_height <=0) { continue; } // Skip the tile.
             vec2f delta = *position - tile_pos;
             bool in_square = abs(delta.x) < MIN_SQUARE_DISTANCE && abs(delta.y) < MIN_SQUARE_DISTANCE;
             bool in_diamond = abs(delta.x) + abs(delta.y) > RSIZE*1.2;
@@ -119,8 +121,6 @@ void collide_wall(struct ent_basics* e, vec2i chunk_index) {
                     { *position = *position + vec2f{x_delta_sign*MIN_SQUARE_DISTANCE-delta.x, 0}; }
                 else if (abs(delta.x) < abs(delta.y) && !is_vertical_pair)
                     { *position = *position + vec2f{0, y_delta_sign*MIN_SQUARE_DISTANCE-delta.y}; }
-                if (anim_tick > 100 && num_collisions > 0 && e->type == player_type)
-                    {std::cout << "H > V = " << (abs(delta.x) > abs(delta.y)) << " at " << tile_index << "\n";}
             }
         }
         sign_y *= -1;
@@ -241,8 +241,8 @@ int main() {
         //=======================================================================================// Client inputs and movement. //
         client_input(&player_client);
         player_client.update_player_entity(); // Apply client inputs to the player entity.
-        collide_wall((struct ent_basics*)p, p->chunk); //--------------------------------- Collision.
-        collide_wall((struct ent_basics*)s, s->chunk);
+        collide_wall((struct ent_basics*)p); //----------------------------------------------- Collision.
+        collide_wall((struct ent_basics*)s);
         //if (anim_tick == 0) std::cout << p->pos << "\n";
         //=======================================================================================// Update the player's camera position. //
         player_client.camera_pos =
@@ -255,14 +255,14 @@ int main() {
             tile* timmy = cast_ray(test_world.chunks, p->pos,
                                    vec2f{cos(player_client.aim_dir/180*(float)M_PI),
                                          sin(player_client.aim_dir/180*(float)M_PI)});
-            if (timmy != nullptr) { timmy->wall_height = 0; player_client.attacking = 0; }
+            if (timmy != nullptr) { timmy->wall_height = 0; Mix_PlayChannel(-1, sound, 0); player_client.attacking = 0; }
         }
         if (player_client.building) {
             //build_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
             tile* timmy = cast_ray_pre_impact(test_world.chunks, p->pos,
                                               vec2f{cos(player_client.aim_dir/180*(float)M_PI),
                                                     sin(player_client.aim_dir/180*(float)M_PI)});
-            if (timmy != nullptr) { timmy->wall_height = 16; player_client.building = 0; }
+            if (timmy != nullptr) { timmy->wall_height = 16; Mix_PlayChannel(-1, sound, 0); player_client.building = 0; }
         }
         SDL_RenderClear(renderer); //=========================================================================// Draw the environment. //
         vec2i order[9] = {

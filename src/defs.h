@@ -119,6 +119,7 @@ struct world { //---------------------------------------------- Collection of ch
     char entity_bytes_array[ENTITY_BYTES_ARRAY_LEN]; //-------- Entities.
 
     world();
+    tile* get_tile(vec2i tile_i);
 };
 extern struct world* main_world; //---------------------------- Main world.
 

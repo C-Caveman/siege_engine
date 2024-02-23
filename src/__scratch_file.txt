@@ -142,6 +142,54 @@ for (int y=c.y-1; y<c.y+2; y++) {
 
 
 
+// **************************************************************************************** //
+
+
+
+e.tile                          //- Global tile (vec2i)
+
+e.tile % CHUNK_WIDTH            //- Global tile to index in chunk.
+
+main_world.get_tile(e.tile)     //- Global tile to actual tile data.
+
+tile* world::get_tile(vec2i tile_i) {
+    if (!tile_i.in_bounds(0, WORLD_WIDTH*CHUNK_WIDTH-1))
+        return nullptr;
+    vec2i chunk_i = tile_i / CHUNK_WIDTH;
+    vec2i local_i = tile_i % CHUNK_WIDTH;
+    return &tiles[chunk_i.y][chunk_i.x].tile[local_i.y][local_i.x];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
