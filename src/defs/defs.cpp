@@ -152,6 +152,9 @@ vec2i vec2i::operator * (const vec2i& v){
 vec2i vec2i::operator / (const vec2i& v){
     return vec2i{x / v.x, y / v.y};
 }
+vec2i vec2i::operator % (const int modulo){
+    return vec2i{x % modulo, y % modulo};
+}
 void vec2i::operator = (const vec2i& v) {
     x = v.x;
     y = v.y;

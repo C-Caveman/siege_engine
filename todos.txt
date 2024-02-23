@@ -1,3 +1,5 @@
+Resolution-independent perspective effect.
+
 Move to new config system.
 
 Audio enum and loader.

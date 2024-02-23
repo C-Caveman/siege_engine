@@ -52,6 +52,7 @@ struct vec2i {
     vec2i operator - (const vec2i& v);
     vec2i operator * (const vec2i& v);
     vec2i operator / (const vec2i& v);
+    vec2i operator % (const int modulo);
     void operator = (const vec2i& v);
     bool operator == (const vec2i& v);
     bool operator != (const vec2i& v);
