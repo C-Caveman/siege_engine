@@ -114,6 +114,7 @@ struct chunk { //------------------------------------- 16x16 region of tiles
 #define MAX_ENTS 2048 //  temp value
 #define MAX_CLIENTS 1 // temp value
 #define ENTITY_BYTES_ARRAY_LEN 8192
+#define MAX_DRAW_DISTANCE 32
 struct world { //---------------------------------------------- Collection of chunks and entities.
     char name[MAX_WORLD_NAME_LEN];
     chunk chunks[WORLD_WIDTH][WORLD_WIDTH]; //----------------- Tiles.
@@ -123,5 +124,4 @@ struct world { //---------------------------------------------- Collection of ch
     tile* get_tile(vec2i tile_i);
 };
 extern struct world* main_world; //---------------------------- Main world.
-
 #endif

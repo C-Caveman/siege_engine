@@ -356,7 +356,7 @@ void draw_chunk_other(vec2f camera_pos, vec2f camera_center, chunk* chunk, vec2i
     render_pos.w = render_pos.h = RSIZE;
     int middle_x = chunk_pos.x - chunk_index.x*CHUNK_WIDTH;
     int middle_y = chunk_pos.y - chunk_index.y*CHUNK_WIDTH;
-    for (int ring=CHUNK_WIDTH*2; ring>-1; ring--) { //--------------------- Draw a diamond loop of tiles.
+    for (int ring=MAX_DRAW_DISTANCE; ring>-1; ring--) { //--------------------- Draw a diamond loop of tiles.
         int spread = 0; // Half the width of a given slice of the diamond.
         for (int row=middle_y-ring; row<=middle_y+ring; row++) {
             vec2i left =  vec2i{middle_x-spread, row};

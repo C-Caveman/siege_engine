@@ -1,5 +1,7 @@
 Resolution-independent perspective effect.
 
+Ceilings where view to floor is blocked.
+
 Move to new config system.
 
 Audio enum and loader.
