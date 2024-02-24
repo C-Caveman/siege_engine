@@ -80,6 +80,9 @@ vec2f vec2f::floor() { // Round down to the nearest whole number.
 vec2i vec2f::to_int() { // Convert to vec2i
     return vec2i {(int)std::floor(x), (int)std::floor(y)};
 }
+vec2i vec2f::to_int_round_up() { // Convert to vec2i
+    return vec2i {(int)std::floor(x + 0.5f), (int)std::floor(y + 0.5f)};
+}
 
 void vec2f::print() {
     printf("(%f, %f)", x, y);

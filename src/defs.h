@@ -27,6 +27,7 @@ struct vec2f {
     vec2f semi_normalized();
     vec2f floor();
     vec2i to_int();
+    vec2i to_int_round_up();
     void print();
     //---------------------------------------------------- operator overloading
     vec2f operator + (const vec2f& v);

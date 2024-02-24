@@ -184,26 +184,22 @@ tile* cast_ray(chunk chunks[WORLD_WIDTH][WORLD_WIDTH], vec2f pos, vec2f dir) {
     }
     return nullptr;
 }
-tile* cast_ray_pre_impact(chunk chunks[WORLD_WIDTH][WORLD_WIDTH], vec2f pos, vec2f dir) {
+tile* cast_ray_pre_impact(vec2f pos, vec2f dir) {
     tile* cur_tile = nullptr;
-    vec2i tile_pos;
-    vec2i chunk_pos;
-    vec2i chunk_tile;
+    tile* prev_tile = nullptr;
+    vec2i tile_index;
+    //vec2i chunk_pos;
+    //vec2i chunk_tile;
     dir = dir.normalized();
     for (int i=0; i<MAX_RAYCAST_DISTANCE; i++) {
         pos = pos + dir * RSIZE/4; //------------- Step forward.
-        tile_pos = vec2i{ (int)std::floor(pos.x/RSIZE + 0.5), (int)std::floor(pos.y/RSIZE + 0.5) }; //-- Cur tile.
-        chunk_pos = vec2i{ tile_pos.x/CHUNK_WIDTH, tile_pos.y/CHUNK_WIDTH }; //-- Cur chunk.
-        chunk_tile = vec2i{ tile_pos.x%CHUNK_WIDTH, tile_pos.y%CHUNK_WIDTH }; //-- Position in chunk.
-        if (!chunk_pos.in_bounds(0, WORLD_WIDTH-1) || !chunk_tile.in_bounds(0, CHUNK_WIDTH-1) ||
-            !tile_pos.in_bounds(0,WORLD_WIDTH*CHUNK_WIDTH-1) ||
-            chunks[chunk_pos.y][chunk_pos.x].tiles[chunk_tile.y][chunk_tile.x].wall_height > 0) {
-                break;
-        }
-        cur_tile = &chunks[chunk_pos.y][chunk_pos.x].tiles[chunk_tile.y][chunk_tile.x];
+        tile_index = (pos / RSIZE).to_int_round_up();
+        cur_tile = main_world->get_tile(tile_index);
+        if (cur_tile == nullptr || cur_tile->wall_height >= 1)
+            break;
+        prev_tile = cur_tile;
     }
-    if (chunk_pos.in_bounds(0, WORLD_WIDTH-1) && chunk_tile.in_bounds(0, CHUNK_WIDTH-1)) { return cur_tile; }
-    else { return nullptr; }
+    return prev_tile;
 }
 int main() {
     server_config();
@@ -259,7 +255,7 @@ int main() {
         }
         if (player_client.building) {
             //build_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
-            tile* timmy = cast_ray_pre_impact(test_world.chunks, p->pos,
+            tile* timmy = cast_ray_pre_impact(p->pos,
                                               vec2f{cos(player_client.aim_dir/180*(float)M_PI),
                                                     sin(player_client.aim_dir/180*(float)M_PI)});
             if (timmy != nullptr) { timmy->wall_height = 16; Mix_PlayChannel(-1, sound, 0); player_client.building = 0; }
