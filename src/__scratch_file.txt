@@ -164,14 +164,9 @@ tile* world::get_tile(vec2i tile_i) {
 // **************************************************************************************** //
 
 //- Same offsets for any resolution.
-vec2f pos_to_uv()???????????????
 
 
-
-
-
-
-
+IDEA:::::::::: Scale TILE_WIDTH based on the resolution!!! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 MAX VIEWABLE AREA: 32x32
 
