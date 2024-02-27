@@ -3,7 +3,7 @@
 #include "client.h"
 
 float PLAYER_ACCELERATION = 10;
-void client_data::update_player_entity() {
+void client::update_player_entity() {
     // Player movement:
     player->vel = player->vel + (accel_dir.normalized() * (PLAYER_ACCELERATION + sprinting*PLAYER_ACCELERATION*2));
     if (accel_dir.vlen() == 0)

@@ -8,7 +8,7 @@
 int num_entities = 0;
 int num_clients = 0;
 
-client_data player_client;
+client player_client;
 
 // each entity gets a unique ID number
 int id = 0;
@@ -48,21 +48,25 @@ void build_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
                     wall_steel,wall_steel_side,chonk->tiles[selected_y][selected_x].wall_height + 1);
 }
 void destroy_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
-    // No longer the start of a click. TODO rename and move to input.cpp TODO
-    int selected_x = (camera_center.x + aim_pixel.x) / RSIZE + 0.5;
-    int selected_y = (camera_center.y + aim_pixel.y) / RSIZE + 0.5;
-    if (selected_x < 0) selected_x = 0;
-    if (selected_y < 0) selected_y = 0;
-    if (selected_x > (CHUNK_WIDTH-1)) selected_x = (CHUNK_WIDTH-1);
-    if (selected_y > (CHUNK_WIDTH-1)) selected_y = (CHUNK_WIDTH-1);
-    if (chonk->tiles[selected_y][selected_x].wall_height <= 0)
+    //destroy_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
+    vec2i sel = ((camera_center + aim_pixel.to_float()) / RSIZE).to_int_round_up();
+    if (sel.x < 0) sel.x = 0;
+    if (sel.y < 0) sel.y = 0;
+    if (sel.x > (CHUNK_WIDTH-1)) sel.x = (CHUNK_WIDTH-1);
+    if (sel.y > (CHUNK_WIDTH-1)) sel.y = (CHUNK_WIDTH-1);
+    if (chonk->tiles[sel.y][sel.x].wall_height <= 0)
         return;
     // Play a sound.
-    if (chonk->tiles[selected_y][selected_x].wall_height == 1)
+    if (chonk->tiles[sel.y][sel.x].wall_height == 1)
         Mix_PlayChannel(-1, sound, 0);
-    chonk->set_wall(selected_x,
-                    selected_y,
-                    wall_steel,wall_steel_side, chonk->tiles[selected_y][selected_x].wall_height - 1 );
+    chonk->set_wall(sel.x,
+                    sel.y,
+                    wall_steel,wall_steel_side, chonk->tiles[sel.y][sel.x].wall_height - 1 );
+}
+
+vec2i select_tile(struct client* c) {
+    if (c == nullptr) { printf("*** null client in select_tile!\n"); exit(-1); }
+    return (struct vec2i)(((c->camera_center + c->aim_pixel_pos.to_float()) / RSIZE).to_int_round_up());
 }
 
 //TODO move this to ent.cpp
@@ -138,15 +142,15 @@ void move_all_ents(char* array, int array_len) {
     struct ent_basics* e;
     for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
         if (array[i] != HEADER_BYTE) { printf("*** Invalid index given by get_next_ent() in move_all_ents()\n"); exit(-1); }
-        //---------------------------------- move the entity, record its position in the chunk
+                                                                                    //- move the entity, record its position in the chunk
         e = (struct ent_basics*)&array[i];
-        vec2i old_tile = e->tile; //--------------------------------------------------------------------------------- Old tile.
-        vec2i old_chunk = e->chunk; //------------------------------------------------------------------------------- Old chunk.
+        vec2i old_tile = e->tile;                                                   //- Old tile.
+        vec2i old_chunk = e->chunk;                                                 //- Old chunk.
         move_ent(e);
         e->chunk = ( (e->pos+vec2f{RSIZE/2,RSIZE/2}) / RSIZE / CHUNK_WIDTH ).to_int();
         vec2f floored = e->pos - (e->chunk * RSIZE * CHUNK_WIDTH).to_float();
         e->tile = (floored / RSIZE + vec2f{0.5,0.5}).to_int();
-        bool changed_tile = (e->tile != old_tile); //--------------------------------------------------------------- New tile?
+        bool changed_tile = (e->tile != old_tile);                                  //- New tile?
         bool old_tile_was_valid = old_tile.in_bounds(0, CHUNK_WIDTH-1);
         bool new_tile_was_valid = e->tile.in_bounds(0, CHUNK_WIDTH-1);
         bool old_chunk_was_valid = old_chunk.in_bounds(0, WORLD_WIDTH-1) && old_tile_was_valid;
@@ -154,63 +158,51 @@ void move_all_ents(char* array, int array_len) {
         tile* old_tile_ptr = &main_world->chunks[old_chunk.y][old_chunk.x].tiles[old_tile.y][old_tile.x];
         tile* new_tile_ptr = &main_world->chunks[e->chunk.y][e->chunk.x].tiles[e->tile.y][e->tile.x];
         if (changed_tile) {
-            for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------------------------------------- Remove handle from old tile.
+            for (int i=0; i<MAX_ENTS_PER_TILE; i++) {                               //- Remove handle from old tile.
                 if (old_chunk_was_valid && old_tile_ptr->ents[i] == e->h) { old_tile_ptr->ents[i] = 0; old_tile_ptr->floor_anim = stonedk; }
             }
             for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------------------------------------ Store handle in new tile.
                 if (new_chunk_was_valid && new_tile_ptr->ents[i] == 0) { new_tile_ptr->ents[i] = e->h; break; }
             } //----- NOTE: copy_handle() isn't used on e->h here. Use it for sharing e->h with other ents.
         }
-        //if (changed_tile && e->type == player_type) { std::cout << "Tile: " << e->tile << "\nChunk: " << e->chunk << "\n\n";}
     }
 }
-//===================================================================// RAYCASTING TODO shortest axis TODO //
 #define MAX_RAYCAST_DISTANCE 128
-tile* cast_ray(chunk chunks[WORLD_WIDTH][WORLD_WIDTH], vec2f pos, vec2f dir) {
-    tile* cur_tile = nullptr;
-    vec2i tile_pos;
-    vec2i chunk_pos;
-    vec2i chunk_tile;
-    dir = dir.normalized();
-    for (int i=0; i<MAX_RAYCAST_DISTANCE; i++) {
-        pos = pos + dir * RSIZE/4; //------------- Step forward.
-        tile_pos = vec2i{ (int)std::floor(pos.x/RSIZE + 0.5), (int)std::floor(pos.y/RSIZE + 0.5) }; //-- Cur tile.
-        chunk_pos = vec2i{ tile_pos.x/CHUNK_WIDTH, tile_pos.y/CHUNK_WIDTH }; //-- Cur chunk.
-        chunk_tile = vec2i{ tile_pos.x%CHUNK_WIDTH, tile_pos.y%CHUNK_WIDTH }; //-- Position in chunk.
-        if (!chunk_pos.in_bounds(0, WORLD_WIDTH-1) || !chunk_tile.in_bounds(0, CHUNK_WIDTH-1)) { break; }
-        cur_tile = &chunks[chunk_pos.y][chunk_pos.x].tiles[chunk_tile.y][chunk_tile.x];
-        bool hit_wall = (cur_tile->wall_height > 0);
-        if (hit_wall) { return cur_tile; }
-    }
-    return nullptr;
-}
-tile* cast_ray_pre_impact(vec2f pos, vec2f dir) {
+tile* raycast_upto_selected_tile(vec2f pos, vec2f dir, vec2i sel) {
     tile* cur_tile = nullptr;
     tile* prev_tile = nullptr;
     vec2i tile_index;
-    //vec2i chunk_pos;
-    //vec2i chunk_tile;
     dir = dir.normalized();
     for (int i=0; i<MAX_RAYCAST_DISTANCE; i++) {
         pos = pos + dir * RSIZE/4; //------------- Step forward.
         tile_index = (pos / RSIZE).to_int_round_up();
         cur_tile = main_world->get_tile(tile_index);
-        if (cur_tile == nullptr || cur_tile->wall_height >= 1)
-            break;
+        if (cur_tile == nullptr || cur_tile->wall_height >= 1) { break; }
         prev_tile = cur_tile;
+        if (tile_index == sel) { break; }
     }
     return prev_tile;
 }
+tile* raycast_into_selected_tile(vec2f pos, vec2f dir, vec2i sel) {
+    tile* cur_tile = nullptr;
+    vec2i tile_index;
+    dir = dir.normalized();
+    for (int i=0; i<MAX_RAYCAST_DISTANCE; i++) {
+        pos = pos + dir * RSIZE/4; //------------- Step forward.
+        tile_index = (pos / RSIZE).to_int_round_up();
+        cur_tile = main_world->get_tile(tile_index);
+        if (cur_tile == nullptr || cur_tile->wall_height >= 1 || tile_index == sel) { break; }
+    }
+    return cur_tile;
+}
 int main() {
-    server_config();
-    //===========================================================// Initialize everything. //
+    server_config();                                                           //===========// Initialize server. //
     running = 1;
     init_graphics();
-    //SDL_RenderSetScale(renderer, 0.5f, 0.5f); //------------------- Zoom in/out TODO properly center/scale everything TODO
     init_audio();
     struct world test_world;
     main_world = &test_world;
-    //======================================================================================// Place tiles. //
+                                                                               //==============// Place tiles. //
     chunk* chunk_0 = &test_world.chunks[0][0];
     test_world.chunks[1][0].tiles[4][4].wall_height = 16;
     chunk_0->set_floors(floor_test);
@@ -221,7 +213,7 @@ int main() {
     for (int x=0; x<CHUNK_WIDTH; x++) {
         chunk_0->set_wall(x,0, wall_steel,wall_steel_side,16);
         chunk_0->set_wall(x,CHUNK_WIDTH-1, wall_steel,wall_steel_side,16);
-    } //====================================================================================// Spawn entities. //
+    }                                                                          //==============// Spawn entities. //
     ent_player* p = (struct ent_player*)spawn_ent(player_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
     p->pos = vec2f{RSIZE,RSIZE};
     player_client.player = (struct ent_player*)p;
@@ -229,64 +221,65 @@ int main() {
     s->pos = vec2f{RSIZE*1.5, RSIZE*CHUNK_WIDTH/2};
     s->fren = p->h;
     printf("*Type name: '%s'\n", get_type_name(s->type));
-    while (running) { //=====================================================================================// GAME LOOP //
+    while (running) {                                                           //======================// GAME LOOP //
         dt = (SDL_GetTicks() - last_frame_end) / 1000;
-        anim_tick = SDL_GetTicks() % 256; // 8-bit timestamp for sprites to know when to go to the next frame.
+        anim_tick = SDL_GetTicks() % 256;                                       //- 8-bit timestamp for animations.
         last_frame_end = SDL_GetTicks();
         track_fps();
-        //=======================================================================================// Client inputs and movement. //
+                                                                                //==================// Client inputs and movement. //
         client_input(&player_client);
-        player_client.update_player_entity(); // Apply client inputs to the player entity.
-        collide_wall((struct ent_basics*)p); //----------------------------------------------- Collision.
+        player_client.update_player_entity();                                   //- Client_Inputs -> Player_Entity.
+        collide_wall((struct ent_basics*)p);                                    //- Collision.
         collide_wall((struct ent_basics*)s);
         //if (anim_tick == 0) std::cout << p->pos << "\n";
-        //=======================================================================================// Update the player's camera position. //
+                                                                                //=================// Update the player's camera position. //
         player_client.camera_pos =
             vec2f {p->pos.x - window_x/2 + RSIZE/2, p->pos.y - window_y/2 + RSIZE/2};
         player_client.camera_center =
             vec2f {p->pos.x, p->pos.y};
-        //=======================================================================================// Building/Destroying tiles. //
+                                                                                //================// Building/Destroying tiles. //
         if (player_client.attacking) {
             //destroy_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
-            tile* timmy = cast_ray(test_world.chunks, p->pos,
-                                   vec2f{cos(player_client.aim_dir/180*(float)M_PI),
-                                         sin(player_client.aim_dir/180*(float)M_PI)});
+            tile* timmy = raycast_into_selected_tile(p->pos,
+                                                   vec2f{cos(player_client.aim_dir/180*(float)M_PI),
+                                                         sin(player_client.aim_dir/180*(float)M_PI)},
+                                                   select_tile(&player_client));
             if (timmy != nullptr) { timmy->wall_height = 0; Mix_PlayChannel(-1, sound, 0); player_client.attacking = 0; }
         }
         if (player_client.building) {
             //build_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
-            tile* timmy = cast_ray_pre_impact(p->pos,
-                                              vec2f{cos(player_client.aim_dir/180*(float)M_PI),
-                                                    sin(player_client.aim_dir/180*(float)M_PI)});
+            tile* timmy = raycast_upto_selected_tile(p->pos,
+                                                   vec2f{cos(player_client.aim_dir/180*(float)M_PI),
+                                                         sin(player_client.aim_dir/180*(float)M_PI)},
+                                                   select_tile(&player_client));
             if (timmy != nullptr) { timmy->wall_height = 16; Mix_PlayChannel(-1, sound, 0); player_client.building = 0; }
         }
-        SDL_RenderClear(renderer); //=========================================================================// Draw the environment. //
-        vec2i order[9] = {
+        SDL_RenderClear(renderer);                                              //===============// Draw the environment. //
+    #define OFFSETS 9
+        vec2i order[OFFSETS] = {
             {-1,1}, {1,1}, {-1,-1}, {1,-1}, //- Corners.
             {-1,0}, {0,1}, {1,0}, {0,-1}, //--- Sides.
             {0,0} //--------------------------- Middle.
         };
-        for (int i=0; i<9; i++) {
+        for (int i=0; i<OFFSETS; i++) {
             vec2i next_chunk = p->chunk + order[i];
-            if ( next_chunk.in_bounds(0,WORLD_WIDTH) ) {
+            if ( next_chunk.in_bounds(0,WORLD_WIDTH) ) {                        //- Floor pass.
                 draw_chunk_floor(
                     player_client.camera_pos, player_client.camera_center,
                     &test_world.chunks[next_chunk.y][next_chunk.x],
                     vec2i{next_chunk.x, next_chunk.y});
             }
         }
-        for (int i=0; i<9; i++) {
+        for (int i=0; i<OFFSETS; i++) {
             vec2i next_chunk = p->chunk + order[i];
-            if ( next_chunk.in_bounds(0,WORLD_WIDTH) ) {
+            if ( next_chunk.in_bounds(0,WORLD_WIDTH) ) {                        //- Wall/entity pass.
                 draw_chunk_other(
                     player_client.camera_pos, player_client.camera_center,
                     &test_world.chunks[next_chunk.y][next_chunk.x],
                     vec2i{next_chunk.x, next_chunk.y});
             }
         }
-        //===========================================================================// Update and draw the entities. //
-        think_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-        //draw_all_ents(player_client.camera_pos, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); // NO LONGER USED?
+        think_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); //==========// Update/draw the entities. //
         move_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         present_frame(); // Put the frame on the screen:
     }

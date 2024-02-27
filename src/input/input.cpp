@@ -16,7 +16,7 @@ bool just_clicked = false;
 bool mouse_moved = false;
 
 
-void client_input(client_data* client) {
+void client_input(client* client) {
     SDL_Event event;
     
     //

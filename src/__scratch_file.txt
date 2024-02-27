@@ -173,9 +173,10 @@ MAX VIEWABLE AREA: 32x32
 
 
 
-
-
-
+ONLY APPLY TILE_SCALE on the screen!! <<<<<<<<<<<<<<<<<<<<<<<<<
+USE TILE_SCALE to make vertical_tiles_visible = 13.5
+window.y / TILE_WIDTH * TILE_SCALE = 13.5
+TILE_SCALE = 13.5 * TILE_WIDTH / window.y
 
 
 

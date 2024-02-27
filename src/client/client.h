@@ -7,7 +7,7 @@
 
 
 // TODO replace the old client system TODO
-struct client_data {
+struct client {
     void update_player_entity();
     // Player entity:
     struct ent_player* player;

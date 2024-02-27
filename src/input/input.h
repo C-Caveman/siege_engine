@@ -9,10 +9,10 @@
 extern int mouse_x;
 extern int mouse_y;
 
-void client_input(client_data* client);
+void client_input(client* client);
 
 
 // TODO replace old ent system TODO
-extern struct client_data player_client;
+extern struct client player_client;
 
 #endif
