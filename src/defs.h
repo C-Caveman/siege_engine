@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <cstdint>
 struct vec2f;
 struct vec2i;
 //=================== Vectors =========================================// Vectors //
