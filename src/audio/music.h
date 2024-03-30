@@ -9,7 +9,7 @@
 
 enum MUSIC_ENUM {
     MUSIC_LIST(TO_ENUM)
-    NUM_MUSIC_TRACKS
+    NUM_MUSIC
 };
 
 #endif 

@@ -5,8 +5,7 @@
 
 #define SFX_LIST(f) \
     f(placeholderSound) \
-    f(placeBlock) \
-    f(destroyBlock)
+    f(thud)
 
 enum SFX_ENUM {
     SFX_LIST(TO_ENUM)

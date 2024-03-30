@@ -42,7 +42,7 @@ void build_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
         return;
     // Play a sound.
     if (chonk->tiles[selected_y][selected_x].wall_height == 0)
-        { Mix_PlayChannel(-1, sound, 0); }
+        { playSound(thud); }
     chonk->set_wall(selected_x,
                     selected_y,
                     wall_steel,wall_steel_side,chonk->tiles[selected_y][selected_x].wall_height + 1);
@@ -58,7 +58,7 @@ void destroy_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
         return;
     // Play a sound.
     if (chonk->tiles[sel.y][sel.x].wall_height == 1)
-        Mix_PlayChannel(-1, sound, 0);
+        playSound(thud);
     chonk->set_wall(sel.x,
                     sel.y,
                     wall_steel,wall_steel_side, chonk->tiles[sel.y][sel.x].wall_height - 1 );
@@ -244,7 +244,7 @@ int main() {
                                                    vec2f{cos(player_client.aim_dir/180*(float)M_PI),
                                                          sin(player_client.aim_dir/180*(float)M_PI)},
                                                    select_tile(&player_client));
-            if (timmy != nullptr && timmy->wall_height != 0) { timmy->wall_height = 0; Mix_PlayChannel(-1, sound, 0); player_client.attacking = 0; }
+            if (timmy != nullptr && timmy->wall_height != 0) { timmy->wall_height = 0; playSound(thud); player_client.attacking = 0; }
         }
         if (player_client.building) {
             //build_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
@@ -252,7 +252,7 @@ int main() {
                                                    vec2f{cos(player_client.aim_dir/180*(float)M_PI),
                                                          sin(player_client.aim_dir/180*(float)M_PI)},
                                                    select_tile(&player_client));
-            if (timmy != nullptr) { timmy->wall_height = 16; Mix_PlayChannel(-1, sound, 0); player_client.building = 0; }
+            if (timmy != nullptr) { timmy->wall_height = 16; playSound(thud); player_client.building = 0; }
         }
         SDL_RenderClear(renderer);                                              //===============// Draw the environment. //
     #define OFFSETS 9
