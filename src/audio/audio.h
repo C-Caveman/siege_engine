@@ -1,7 +1,9 @@
 #ifndef AUDIO
 #define AUDIO
 
-#include "SDL2/SDL_mixer.h" 
+#include "sfx.h"
+#include "music.h"
+#include "SDL2/SDL_mixer.h"
 
 //SDL_AudioDeviceID audio_device;
 extern Mix_Music * music;

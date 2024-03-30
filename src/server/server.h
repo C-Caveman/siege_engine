@@ -8,7 +8,7 @@
 #include "../input/input.h"
 #include "../config/config.h"
 #include "../client/client.h"
-#include "../ent/actions.h"
+#include "server_constants.h"
 
 
 extern int num_clients;
