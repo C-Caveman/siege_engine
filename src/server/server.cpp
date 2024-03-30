@@ -244,7 +244,7 @@ int main() {
                                                    vec2f{cos(player_client.aim_dir/180*(float)M_PI),
                                                          sin(player_client.aim_dir/180*(float)M_PI)},
                                                    select_tile(&player_client));
-            if (timmy != nullptr) { timmy->wall_height = 0; Mix_PlayChannel(-1, sound, 0); player_client.attacking = 0; }
+            if (timmy != nullptr && timmy->wall_height != 0) { timmy->wall_height = 0; Mix_PlayChannel(-1, sound, 0); player_client.attacking = 0; }
         }
         if (player_client.building) {
             //build_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);

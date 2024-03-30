@@ -22,9 +22,8 @@
     DO(wall_steel) \
     DO(wall_steel_side) \
 
-#define MAKE_ENUM(x) x, 
 enum animation_ids {
-    ANIMATION_LIST(MAKE_ENUM)
+    ANIMATION_LIST(TO_ENUM)
     NUM_ANIM
 };
 

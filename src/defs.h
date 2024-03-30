@@ -9,6 +9,10 @@
 #define DEBUG_GRAPHICS 0
 #define DEBUG_GRAPHICS_LOADING 0
 
+// Expansion macros: (X Macros)
+#define TO_ENUM(x) x, 
+#define TO_STRING(x) #x, 
+
 #include <iostream>
 #include <cstring>
 struct vec2f;

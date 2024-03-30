@@ -24,9 +24,8 @@ float last_frame_end, frame_time, frame_count, last_sec, fps;
 float dt = 0;
 TTF_Font* font = 0;
 
-#define MAKE_STRING(x) #x, 
 constexpr int MAX_ANIM_NAME_LEN = 32;
-char animation_names[NUM_ANIM][MAX_ANIM_NAME_LEN] = { ANIMATION_LIST(MAKE_STRING) };
+char animation_names[NUM_ANIM][MAX_ANIM_NAME_LEN] = { ANIMATION_LIST(TO_STRING) };
 
 void skip_comment(FILE* fp) {
     char c = fgetc(fp);
