@@ -91,7 +91,7 @@ void client_input(client* client) {
                         //TODO redo this
                         client->aim_dir += 180;
                         printf("Rotating...\n");
-                        playMusic(brown); //HACK
+                        playMusic(brown);
                         break;
                     
                     case SDLK_f:
