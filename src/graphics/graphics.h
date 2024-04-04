@@ -38,7 +38,8 @@ void track_fps();
 void draw_ent_sprites(vec2f camera_pos, struct ent_basics* ent);
 void draw_all_ents(vec2f camera_pos, char* array, int array_len);
 void draw_chunk_floor(vec2f camera_pos, vec2f camera_center, chunk* chunk, vec2i chunk_index);
-void draw_chunk_other(vec2f camera_pos, vec2f camera_center, chunk* chunk, vec2i chunk_index);
+void draw_chunk_ents(vec2f camera_pos, vec2f camera_center, chunk* chunk, vec2i chunk_index);
+void draw_chunk_walls(vec2f camera_pos, vec2f camera_center, chunk* chunk, vec2i chunk_index);
 void present_frame();
 void cleanup_graphics();
 
