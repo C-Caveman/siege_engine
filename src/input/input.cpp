@@ -108,6 +108,8 @@ void client_input(client* client) {
                             window_y = window_size.h;
                         }
                         fullscreen = !fullscreen;
+                        tile_scale = window_y / VERTICAL_TILES_VISIBLE;
+                        std::cout << "tile_scale for res (" << window_x << ", " << window_y << ") = " << tile_scale << "\n";
                         break;
                         
                     // end of key down processing
@@ -209,8 +211,8 @@ void client_input(client* client) {
     //TODO something with this
     // only override keyboard aim if mouse is moving
     SDL_GetMouseState(&client->aim_pixel_pos.x, &client->aim_pixel_pos.y);
-    client->aim_pixel_pos.x = (client->aim_pixel_pos.x - window_x/2);
-    client->aim_pixel_pos.y = (client->aim_pixel_pos.y - window_y/2);
+    client->aim_pixel_pos.x = (client->aim_pixel_pos.x*(RSIZE/tile_scale) - window_x/2*(RSIZE/tile_scale));
+    client->aim_pixel_pos.y = (client->aim_pixel_pos.y*(RSIZE/tile_scale) - window_y/2*(RSIZE/tile_scale));
     if (mouse_moved == true) {
         client->aim_dir = atan2(client->aim_pixel_pos.y, client->aim_pixel_pos.x) * 180 / M_PI;
     }

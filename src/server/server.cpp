@@ -70,8 +70,8 @@ vec2i select_tile(struct client* c) {
 }
 
 //TODO move this to ent.cpp
-constexpr float PLAYER_WIDTH = RSIZE;
-constexpr float MIN_SQUARE_DISTANCE = PLAYER_WIDTH/2 + RSIZE/2;
+float PLAYER_WIDTH = RSIZE;
+float MIN_SQUARE_DISTANCE = PLAYER_WIDTH/2 + RSIZE/2;
 void collide_wall(struct ent_basics* e) {
     vec2f* position = &e->pos;
     vec2f centered_position = e->pos + vec2f{RSIZE/2, RSIZE/2};
@@ -218,7 +218,7 @@ int main() {
     p->pos = vec2f{RSIZE,RSIZE};
     player_client.player = (struct ent_player*)p;
     ent_scenery* s = (ent_scenery*)spawn_ent(scenery_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-    s->pos = vec2f{RSIZE*1.5, RSIZE*CHUNK_WIDTH/2};
+    s->pos = vec2f{(float)(RSIZE*1.5), RSIZE*CHUNK_WIDTH/2};
     s->fren = p->h;
     printf("*Type name: '%s'\n", get_type_name(s->type));
     while (running) {                                                           //======================// GAME LOOP //
@@ -234,7 +234,7 @@ int main() {
         //if (anim_tick == 0) std::cout << p->pos << "\n";
                                                                                 //=================// Update the player's camera position. //
         player_client.camera_pos =
-            vec2f {p->pos.x - window_x/2 + RSIZE/2, p->pos.y - window_y/2 + RSIZE/2};
+            vec2f {p->pos.x - window_x/2*(RSIZE/tile_scale) + RSIZE/2, p->pos.y - window_y/2*(RSIZE/tile_scale) + RSIZE/2};
         player_client.camera_center =
             vec2f {p->pos.x, p->pos.y};
                                                                                 //================// Building/Destroying tiles. //
