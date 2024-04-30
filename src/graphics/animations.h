@@ -8,6 +8,7 @@
 // each animation loaded by the game (filenames)
 #define ANIMATION_LIST(DO) \
     DO(floor_test) \
+    DO(black) \
     DO(rocket_tank) \
     DO(gun_0) \
     DO(gun_chaingun) \

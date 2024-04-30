@@ -413,33 +413,19 @@ void draw_chunk_walls(vec2f camera_pos, vec2f camera_center, chunk* chunk, vec2i
 }
 void renderText(char* text) {
     SDL_Color White = {255, 255, 255};  // this is the color in rgb format, maxing out all would give you the color white, and it will be your text's color
-
     SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, text, White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-
     SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage); //now you can convert it into a texture
-
-    SDL_Rect Message_rect; //create a rect
-    Message_rect.x = 0;  //controls the rect's x coordinate 
-    Message_rect.y = 0; // controls the rect's y coordinte
-    Message_rect.w = strnlen(text, 256) * window_y/16; // controls the width of the rect
-    Message_rect.h = window_y/16; // controls the height of the rect
-
-    //Mind you that (0,0) is on the top left of the window/screen, think a rect as the text's box, that way it would be very simple to understand
-
-    //Now since it's a texture, you have to put RenderCopy in your game loop area, the area where the whole code executes
-
-    SDL_RenderCopy(renderer, Message, NULL, &Message_rect); //you put the renderer's name first, the Message, the crop size(you can ignore this if you don't want to dabble with cropping), and the rect which is the size and coordinate of your texture
-
-    //Don't forget to free your surface and texture
+    SDL_Rect Message_rect;
+    float charWidth = window_y/16;
+    Message_rect.x = window_x/2 - strnlen(text, 256)*charWidth/2 /* + sin(last_frame_end / 128) * window_x / 16 */;
+    Message_rect.y = window_y/32;
+    Message_rect.w = strnlen(text, 256) * charWidth;
+    Message_rect.h = window_y/16;
+    
+    SDL_RenderCopy(renderer, textures[anim_data[black].texture_index], NULL, &Message_rect);
+    SDL_RenderCopy(renderer, Message, NULL, &Message_rect);
     SDL_FreeSurface(surfaceMessage);
     SDL_DestroyTexture(Message);
-    /*
-    I tried to explain the code line by line, you don't see any window right there since I already assumed that you knew how to initialize a renderer which would give me an idea that you also know how to initialize a window, then all you need is the idea on how to initialize a texture.
-
-    Minor questions here, did your window open? was it colored black? if so then my thoughts were right, if not, then you can just ask me and I could change this code to implement the whole section which consists of a renderer and a window.
-
-    --kdyz
-    */
 }
 void cleanup_graphics() {
     SDL_DestroyRenderer(renderer);

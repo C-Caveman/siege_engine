@@ -293,7 +293,7 @@ int main() {
         
 #define defaultStringSize 256
         char fpsMessage[defaultStringSize];
-        snprintf(fpsMessage, defaultStringSize, "fps: %f", fps);
+        snprintf(fpsMessage, defaultStringSize, "fps: %.0f", fps);
         renderText(fpsMessage);
         //printf("%s\n", fpsMessage);
         
