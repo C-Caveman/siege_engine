@@ -288,6 +288,18 @@ int main() {
                     vec2i{next_chunk.x, next_chunk.y});
             }
         }
+        // DRAW A HUD!
+        
+        
+#define defaultStringSize 256
+        char fpsMessage[defaultStringSize];
+        snprintf(fpsMessage, defaultStringSize, "fps: %f", fps);
+        renderText(fpsMessage);
+        //printf("%s\n", fpsMessage);
+        
+        
+        
+        
         think_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); //==========// Update/draw the entities. //
         move_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         present_frame(); // Put the frame on the screen:

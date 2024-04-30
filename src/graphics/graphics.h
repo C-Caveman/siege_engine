@@ -41,6 +41,7 @@ void draw_all_ents(vec2f camera_pos, char* array, int array_len);
 void draw_chunk_floor(vec2f camera_pos, vec2f camera_center, chunk* chunk, vec2i chunk_index);
 void draw_chunk_ents(vec2f camera_pos, vec2f camera_center, chunk* chunk, vec2i chunk_index);
 void draw_chunk_walls(vec2f camera_pos, vec2f camera_center, chunk* chunk, vec2i chunk_index);
+void renderText(char* text);
 void present_frame();
 void cleanup_graphics();
 
