@@ -22,7 +22,7 @@ SDL_Rect window_size; // Dimensions of the screen. Set in the init_graphics() me
 SDL_Rect background;
 int fullscreen, window_x, window_y, fps_cap;
 int running;
-float last_frame_end, frame_time, frame_count, last_sec, fps;
+float last_frame_end, cur_frame_start, frame_time, frame_count, last_sec, fps;
 float dt = 0;
 TTF_Font* font = 0;
 

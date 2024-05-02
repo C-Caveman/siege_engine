@@ -43,9 +43,12 @@ void build_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
     // Play a sound.
     if (chonk->tiles[selected_y][selected_x].wall_height == 0)
         { playSound(thud); }
+    else if (chonk->tiles[selected_y][selected_x].wall_height != 255) {
+        playSound(metalPing);
+    }
     chonk->set_wall(selected_x,
                     selected_y,
-                    wall_steel,wall_steel_side,chonk->tiles[selected_y][selected_x].wall_height + 1);
+                    wall_steel,wall_steel_side,chonk->tiles[selected_y][selected_x].wall_height + 16);
 }
 void destroy_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
     //destroy_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
@@ -222,7 +225,8 @@ int main() {
     s->fren = p->h;
     printf("*Type name: '%s'\n", get_type_name(s->type));
     while (running) {                                                           //======================// GAME LOOP //
-        dt = (SDL_GetTicks() - last_frame_end) / 1000;
+        cur_frame_start = SDL_GetTicks();
+        dt = (cur_frame_start - last_frame_end) / 1000;
         anim_tick = SDL_GetTicks() % 256;                                       //- 8-bit timestamp for animations.
         last_frame_end = SDL_GetTicks();
         track_fps();
@@ -238,21 +242,34 @@ int main() {
         player_client.camera_center =
             vec2f {p->pos.x, p->pos.y};
                                                                                 //================// Building/Destroying tiles. //
-        if (player_client.attacking) {
+        if (player_client.attacking && (cur_frame_start - player_client.lastAttackTime) > 200) {
             //destroy_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
+            player_client.lastAttackTime = cur_frame_start;
             tile* timmy = raycast_into_selected_tile(p->pos,
                                                    vec2f{cos(player_client.aim_dir/180*(float)M_PI),
                                                          sin(player_client.aim_dir/180*(float)M_PI)},
                                                    select_tile(&player_client));
-            if (timmy != nullptr && timmy->wall_height != 0) { timmy->wall_height = 0; playSound(thud); player_client.attacking = 0; }
+            if (timmy != nullptr && timmy->wall_height != 0) { timmy->wall_height = 0; playSound(thud); }
         }
-        if (player_client.building) {
+        if (player_client.building && (cur_frame_start - player_client.lastBuildTime) > 150) {
+            player_client.lastBuildTime = cur_frame_start;
             //build_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
+            //
             tile* timmy = raycast_upto_selected_tile(p->pos,
                                                    vec2f{cos(player_client.aim_dir/180*(float)M_PI),
                                                          sin(player_client.aim_dir/180*(float)M_PI)},
                                                    select_tile(&player_client));
-            if (timmy != nullptr) { timmy->wall_height = 16; playSound(thud); player_client.building = 0; }
+            for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
+                if (timmy == nullptr)
+                    break;
+                if (timmy->ents[i] != 0)
+                    timmy = nullptr;
+            }
+            if (timmy != nullptr) {
+                timmy->wall_height = 16;
+                playSound(thud);
+            }
+            //
         }
         SDL_RenderClear(renderer);                                              //===============// Draw the environment. //
     #define OFFSETS 9

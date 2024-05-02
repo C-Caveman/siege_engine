@@ -16,16 +16,18 @@ struct client {
     //
     bool attacking;
     bool building;
-    vec2f accel_dir; // Desired move direction.
     bool sprinting; // Desired movement speed.
+    bool quitting; // Quit button.
+    vec2f accel_dir; // Desired move direction.
     float jerk; // Rate of acceleration.
     float aim_dir_rotation; // Desired auto rotation for aim.
     float aim_dir; // Desired aim direction.
     vec2i aim_pixel_pos; // Current pixel the cursor is on.
-    bool quitting; // Quit button.
     // Current camera position:
     vec2f camera_pos; // Top-left corner of the camera.
     vec2f camera_center; // Center of the camera.
+    int lastAttackTime; // Last time the player attacked.
+    int lastBuildTime; // Last time the player built.
 };
 
 // TODO use these for packets TODO
