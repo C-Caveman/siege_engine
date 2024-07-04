@@ -1,4 +1,5 @@
 #include "audio.h" 
+#include "SDL2/SDL_mixer.h"
 
 #define MAX_FILENAME_LEN 256
 #define MAX_SFX_NAME_LEN MAX_FILENAME_LEN - 56

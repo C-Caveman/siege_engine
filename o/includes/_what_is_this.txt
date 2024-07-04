@@ -1,0 +1,7 @@
+This is a folder for linking "whatever.h" files that can fail to be found sometimes.
+
+If the compiler says "missing whatever.h" you can find it with:
+    find / -name 'whavever.h' 2>/dev/null
+
+And then link it to this include dir with:
+    ln -s 'full/path/to/whatever.h' o/includes

@@ -94,7 +94,7 @@ void get_path() {
         printf("Failed to run command.\n");
         exit(1);
     }
-    fgets(path, sizeof(path), fp);
+    (void)!fgets(path, sizeof(path), fp);
     pclose(fp);
     if (path[0] == 0) { // make sure a path was obtained
         printf("Failed to run PWD to get current directory.\n");

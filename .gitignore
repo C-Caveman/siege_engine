@@ -7,3 +7,8 @@ assets
 sup.log
 sup_list.supp
 valgrind_log.txt
+
+#=========================================// Ignore environment-workaround cruft. //
+env
+env.nix
+o/includes/*.h
