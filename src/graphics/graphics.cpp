@@ -427,6 +427,12 @@ void renderText(char* text) {
     SDL_FreeSurface(surfaceMessage);
     SDL_DestroyTexture(Message);
 }
+void drawDebugRectangle(int x, int y, int size) {
+    SDL_Rect testRect = SDL_Rect {x, y, size, size};
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // set rectangle color
+    SDL_RenderFillRect(renderer, &testRect);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+}
 void cleanup_graphics() {
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

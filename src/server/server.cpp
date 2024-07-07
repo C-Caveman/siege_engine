@@ -305,17 +305,16 @@ int main() {
                     vec2i{next_chunk.x, next_chunk.y});
             }
         }
-        // DRAW A HUD!
-        
-        
-#define defaultStringSize 256
+        // DRAW A HUD!        
+        #define defaultStringSize 256
         char fpsMessage[defaultStringSize];
         snprintf(fpsMessage, defaultStringSize, "fps: %.0f", fps);
         renderText(fpsMessage);
-        //printf("%s\n", fpsMessage);
         
-        
-        
+        const int testRectSize = 100;
+        const float offsetRatio = 0.1;
+        drawDebugRectangle( (window_x/2 - testRectSize/2) + p->vel.x*offsetRatio, (window_y/2 - testRectSize/2) + p->vel.y*offsetRatio, testRectSize);
+        draw_ent_sprites(player_client.camera_pos, (struct ent_basics*)p);
         
         think_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); //==========// Update/draw the entities. //
         move_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
