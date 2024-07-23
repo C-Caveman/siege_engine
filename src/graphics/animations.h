@@ -14,10 +14,12 @@
     DO(gun_chaingun) \
     DO(gun_grenade) \
     DO(gun_railgun) \
+    DO(projectilePlasma) \
     DO(sand) \
     DO(stone) \
     DO(stonedk) \
     DO(tiledark) \
+    DO(solid_grey) \
     DO(firepit) \
     DO(knight_1) \
     DO(wall_steel) \

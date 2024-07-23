@@ -37,18 +37,17 @@ void build_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
     //printf("Tile: (%d, %d)\n", selected_x, selected_y);
     //printf("Pos:  (%f, %f)\n", camera_center.x, camera_center.y);
     if (chonk->tiles[selected_y][selected_x].wall_height > 254 ||
-        ( (int(camera_center.x/RSIZE) == selected_x) && (int(camera_center.y/RSIZE) == selected_y) )
-    )
+        ( (int(camera_center.x/RSIZE) == selected_x) && (int(camera_center.y/RSIZE) == selected_y) ))
         return;
+    struct tile* t = &chonk->tiles[selected_y][selected_x];
     // Play a sound.
-    if (chonk->tiles[selected_y][selected_x].wall_height == 0)
-        { playSound(thud); }
-    else if (chonk->tiles[selected_y][selected_x].wall_height != 255) {
-        playSound(metalPing);
+    if (t->wall_height == 0) {
+        playSound(thud);
     }
     chonk->set_wall(selected_x,
                     selected_y,
-                    wall_steel,wall_steel_side,chonk->tiles[selected_y][selected_x].wall_height + 16);
+                    wall_steel,solid_grey,t->wall_height + 16);
+    //t->wall_side_anim = solid_grey;
 }
 void destroy_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
     //destroy_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
@@ -242,6 +241,14 @@ int main() {
         player_client.camera_center =
             vec2f {p->pos.x, p->pos.y};
                                                                                 //================// Building/Destroying tiles. //
+        if (player_client.attacking && (cur_frame_start - player_client.lastAttackTime) > 10) {
+            player_client.lastAttackTime = cur_frame_start;
+            playSound(placeholderSound);
+            void* e = spawn_ent(projectile_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+            vec2f aimDir = vec2f{cos(player_client.aim_dir/180*(float)M_PI), sin(player_client.aim_dir/180*(float)M_PI)};
+            ((struct ent_basics*)e)->pos = player_client.player->pos + aimDir*100;
+            ((struct ent_basics*)e)->vel = aimDir * 400;
+        }
         if (player_client.attacking && (cur_frame_start - player_client.lastAttackTime) > 200) {
             //destroy_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
             player_client.lastAttackTime = cur_frame_start;
@@ -267,6 +274,7 @@ int main() {
             }
             if (timmy != nullptr) {
                 timmy->wall_height = 16;
+                timmy->wall_side_anim = solid_grey;
                 playSound(thud);
             }
             //

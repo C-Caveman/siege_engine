@@ -64,13 +64,24 @@ void ent_scenery::init() {
     flags = DRAWABLE | ANIMATABLE;
     num_sprites = NUM_SCENERY_SPRITES;
     sprites[SCENERY_SPRITE].anim = rocket_tank;
-}//==============================================================================// UPDATE AN ENTITY FOR THE NEXT FRAME. //
+}
+void ent_projectile::init() {
+    num_sprites = 1;
+    sprites[0].anim = projectilePlasma;
+    lifetime = 100;
+}
+//==============================================================================// UPDATE AN ENTITY FOR THE NEXT FRAME. //
 void ent_player::think() {
 }
 void ent_scenery::think() {
     ent_basics* e = get_ent(fren);
     if (e != nullptr) { vel = vel + ( e->pos-pos ).normalized() * 15; } //- Follow the player.
     vel = vel * 1.1; //---------------------------------------------------- Slip around.
+}
+void ent_projectile::think() {
+    lifetime -= 1;
+    if (lifetime <= 0)
+        despawn_ent((ent_basics*)this);
 }
 //=====================================================// Entity management functions. (spawn, despawn, get_next, ect.) //
 // X macro for ENTITY_TYPES_LIST:

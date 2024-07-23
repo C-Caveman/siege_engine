@@ -40,7 +40,8 @@ handle              uncopy_handle(handle i); //----------- Delete a handle to an
 #define MAX_ENTITY_TYPE_NAME_LEN 32
 #define ENTITY_TYPES_LIST \
     expand(player) \
-    expand(scenery)
+    expand(scenery) \
+    expand(projectile)
 // ENTITY_TYPES_LIST is an X macro. Redefine expand() to change how the list expands.
 #define expand(name) name##_type, 
 enum entity_types { ENTITY_TYPES_LIST    NUM_ENT_TYPES };
@@ -72,6 +73,16 @@ struct ent_scenery {
     ENT_BASICS
     struct sprite sprites[NUM_PLAYER_SPRITES];
     handle fren;
+
+    void init();
+    void think();
+};
+enum projectile_sprites {PROJECTILE_SPRITE_1, PROJECTILE_SPRITE_2}; //----------------------- Projectile entity.
+struct ent_projectile {
+    ENT_BASICS
+    struct sprite sprites[NUM_PLAYER_SPRITES];
+    handle parent;
+    int lifetime;
 
     void init();
     void think();
