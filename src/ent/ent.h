@@ -41,13 +41,12 @@ handle              uncopy_handle(handle i); //----------- Delete a handle to an
 #define ENTITY_TYPES_LIST \
     expand(player) \
     expand(scenery) \
-    expand(projectile)
-// ENTITY_TYPES_LIST is an X macro. Redefine expand() to change how the list expands.
+    expand(projectile) \
+    expand(rabbit)
 #define expand(name) name##_type, 
 enum entity_types { ENTITY_TYPES_LIST    NUM_ENT_TYPES };
 #undef expand
-//======= ENTITIES ====================================================================================// ENTITIES //
-enum example_sprites {FIRST_SPRITE, SECOND_SPRITE, NUM_EXAMPLE_SPRITES}; //---------- EXAMPLE ENTITY.
+enum example_sprites {FIRST_SPRITE, SECOND_SPRITE, NUM_EXAMPLE_SPRITES}; //---------- EXAMPLE ENTITY!!!!!!!!!!!!!!!!!!!!!!
 struct ent_example {
     ENT_BASICS //---------------------------------------------- !!! REQUIRED !!!
     struct sprite sprites[NUM_EXAMPLE_SPRITES]; //------------- !!! REQUIRED !!!
@@ -57,7 +56,7 @@ struct ent_example {
     void think(); //------------------------------------------- !!! REQUIRED !!!
     //--------------------------------------------------------- <your functions here>
 };
-enum player_sprites {PLAYER_BODY, PLAYER_GUN, NUM_PLAYER_SPRITES}; //---------------- Player entity.
+enum player_sprites {PLAYER_BODY, PLAYER_GUN, NUM_PLAYER_SPRITES};              // PLAYER
 enum move_types {MOVE_SNEAK, MOVE_WALK, MOVE_SPRINT, MOVE_DASH, NUM_MOVE_TYPES};
 struct ent_player {
     ENT_BASICS
@@ -68,7 +67,7 @@ struct ent_player {
     void init();
     void think();
 };
-enum scenery_sprites {SCENERY_SPRITE, NUM_SCENERY_SPRITES}; //----------------------- Scenery entity.
+enum scenery_sprites {SCENERY_SPRITE_1, NUM_SCENERY_SPRITES};                     // SCENERY
 struct ent_scenery {
     ENT_BASICS
     struct sprite sprites[NUM_PLAYER_SPRITES];
@@ -77,12 +76,22 @@ struct ent_scenery {
     void init();
     void think();
 };
-enum projectile_sprites {PROJECTILE_SPRITE_1, PROJECTILE_SPRITE_2}; //----------------------- Projectile entity.
+enum projectile_sprites {PROJECTILE_SPRITE_1, PROJECTILE_SPRITE_2};             // PROJECTILE
 struct ent_projectile {
     ENT_BASICS
     struct sprite sprites[NUM_PLAYER_SPRITES];
     handle parent;
     int lifetime;
+
+    void init();
+    void think();
+};
+enum rabbit_sprites {RABBIT_SPRITE_1, NUM_RABBIT_SPRITES};                      // RABBIT
+struct ent_rabbit {
+    ENT_BASICS
+    struct sprite sprites[NUM_RABBIT_SPRITES];
+    vec2f wanderDir;
+    int wanderWait;
 
     void init();
     void think();

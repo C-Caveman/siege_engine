@@ -190,20 +190,24 @@ void draw_ent_sprites(vec2f camera_pos, struct ent_basics* e) {
     ent_render_pos.w = ent_render_pos.h = tile_scale;
     if (DEBUG_GRAPHICS) { printf("Num sprites in %s entity: %d\n", get_type_name(e->type), num_sprites); }
     sprite* sprites = (sprite*)( (char*)e+sizeof(struct ent_basics) );
+    sprite* s;
     for (int i=0; i<num_sprites; i++) {
         // Get sprite data: (stored after the basic_ent segments)
-        anim = sprites[i].anim;
-        p =    sprites[i].pos + e->pos;
-        tick = sprites[i].anim_tick;
-        rotation = sprites[i].rotation;
+        s = &sprites[i];
+        anim = s->anim;
+        p =    s->pos + e->pos;
+        tick = s->anim_tick;
+        rotation = s->rotation;
+        flags = s->flags;
         //
         // Advance to the next frame if enough time has passed.
         //
         // Pause if on the last frame and not looping:
-        if (  (sprites[i].frame == (anim_data[anim].len-1)) &&
-             !(sprites[i].flags & LOOPING))
-            { sprites[i].flags |= PAUSED; }
-        flags = sprites[i].flags;
+        bool isLastFrame = (s->frame == (anim_data[anim].len-1));
+        if (  isLastFrame && !(s->flags & (uint8_t)LOOPING)) {
+            s->flags |= PAUSED;
+            //printf("Stopped anim for %s.\n", get_type_name(e->type));
+        }
         // Handle anim_tick overflowing back to lower values:
         ms_since_last_frame = anim_tick - tick + (anim_tick < tick)*256;
         // Update the frame if enough anim_ticks have passed since the last one:
@@ -212,7 +216,9 @@ void draw_ent_sprites(vec2f camera_pos, struct ent_basics* e) {
             sprites[i].frame += 1;
         }
         // Loop if needed:
-        if (sprites[i].frame > (anim_data[anim].len-1)) { sprites[i].frame = 0; }
+        if (sprites[i].frame >= anim_data[anim].len) {
+            sprites[i].frame = 0;
+        }
         // Adjust for screen position:
         ent_render_pos.x = (p.x - camera_pos.x)*(tile_scale/RSIZE);
         ent_render_pos.y = (p.y - camera_pos.y)*(tile_scale/RSIZE);

@@ -46,7 +46,7 @@ struct ent_basics*  get_ent(handle i) { //------------ Get an entity by its hand
         { return handles[i].ent; }
     else
         { handles[i].copies--; return nullptr; }
-}//===============================================================================// INITIALIZE AN ENTITY. //
+}//===============================================================================// ENTITY FUNCTIONS. //
 void ent_player::init() {
     if (DEBUG_ENTS) { printf("Player entity initializing!\n"); }
     flags = DRAWABLE | ANIMATABLE | MOVABLE | COLLIDABLE | THINKABLE;
@@ -58,31 +58,49 @@ void ent_player::init() {
     // Sprint by default:
     movetype = MOVE_SPRINT;
 }
-void ent_scenery::init() {
+void ent_player::think() {                              // PLAYER
+}
+
+void ent_scenery::init() {                              // SCENERY
     if (DEBUG_ENTS)
         printf("Scenery ent initializing!\n");
     flags = DRAWABLE | ANIMATABLE;
     num_sprites = NUM_SCENERY_SPRITES;
-    sprites[SCENERY_SPRITE].anim = rocket_tank;
+    sprites[SCENERY_SPRITE_1].anim = rocket_tank;
 }
-void ent_projectile::init() {
+void ent_scenery::think() {
+    //ent_basics* e = get_ent(fren);
+    //if (e != nullptr) { vel = vel + ( e->pos-pos ).normalized() * 15; } //- Follow the player.
+    //vel = vel * 1.1; //---------------------------------------------------- Slip around.
+}
+
+void ent_projectile::init() {                           // PROJECTILE
     num_sprites = 1;
     sprites[0].anim = projectilePlasma;
     lifetime = 100;
-}
-//==============================================================================// UPDATE AN ENTITY FOR THE NEXT FRAME. //
-void ent_player::think() {
-}
-void ent_scenery::think() {
-    ent_basics* e = get_ent(fren);
-    if (e != nullptr) { vel = vel + ( e->pos-pos ).normalized() * 15; } //- Follow the player.
-    vel = vel * 1.1; //---------------------------------------------------- Slip around.
 }
 void ent_projectile::think() {
     lifetime -= 1;
     if (lifetime <= 0)
         despawn_ent((ent_basics*)this);
 }
+
+void ent_rabbit::init() {                               // RABBIT
+    wanderDir = vec2f{1,0};
+    wanderWait = 100;
+    num_sprites = 1;
+    sprites[0].flags |= LOOPING;
+    sprites[0].anim = cubeFace;
+}
+void ent_rabbit::think() {
+    wanderWait -= 1;
+    if (wanderWait <= 0) {
+        wanderWait = 100;
+        wanderDir = vec2f{ (float)(rand()) / (float)(RAND_MAX) - 0.5f, (float)(rand()) / (float)RAND_MAX - 0.5f };
+        vel = wanderDir.normalized() * 800.f;
+    }
+}
+
 //=====================================================// Entity management functions. (spawn, despawn, get_next, ect.) //
 // X macro for ENTITY_TYPES_LIST:
 #define expand(name) #name, 

@@ -10,6 +10,7 @@
     DO(floor_test) \
     DO(black) \
     DO(rocket_tank) \
+    DO(cubeFace) \
     DO(gun_0) \
     DO(gun_chaingun) \
     DO(gun_grenade) \

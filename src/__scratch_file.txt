@@ -180,6 +180,8 @@ TILE_SCALE = 13.5 * TILE_WIDTH / window.y
 
 
 
+**********************************************************************************
+I just want to open a door and hear a coin-pickup sound.
 
 
 
@@ -188,15 +190,97 @@ TILE_SCALE = 13.5 * TILE_WIDTH / window.y
 
 
 
+/
+    /src
+    /config
+        config.cfg
+    /assets
+    /placeholders
+    /CRUCIBLE
+        /BOOT
+            /living
+                player.png
+            /dead
+            state.txt
+        /OVERWORLD
+            /living
+                mentor.png
+            /dead
+            state.txt
+        /UNDERWORLD
+            /living
+            /dead
+            state.txt
+        /ETHER
+            /undead
+            /dead
+            state.txt
+        /LIB
+            /living
+            /dead
+            state.txt
+            history.txt
+            fabricator.exe
+        /VAULT
+            /living
+            /dead
+            permanent.sav
+            memories.txt
+            secrets.pgp
+    /.VAULT
+        /living
+        /dead
+            _.png
+        secrets.pgp
+        
+      
+#ARRIVAL
+WHERE TO? > 
 
 
 
 
+****************************************************************************************
+Text boxes:
+
++------Face--------+  +-Text---------------------------------------------------+
+|                  |  |                                                        |
+|                  |  |                                                        |
+|                  |  |                                                        |
+|                  |  |                                                        |
+|                  |  |                                                        |
++------------------+  +--------------------------------------------------------+
+
+****************************************************************************************
+Potential names:
+    Galliard    Ye olde dance music.
+    Aenon       Place of baptism.
+    Alukah      Blood sucker. Vampire?
+    Anna        Widow, prophet of Christ's coming.
+    Ariel       Underworld, potential root word of Erelim.
+    Boaz        "To be strong."
+    Cassiel,    Guardians of a divine fortress.
+    Dumiel,     |
+    Gabriel     |
+    Caleb       Representative of the Tribe of Judah during the Israelites' journey to the Promised Land.
+    Efron       Son of Zohar the Hittite.
+    
 
 
+****************************************************************************************
+Exploring the worlds and vault(s?),     [dialogue, vault keys, scenery]
+moving characters in files,             [dialogue]
+simple puzzles,                         [vault keys]
+combat setpieces,                       [vault keys]
 
-
-
+***
+exploration:
+    environment
+    character
+puzzles:
+    environment
+    combat
+    character
 
 
 

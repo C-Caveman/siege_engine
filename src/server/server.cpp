@@ -223,6 +223,8 @@ int main() {
     s->pos = vec2f{(float)(RSIZE*1.5), RSIZE*CHUNK_WIDTH/2};
     s->fren = p->h;
     printf("*Type name: '%s'\n", get_type_name(s->type));
+    struct ent_basics* bunny = (struct ent_basics*)spawn_ent(rabbit_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+    bunny->pos = vec2f{RSIZE*2, RSIZE*2};
     while (running) {                                                           //======================// GAME LOOP //
         cur_frame_start = SDL_GetTicks();
         dt = (cur_frame_start - last_frame_end) / 1000;
@@ -234,6 +236,7 @@ int main() {
         player_client.update_player_entity();                                   //- Client_Inputs -> Player_Entity.
         collide_wall((struct ent_basics*)p);                                    //- Collision.
         collide_wall((struct ent_basics*)s);
+        collide_wall((struct ent_basics*)bunny);
         //if (anim_tick == 0) std::cout << p->pos << "\n";
                                                                                 //=================// Update the player's camera position. //
         player_client.camera_pos =
@@ -322,7 +325,8 @@ int main() {
         const int testRectSize = 100;
         const float offsetRatio = 0.1;
         drawDebugRectangle( (window_x/2 - testRectSize/2) + p->vel.x*offsetRatio, (window_y/2 - testRectSize/2) + p->vel.y*offsetRatio, testRectSize);
-        draw_ent_sprites(player_client.camera_pos, (struct ent_basics*)p);
+        //draw_ent_sprites(player_client.camera_pos, (struct ent_basics*)p);
+        draw_all_ents(player_client.camera_pos, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         
         think_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); //==========// Update/draw the entities. //
         move_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);

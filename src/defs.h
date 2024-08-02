@@ -87,7 +87,10 @@ typedef int16_t handle; //-------------------- Entity handle.
 struct ent_basics { ENT_BASICS }; //----------------------------------- Generic entity.
 enum ent_flags {DRAWABLE, ANIMATABLE, MOVABLE, COLLIDABLE, THINKABLE, };
 //============================================================================// SPRITES //
-enum sprite_flags {LOOPING, PAUSED, };
+enum sprite_flags {
+    LOOPING = 1<<0,
+    PAUSED  = 1<<1,
+};
 #define HEADER_BYTE 'H'
 struct sprite {
     uint16_t anim;       // Enum value of the animation. (animation data is stored elsewhere)
