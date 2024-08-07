@@ -250,6 +250,7 @@ int main() {
             void* e = spawn_ent(projectile_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
             vec2f aimDir = vec2f{cos(player_client.aim_dir/180*(float)M_PI), sin(player_client.aim_dir/180*(float)M_PI)};
             ((struct ent_basics*)e)->pos = player_client.player->pos + aimDir*100;
+            ((struct ent_basics*)e)->tile = (player_client.player->pos + aimDir*100).to_int() / RSIZE;
             ((struct ent_basics*)e)->vel = aimDir * 400;
         }
         if (player_client.attacking && (cur_frame_start - player_client.lastAttackTime) > 200) {
