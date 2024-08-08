@@ -9,7 +9,8 @@
     f(fwaf) \
     f(metalFadeIn) \
     f(metalPing) \
-    f(metalThunder)
+    f(metalThunder) \
+    f(chow)
 
 enum SFX_ENUM {
     SFX_LIST(TO_ENUM)

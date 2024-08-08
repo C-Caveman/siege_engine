@@ -1,5 +1,6 @@
 // Implementations of entity functions.
 #include "ent.h"
+#include "../audio/audio.h"
 
 extern volatile float mouse_angle; // Direction the mouse is pointed in.
 extern volatile int mouse_x;
@@ -49,7 +50,6 @@ struct ent_basics*  get_ent(handle i) { //------------ Get an entity by its hand
 }//===============================================================================// ENTITY FUNCTIONS. //
 void ent_player::init() {
     if (DEBUG_ENTS) { printf("Player entity initializing!\n"); }
-    flags = DRAWABLE | ANIMATABLE | MOVABLE | COLLIDABLE | THINKABLE;
     pos = vec2f{0,0};
     // Init the sprites:
     num_sprites = NUM_PLAYER_SPRITES;
@@ -64,7 +64,6 @@ void ent_player::think() {                              // PLAYER
 void ent_scenery::init() {                              // SCENERY
     if (DEBUG_ENTS)
         printf("Scenery ent initializing!\n");
-    flags = DRAWABLE | ANIMATABLE;
     num_sprites = NUM_SCENERY_SPRITES;
     sprites[SCENERY_SPRITE_1].anim = rocket_tank;
 }
@@ -77,17 +76,17 @@ void ent_scenery::think() {
 void ent_projectile::init() {                           // PROJECTILE
     num_sprites = 1;
     sprites[0].anim = projectilePlasma;
+    flags = NOFRICTION;
     lifetime = 100;
 }
 void ent_projectile::think() {
     lifetime -= 1;
     struct tile* cur_tile = main_world->get_tile(tile);
-    if (h == 4 && cur_tile != 0) {
-        printf("Wall height: %d\n", cur_tile->wall_height);
-    }
     if (cur_tile != 0 && cur_tile->wall_height > 0) {
         lifetime = 0;
         despawn_ent((ent_basics*)this);
+        cur_tile->wall_height = 0;
+        playSound(chow);
         return;
     }
     if (lifetime <= 0)
@@ -246,6 +245,7 @@ void move_ent(struct ent_basics* e) { //------------ Update an ent's position ba
     // Apply friction:
     float friction = e->vel.vlen();
     friction = (friction * friction) / 10000;
-    e->vel = e->vel - (e->vel.normalized() * friction);
+    int hasFriction = (e->flags & NOFRICTION) == 0;
+    e->vel = e->vel - (e->vel.normalized() * friction * hasFriction);
     if (e->vel.vlen() < 5) { e->vel = vec2f{0,0}; } // Minimum vel.
 }

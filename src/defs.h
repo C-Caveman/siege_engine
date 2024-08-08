@@ -85,7 +85,14 @@ struct vec2i {
     int health;
 typedef int16_t handle; //-------------------- Entity handle.
 struct ent_basics { ENT_BASICS }; //----------------------------------- Generic entity.
-enum ent_flags {DRAWABLE, ANIMATABLE, MOVABLE, COLLIDABLE, THINKABLE, };
+enum ent_flags {
+    NODRAW =      1,
+    NOANIMATION = 2,
+    NOMOVE =      2*2,
+    NOFRICTION =  2*2*2,
+    NOCOLLISION = 2*2*2*2,
+    NOTHINK =     2*2*2*2*2,
+};
 //============================================================================// SPRITES //
 enum sprite_flags {
     LOOPING = 1<<0,
