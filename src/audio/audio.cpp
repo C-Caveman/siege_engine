@@ -58,17 +58,11 @@ void init_audio() {
 }
 
 void cleanup_audio() {
-    Mix_Chunk* placeholderSoundPtr = sfx[placeholderSound];
-    Mix_FreeChunk(sfx[placeholderSound]);
     for (int i=0; i<NUM_SFX; i++) {
-        if (sfx[i] != placeholderSoundPtr)
-            Mix_FreeChunk(sfx[i]);
+        Mix_FreeChunk(sfx[i]);
     }
-    Mix_Music* placeholderMusicPtr = musics[placeholderMusic];
-    Mix_FreeMusic(musics[placeholderMusic]);
     for (int i=0; i<NUM_MUSIC; i++) {
-        if (musics[i] != placeholderMusicPtr)
-            Mix_FreeMusic(musics[i]);
+        Mix_FreeMusic(musics[i]);
     }
     Mix_Quit();
     Mix_CloseAudio();

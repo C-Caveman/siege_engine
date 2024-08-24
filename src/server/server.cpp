@@ -323,14 +323,13 @@ int main() {
         snprintf(fpsMessage, defaultStringSize, "fps: %.0f", fps);
         renderText(fpsMessage);
         
-        const int testRectSize = 100;
-        const float offsetRatio = 0.1;
-        drawDebugRectangle( (window_x/2 - testRectSize/2) + p->vel.x*offsetRatio, (window_y/2 - testRectSize/2) + p->vel.y*offsetRatio, testRectSize);
+        char message[] = "Hello world! This is a very long meeeeeeeeeeeeeeeeeeeeeeeeeeesssssssssssssssaaaaaaaaaaaaaaaaaaagggggggggggge.";
+        drawTextBox((char*)&message);
         //draw_ent_sprites(player_client.camera_pos, (struct ent_basics*)p);
         
         think_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); //==========// Update/draw the entities. //
         move_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-        draw_all_ents(player_client.camera_pos, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+        //draw_all_ents(player_client.camera_pos, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         present_frame(); // Put the frame on the screen:
     }
     printf("Server was running for %d seconds.\n", SDL_GetTicks() / 1000);

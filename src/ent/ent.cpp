@@ -81,7 +81,7 @@ void ent_projectile::init() {                           // PROJECTILE
 }
 void ent_projectile::think() {
     lifetime -= 1;
-    struct tile* cur_tile = main_world->get_tile(pos.to_int() / RSIZE);
+    struct tile* cur_tile = main_world->get_tile( (pos + vec2f{RSIZE/2,RSIZE/2}).to_int() / RSIZE);
     if (cur_tile != 0 && cur_tile->wall_height > 0) {
         lifetime = 0;
         despawn_ent((ent_basics*)this);

@@ -433,11 +433,45 @@ void renderText(char* text) {
     SDL_FreeSurface(surfaceMessage);
     SDL_DestroyTexture(Message);
 }
-void drawDebugRectangle(int x, int y, int size) {
-    SDL_Rect testRect = SDL_Rect {x, y, size, size};
+void drawDebugRectangle(int x, int y, int w, int h) {
+    SDL_Rect testRect = SDL_Rect {x, y, w, h};
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // set rectangle color
     SDL_RenderFillRect(renderer, &testRect);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+}
+
+/*?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+
+Each character needs to be a fixed % of the screen width!
+Let's say 5%??
+
+*/
+void drawTextBox(char* text) {
+    SDL_Color White = {255, 255, 255};
+    int charWidth = window_x / 32;
+    int charHeight = charWidth * 2;
+    int numChars = strlen(text);
+    #define MAX_LINE_BUFFER_SIZE 256
+    char lineBuffer[MAX_LINE_BUFFER_SIZE] = {0};
+    int maxLineChars = (window_x / charWidth) - 1;
+    if (maxLineChars > MAX_LINE_BUFFER_SIZE)
+        maxLineChars = MAX_LINE_BUFFER_SIZE;
+    int numLines = std::ceil(numChars / maxLineChars);
+    int numCharsPrinted = 0;
+    
+    // Draw the message box:
+    for (int i=0; i<numLines; i++) {
+        memset(lineBuffer, 0, MAX_LINE_BUFFER_SIZE);
+        strncpy(lineBuffer, &text[numCharsPrinted], maxLineChars);
+        numCharsPrinted += maxLineChars;
+        SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, lineBuffer, White);
+        SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+        SDL_Rect lineOfText = SDL_Rect {window_x/128, window_y-charHeight*numLines + charHeight*i, charWidth*maxLineChars, charHeight};
+        SDL_RenderCopy(renderer, textures[anim_data[black].texture_index], NULL, &lineOfText);
+        SDL_RenderCopy(renderer, Message, NULL, &lineOfText);
+        SDL_FreeSurface(surfaceMessage);
+        SDL_DestroyTexture(Message);
+    }
 }
 void cleanup_graphics() {
     SDL_DestroyRenderer(renderer);
