@@ -323,7 +323,7 @@ int main() {
         snprintf(fpsMessage, defaultStringSize, "fps: %.0f", fps);
         renderText(fpsMessage);
         
-        char message[] = "Hello world! This is a very long meeeeeeeeeeeeeeeeeeeeeeeeeeesssssssssssssssaaaaaaaaaaaaaaaaaaagggggggggggge.";
+        char message[] = "Example message. Woooooooooooooooooooooooooooooooooooooords! Hello world! Goodbye world!";
         drawTextBox((char*)&message);
         //draw_ent_sprites(player_client.camera_pos, (struct ent_basics*)p);
         

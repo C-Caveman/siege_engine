@@ -111,11 +111,13 @@ void init_fonts() {
         printf("Failed to load SDL2_ttf library: %s\n", TTF_GetError());
         exit(1);
     }
-    char font_path[] = "assets/graphics/fonts/KronaOne-Regular.ttf";
-    font = TTF_OpenFont(font_path, 24);
-    if (font == 0) { printf("Failed to load font %s\n%s\n", font_path, TTF_GetError()); }
+    char font_path[] = "assets/graphics/fonts/FreeMonoBold.ttf";
     char font_placeholder_path[] = "placeholders/graphics/fonts/KronaOne-Regular.ttf";
-    font = TTF_OpenFont(font_placeholder_path, 24);
+    font = TTF_OpenFont(font_path, 24);
+    if (font == 0) {
+        printf("Failed to load font %s\n%s\n", font_path, TTF_GetError());
+        font = TTF_OpenFont(font_placeholder_path, 24);
+    }
     if (font == 0) { printf("Failed to load font %s\n%s\n", font_placeholder_path, TTF_GetError()); exit(-1); }
 }
 
@@ -448,7 +450,7 @@ Let's say 5%??
 */
 void drawTextBox(char* text) {
     SDL_Color White = {255, 255, 255};
-    int charWidth = window_x / 32;
+    int charWidth = window_x / 64;
     int charHeight = charWidth * 2;
     int numChars = strlen(text);
     #define MAX_LINE_BUFFER_SIZE 256
@@ -456,21 +458,28 @@ void drawTextBox(char* text) {
     int maxLineChars = (window_x / charWidth) - 1;
     if (maxLineChars > MAX_LINE_BUFFER_SIZE)
         maxLineChars = MAX_LINE_BUFFER_SIZE;
-    int numLines = std::ceil(numChars / maxLineChars);
-    int numCharsPrinted = 0;
-    
-    // Draw the message box:
-    for (int i=0; i<numLines; i++) {
-        memset(lineBuffer, 0, MAX_LINE_BUFFER_SIZE);
-        strncpy(lineBuffer, &text[numCharsPrinted], maxLineChars);
-        numCharsPrinted += maxLineChars;
+    //int numLines = std::ceil(numChars / maxLineChars) + 1; //TODO re-implement the numLines counter, or set a fixed line count!! TODO
+    //int numCharsPrinted = 0;
+    int wrapThreshold = maxLineChars * 0.9;
+    int lineNumber = 0;
+    int curLineChars = 0;
+    // Print the text:
+    for (int i=0; i<numChars; i++, curLineChars++) {
+        if ( (curLineChars >= wrapThreshold && text[i] == ' ') || (curLineChars >= maxLineChars) ) {
+            lineNumber++;
+            curLineChars = 0;
+            //Skip leading whitespace.
+            while (text[i] == ' ')
+                i++;
+        }
+        lineBuffer[0] = text[i];
         SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, lineBuffer, White);
-        SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
-        SDL_Rect lineOfText = SDL_Rect {window_x/128, window_y-charHeight*numLines + charHeight*i, charWidth*maxLineChars, charHeight};
-        SDL_RenderCopy(renderer, textures[anim_data[black].texture_index], NULL, &lineOfText);
-        SDL_RenderCopy(renderer, Message, NULL, &lineOfText);
+        SDL_Texture* charTexture = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+        SDL_Rect charBox = SDL_Rect {charWidth*(curLineChars+1), charHeight*lineNumber + window_y*3/4, charWidth, charHeight};
+        SDL_RenderCopy(renderer, textures[anim_data[black].texture_index], NULL, &charBox);
+        SDL_RenderCopy(renderer, charTexture, NULL, &charBox);
         SDL_FreeSurface(surfaceMessage);
-        SDL_DestroyTexture(Message);
+        SDL_DestroyTexture(charTexture);
     }
 }
 void cleanup_graphics() {

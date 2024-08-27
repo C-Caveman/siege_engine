@@ -98,7 +98,7 @@ void ent_rabbit::init() {                               // RABBIT
     wanderWait = 100;
     num_sprites = 1;
     sprites[0].flags |= LOOPING;
-    sprites[0].anim = cubeFace;
+    sprites[0].anim = faceNecronomicon;
 }
 void ent_rabbit::think() {
     wanderWait -= 1;
