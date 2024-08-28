@@ -442,13 +442,45 @@ void drawDebugRectangle(int x, int y, int w, int h) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 }
 
-/*?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+void drawFps(float fps) {
+    #define fpsStringSize 256
+    char fpsText[fpsStringSize];
+    snprintf(fpsText, fpsStringSize, "fps: %.0f", fps);
+    
+    
+    SDL_Color White = {255, 255, 255};
+    int charWidth = window_x / 64;
+    int charHeight = charWidth * 2;
+    int numChars = strlen(fpsText);
+    #define MAX_LINE_BUFFER_SIZE 256
+    char lineBuffer[MAX_LINE_BUFFER_SIZE] = {0};
+    int maxLineChars = (window_x / charWidth) - 1;
+    if (maxLineChars > MAX_LINE_BUFFER_SIZE)
+        maxLineChars = MAX_LINE_BUFFER_SIZE;
+    int wrapThreshold = maxLineChars * 0.9;
+    int lineNumber = 0;
+    int curLineChars = 0;
+    // Print the text:
+    for (int i=0; i<numChars; i++, curLineChars++) {
+        if ( (curLineChars >= wrapThreshold && fpsText[i] == ' ') || (curLineChars >= maxLineChars) ) {
+            lineNumber++;
+            curLineChars = 0;
+            //Skip leading whitespace.
+            while (fpsText[i] == ' ')
+                i++;
+        }
+        lineBuffer[0] = fpsText[i];
+        SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, lineBuffer, White);
+        SDL_Texture* charTexture = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+        SDL_Rect charBox = SDL_Rect {charWidth*(curLineChars+1), charHeight*lineNumber + window_y/128, charWidth, charHeight};
+        SDL_RenderCopy(renderer, textures[anim_data[black].texture_index], NULL, &charBox);
+        SDL_RenderCopy(renderer, charTexture, NULL, &charBox);
+        SDL_FreeSurface(surfaceMessage);
+        SDL_DestroyTexture(charTexture);
+    }
+}
 
-Each character needs to be a fixed % of the screen width!
-Let's say 5%??
-
-*/
-void drawTextBox(char* text) {
+void drawTextBox(char* text, int numCharsToPrint) {
     SDL_Color White = {255, 255, 255};
     int charWidth = window_x / 64;
     int charHeight = charWidth * 2;
@@ -460,11 +492,13 @@ void drawTextBox(char* text) {
         maxLineChars = MAX_LINE_BUFFER_SIZE;
     //int numLines = std::ceil(numChars / maxLineChars) + 1; //TODO re-implement the numLines counter, or set a fixed line count!! TODO
     //int numCharsPrinted = 0;
-    int wrapThreshold = maxLineChars * 0.9;
+    int wrapThreshold = maxLineChars * 0.8;
     int lineNumber = 0;
     int curLineChars = 0;
     // Print the text:
     for (int i=0; i<numChars; i++, curLineChars++) {
+        if (i > numCharsToPrint)
+            break;
         if ( (curLineChars >= wrapThreshold && text[i] == ' ') || (curLineChars >= maxLineChars) ) {
             lineNumber++;
             curLineChars = 0;

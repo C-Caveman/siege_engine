@@ -42,8 +42,9 @@ void draw_chunk_floor(vec2f camera_pos, vec2f camera_center, chunk* chunk, vec2i
 void draw_chunk_ents(vec2f camera_pos, vec2f camera_center, chunk* chunk, vec2i chunk_index);
 void draw_chunk_walls(vec2f camera_pos, vec2f camera_center, chunk* chunk, vec2i chunk_index);
 void renderText(char* text);
+void drawFps(float fps);
 void drawDebugRectangle(int x, int y, int w, int h);
-void drawTextBox(char* text);
+void drawTextBox(char* text, int numCharsToPrint);
 void present_frame();
 void cleanup_graphics();
 

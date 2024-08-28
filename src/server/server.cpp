@@ -197,6 +197,9 @@ tile* raycast_into_selected_tile(vec2f pos, vec2f dir, vec2i sel) {
     }
     return cur_tile;
 }
+//TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO delete this! make this an entity! TODO
+int textBoxTick = SDL_GetTicks() % 256;
+int textBoxCharsPrinted = 0;
 int main() {
     server_config();                                                           //===========// Initialize server. //
     running = 1;
@@ -237,7 +240,6 @@ int main() {
         collide_wall((struct ent_basics*)p);                                    //- Collision.
         collide_wall((struct ent_basics*)s);
         collide_wall((struct ent_basics*)bunny);
-        //if (anim_tick == 0) std::cout << p->pos << "\n";
                                                                                 //=================// Update the player's camera position. //
         player_client.camera_pos =
             vec2f {p->pos.x - window_x/2*(RSIZE/tile_scale) + RSIZE/2, p->pos.y - window_y/2*(RSIZE/tile_scale) + RSIZE/2};
@@ -317,14 +319,35 @@ int main() {
                     vec2i{next_chunk.x, next_chunk.y});
             }
         }
-        // DRAW A HUD!        
-        #define defaultStringSize 256
-        char fpsMessage[defaultStringSize];
-        snprintf(fpsMessage, defaultStringSize, "fps: %.0f", fps);
-        renderText(fpsMessage);
+        // DRAW A HUD!   
+        drawFps(fps);
         
-        char message[] = "Example message. Woooooooooooooooooooooooooooooooooooooords! Hello world! Goodbye world!";
-        drawTextBox((char*)&message);
+        char message[] = "Example message. Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
+        int msSinceTextBoxUpdate = anim_tick - textBoxTick + (anim_tick < textBoxTick)*256;
+        int numTextBoxChars = strlen(message);
+        char prevChar = message[(textBoxCharsPrinted > 0) ? textBoxCharsPrinted-1 : 0];
+        char c = message[textBoxCharsPrinted];
+        int isPunctuation = (c == '.' || c == '!' || c == '?');
+        int isSpace = (c == ' ');
+        if (msSinceTextBoxUpdate > 70 && !(isSpace && msSinceTextBoxUpdate < 140) && !(isPunctuation && msSinceTextBoxUpdate < 200) && textBoxCharsPrinted < numTextBoxChars) {
+            textBoxTick = anim_tick;
+            textBoxCharsPrinted++;
+            if (isPunctuation && rand() > RAND_MAX/2)
+                playSoundChannel(typewriterA04, 5);
+            else if (isPunctuation)
+                playSoundChannel(typewriterA03, 5);
+            else if (c != ' ' && rand() > RAND_MAX/2)
+                playSoundChannel(typewriterA02, rand() % 4);
+            else if (c != ' ' && prevChar == ' ')
+                playSoundChannel(typewriterA06, 4);
+            else if (c != ' ' && rand() < RAND_MAX/1.1 && prevChar == ' ')
+                playSoundChannel(typewriterA02, rand() % 4);
+            else if (c != ' ')
+                playSoundChannel(typewriterA06, rand() % 4);
+        }
+        if (textBoxCharsPrinted == numTextBoxChars)
+            textBoxCharsPrinted = 0;
+        drawTextBox((char*)&message, textBoxCharsPrinted);
         //draw_ent_sprites(player_client.camera_pos, (struct ent_basics*)p);
         
         think_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); //==========// Update/draw the entities. //

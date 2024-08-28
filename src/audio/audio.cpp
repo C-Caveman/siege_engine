@@ -73,6 +73,11 @@ void playSound(int index) {
         index = placeholderSound;
     Mix_PlayChannel(-1, sfx[index], 0);
 }
+void playSoundChannel(int index, int channelIndex) {
+    if (index < 0 || index >= NUM_SFX)
+        index = placeholderSound;
+    Mix_PlayChannel(channelIndex, sfx[index], 0);
+}
 void playMusic(int index) {
     if (index < 0 || index >= NUM_SFX)
         index = placeholderMusic;

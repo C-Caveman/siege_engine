@@ -10,7 +10,13 @@
     f(metalFadeIn) \
     f(metalPing) \
     f(metalThunder) \
-    f(chow)
+    f(chow) \
+    f(typewriterA01) \
+    f(typewriterA02) \
+    f(typewriterA03) \
+    f(typewriterA04) \
+    f(typewriterA05) \
+    f(typewriterA06)
 
 enum SFX_ENUM {
     SFX_LIST(TO_ENUM)
