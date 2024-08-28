@@ -5,30 +5,39 @@
 #define MAX_SFX_NAME_LEN MAX_FILENAME_LEN - 56
 #define MAX_MUSIC_NAME_LEN MAX_FILENAME_LEN - 56
 
-Mix_Music* musics[NUM_MUSIC];
-Mix_Chunk* sfx[NUM_SFX];
+Mix_Music* musics[NUM_MUSIC] = {0};
+Mix_Chunk* sfx[NUM_SFX]  = {0};
 
 char musicNames[NUM_SFX][MAX_MUSIC_NAME_LEN] = { MUSIC_LIST(TO_STRING) };
 char sfxNames[NUM_SFX][MAX_SFX_NAME_LEN] = { SFX_LIST(TO_STRING) };
 
 void loadSFX() {
     char fileName[MAX_FILENAME_LEN];
+    for (int i=0; i<NUM_SFX; i++) {
+        sfx[i] = 0;
+    }
     Mix_Chunk* placeholderSoundPtr = Mix_LoadWAV("placeholders/audio/sfx/placeholderSound.wav");
+    sfx[placeholderSound] = placeholderSoundPtr;
     if (!placeholderSoundPtr) {
         printf("*** Error: Couldn't find placeholders/audio/sfx/placeholderSound.wav!\n");
         exit(-1);
     }
-    for (int i=0; i<NUM_SFX; i++) {
+    for (int i=placeholderSound+1; i<NUM_SFX; i++) {
         snprintf(fileName, sizeof(fileName), "assets/audio/sfx/%.*s.wav", (int)strnlen(sfxNames[i], MAX_SFX_NAME_LEN), sfxNames[i]);
-        printf("Loading sound: '%s'\n", fileName);
         sfx[i] =  Mix_LoadWAV(fileName);
-        if (!sfx[i])
+        if (!sfx[i]) {
             sfx[i] = placeholderSoundPtr;
+            printf("*** sfx file '%s' not found!\n", fileName);
+        }
     }
 }
 void loadMusic() {
     char fileName[MAX_FILENAME_LEN];
+    for (int i=0; i<NUM_MUSIC; i++) {
+        musics[i] = 0;
+    }
     Mix_Music* placeholderMusicPtr = Mix_LoadMUS("placeholders/audio/music/placeholderMusic.ogg");
+    musics[placeholderMusic] = placeholderMusicPtr;
     if (!placeholderMusicPtr) {
         printf("*** Error: Couldn't find placeholders/audio/music/placeholderMusic.ogg!\n");
         exit(-1);
@@ -59,11 +68,16 @@ void init_audio() {
 
 void cleanup_audio() {
     for (int i=0; i<NUM_SFX; i++) {
-        Mix_FreeChunk(sfx[i]);
+        if (sfx[i] != 0 && sfx[i] != sfx[placeholderSound]) {
+            Mix_FreeChunk(sfx[i]);
+        }
     }
+    Mix_FreeChunk(sfx[placeholderSound]);
     for (int i=0; i<NUM_MUSIC; i++) {
-        Mix_FreeMusic(musics[i]);
+        if (musics[i] != 0 && musics[i] != musics[placeholderMusic])
+            Mix_FreeMusic(musics[i]);
     }
+    Mix_FreeMusic(musics[placeholderMusic]);
     Mix_Quit();
     Mix_CloseAudio();
 }
