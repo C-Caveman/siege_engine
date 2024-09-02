@@ -97,3 +97,17 @@ void playMusic(int index) {
         index = placeholderMusic;
      Mix_PlayMusic(musics[index], 0);
 }
+void playMusicLoop(int index) {
+    if (index < 0 || index >= NUM_SFX)
+        index = placeholderMusic;
+     Mix_PlayMusic(musics[index], -1);
+}
+void pauseMusic() {
+    Mix_PauseMusic();
+}
+void resumeMusic() {
+    Mix_ResumeMusic();
+}
+int isMusicPaused() {
+    return Mix_PausedMusic();
+}

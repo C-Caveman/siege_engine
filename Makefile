@@ -16,18 +16,18 @@ CC = g++
 CFLAGS = -g -Wall -Werror -Wpedantic -std=gnu++11
 INCLUDES=-Io/includes
 LIBS = -lSDL2 -lSDL2_ttf -lSDL2_mixer
-OBJECTS = o/server.o o/config.o o/audio.o o/graphics.o o/input.o o/world.o o/chunk.o o/ent.o o/defs.o o/client.o
+OBJECTS = o/vars.o o/server.o o/audio.o o/graphics.o o/input.o o/world.o o/chunk.o o/ent.o o/defs.o o/client.o
 
 ex: ${OBJECTS} Makefile
 	cd o/
 	${CC} ${CFLAGS} ${OBJECTS} -o ex ${LIBS} ${INCLUDES}
 
+o/vars.o: src/config/vars.h src/config/vars.c
+	${CC} ${CFLAGS} -c src/config/vars.c -o o/vars.o ${INCLUDES}
 o/client.o: src/client/client.cpp src/client/client.h
 	${CC} ${CFLAGS} -c src/client/client.cpp -o o/client.o ${INCLUDES}
 o/server.o: src/server/server.cpp src/server/server.h o/graphics.o o/input.o o/ent.o o/defs.o o/client.o
 	${CC} ${CFLAGS} -c src/server/server.cpp -o o/server.o ${INCLUDES}
-o/config.o: src/config/cfg.cpp src/config/config.h
-	${CC} ${CFLAGS} -c src/config/cfg.cpp -o o/config.o ${INCLUDES}
 o/audio.o: src/audio/audio.cpp src/audio/audio.h src/audio/sfx.h src/audio/music.h
 	${CC} ${CFLAGS} -c src/audio/audio.cpp -o o/audio.o ${INCLUDES}
 o/graphics.o: src/graphics/graphics.cpp src/graphics/graphics.h src/graphics/animations.h o/world.o o/ent.o o/defs.o

@@ -20,7 +20,6 @@ SDL_Renderer* renderer;
 SDL_Window* window;
 SDL_Rect window_size; // Dimensions of the screen. Set in the init_graphics() method.
 SDL_Rect background;
-int fullscreen, window_x, window_y, fps_cap;
 int running;
 float last_frame_end, cur_frame_start, frame_time, frame_count, last_sec, fps;
 float dt = 0;
@@ -479,7 +478,11 @@ void drawFps(float fps) {
         SDL_DestroyTexture(charTexture);
     }
 }
-
+struct textBox {
+    char text[1024]; //TODO define a size constant
+    vec2i pos;
+    int image;
+};
 void drawTextBox(char* text, int numCharsToPrint) {
     SDL_Color White = {255, 255, 255};
     int charWidth = window_x / 64;

@@ -5,11 +5,6 @@
 # start a line with
 # the '#' symbol.
 #
-# Variable order does not matter,
-# but adding new variables requires
-# the use of vars_list.txt
-# with print_hashes(char* fname)
-# to update the hash table in cfg.cpp
 
 window_x 800
 window_y 800

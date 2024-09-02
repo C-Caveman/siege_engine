@@ -6,7 +6,6 @@
 #include "../ent/ent.h"
 
 
-// TODO replace the old client system TODO
 struct client {
     void update_player_entity();
     // Player entity:

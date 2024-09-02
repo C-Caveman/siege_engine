@@ -15,17 +15,6 @@ int id = 0;
 int new_id() {return ++id;}
 uint8_t anim_tick = 0;
 
-void server_config() {
-    //char varlist_fname[] = "config/vars_list.txt";
-    char config_fname[] = "config/config.txt";
-    // debug print the config variable indicies are in their table
-    //print_hashes(varlist_fname);
-    // initialize the config variable hash table
-    set_var_ptrs(); // TODO migrate to new config system <--------------- TODO
-    // load the config file data
-    vars_from_file(config_fname);
-}
-
 void build_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
     // No longer the start of a click. TODO rename and move to input.cpp TODO
     int selected_x = (camera_center.x + aim_pixel.x) / RSIZE + 0.5;
@@ -201,7 +190,7 @@ tile* raycast_into_selected_tile(vec2f pos, vec2f dir, vec2i sel) {
 int textBoxTick = SDL_GetTicks() % 256;
 int textBoxCharsPrinted = 0;
 int main() {
-    server_config();                                                           //===========// Initialize server. //
+    applyConfig((char*)"config/config.txt");                                                           //===========// Initialize server. //
     running = 1;
     init_graphics();
     init_audio();
@@ -228,6 +217,15 @@ int main() {
     printf("*Type name: '%s'\n", get_type_name(s->type));
     struct ent_basics* bunny = (struct ent_basics*)spawn_ent(rabbit_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
     bunny->pos = vec2f{RSIZE*2, RSIZE*2};
+    
+    
+    
+    playMusicLoop(spookyWind1); //TODO todon't do this
+    
+    
+    
+    
+    
     while (running) {                                                           //======================// GAME LOOP //
         cur_frame_start = SDL_GetTicks();
         dt = (cur_frame_start - last_frame_end) / 1000;
@@ -279,8 +277,10 @@ int main() {
                     timmy = nullptr;
             }
             if (timmy != nullptr) {
-                timmy->wall_height = 16;
-                timmy->wall_side_anim = solid_grey;
+                timmy->wall_height = 8;
+                timmy->floor_anim = grass1Floor;
+                timmy->wall_side_anim = grass1Side;
+                timmy->wall_top_anim = grass1Side;
                 playSound(thud);
             }
             //
@@ -332,7 +332,6 @@ int main() {
         if (msSinceTextBoxUpdate > 70 && !(isSpace && msSinceTextBoxUpdate < 140) && !(isPunctuation && msSinceTextBoxUpdate < 200) && textBoxCharsPrinted < numTextBoxChars) {
             textBoxTick = anim_tick;
             textBoxCharsPrinted++;
-            /*
             if (isPunctuation && rand() > RAND_MAX/2)
                 playSoundChannel(typewriterAPunct2, 5);
             else if (isPunctuation && rand() > RAND_MAX/4)
@@ -347,9 +346,6 @@ int main() {
                 playSoundChannel(typewriterARattle1, rand() % 4);
             else if (c != ' ')
                 playSoundChannel(typewriterARattle2, rand() % 4);
-            */
-            if (c != ' ' && prevChar != '$')
-                playSoundChannel(voiceMetalB3, 4);
         }
         if (textBoxCharsPrinted == numTextBoxChars)
             textBoxCharsPrinted = 0;

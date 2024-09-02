@@ -7,7 +7,7 @@
 //extern bool running;
 
 // give access to screen size data
-extern int window_x, window_y;
+//extern int window_x, window_y;
 
 
 // detect the BOGUS x11 keyup event generated on keydown

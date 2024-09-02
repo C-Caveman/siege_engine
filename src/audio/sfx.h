@@ -25,10 +25,7 @@
     f(voiceMetalA) \
     f(voiceMetalB1) \
     f(voiceMetalB2) \
-    f(voiceMetalB3) \
-    f(voiceMetalB4) \
-    f(voiceMetalB5) \
-    f(voiceMetalB6)
+    f(voiceMetalB3)
 
 enum SFX_ENUM {
     SFX_LIST(TO_ENUM)
