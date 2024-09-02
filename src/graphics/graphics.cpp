@@ -148,7 +148,7 @@ void init_graphics() {
         if (SDL_CreateWindowAndRenderer(window_x, window_y, 0, &window, &renderer) != 0)
             std::cout << "SDL window/renderer init failed" << SDL_GetError() << "\n";
     }
-    SDL_SetWindowTitle(window, "Hello SDL!");
+    SDL_SetWindowTitle(window, windowName);
     tile_scale = window_y / VERTICAL_TILES_VISIBLE;
     std::cout << "tile_scale for res (" << window_x << ", " << window_y << ") = " << tile_scale << "\n";
     // set the framerate via the config

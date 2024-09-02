@@ -322,11 +322,12 @@ int main() {
         // DRAW A HUD!   
         drawFps(fps);
         
-        char message[] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
+        //char message[] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
+        //char* message = welcomeMessage;
         int msSinceTextBoxUpdate = anim_tick - textBoxTick + (anim_tick < textBoxTick)*256;
-        int numTextBoxChars = strlen(message);
-        char prevChar = message[(textBoxCharsPrinted > 0) ? textBoxCharsPrinted-1 : 0];
-        char c = message[textBoxCharsPrinted];
+        int numTextBoxChars = strlen(welcomeMessage);
+        char prevChar = welcomeMessage[(textBoxCharsPrinted > 0) ? textBoxCharsPrinted-1 : 0];
+        char c = welcomeMessage[textBoxCharsPrinted];
         int isPunctuation = (c == '.' || c == '!' || c == '?');
         int isSpace = (c == ' ');
         if (msSinceTextBoxUpdate > 70 && !(isSpace && msSinceTextBoxUpdate < 140) && !(isPunctuation && msSinceTextBoxUpdate < 200) && textBoxCharsPrinted < numTextBoxChars) {
@@ -349,7 +350,7 @@ int main() {
         }
         if (textBoxCharsPrinted == numTextBoxChars)
             textBoxCharsPrinted = 0;
-        drawTextBox((char*)&message, textBoxCharsPrinted);
+        drawTextBox((char*)&welcomeMessage, textBoxCharsPrinted);
         //draw_ent_sprites(player_client.camera_pos, (struct ent_basics*)p);
         
         think_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); //==========// Update/draw the entities. //

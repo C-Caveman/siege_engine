@@ -6,7 +6,6 @@
 #include "../audio/audio.h"
 #include "../graphics/graphics.h"
 #include "../input/input.h"
-#include "../config/config.h"
 #include "../client/client.h"
 #include "server_constants.h"
 

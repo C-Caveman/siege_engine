@@ -28,8 +28,8 @@ void print_vars();
     expand(floaty_flops)
 
 #define STRING_VARS_LIST(expand) \
-    expand(example_string_variable) \
-    expand(string_bean) \
+    expand(welcomeMessage) \
+    expand(windowName) \
     expand(billy_jean) \
     expand(lima_bean)
 

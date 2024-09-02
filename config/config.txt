@@ -13,3 +13,5 @@ window_y 800
 #window_y 1080
 fullscreen 0
 fps_cap 110
+windowName Siege Engine
+welcomeMessage Tiles and triggers. Entities and dialogue boxes. Atmosphere and music. Story and characters. Smoking embers and a steady wind.
