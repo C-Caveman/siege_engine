@@ -42,7 +42,8 @@ handle              uncopy_handle(handle i); //----------- Delete a handle to an
     expand(player) \
     expand(scenery) \
     expand(projectile) \
-    expand(rabbit)
+    expand(rabbit) \
+    expand(zombie)
 #define expand(name) name##_type, 
 enum entity_types { ENTITY_TYPES_LIST    NUM_ENT_TYPES };
 #undef expand
@@ -88,6 +89,16 @@ struct ent_projectile {
 };
 enum rabbit_sprites {RABBIT_SPRITE_1, NUM_RABBIT_SPRITES};                      // RABBIT
 struct ent_rabbit {
+    ENT_BASICS
+    struct sprite sprites[NUM_RABBIT_SPRITES];
+    vec2f wanderDir;
+    int wanderWait;
+
+    void init();
+    void think();
+};
+enum zombie_sprites {ZOMBIE_SPRITE_1, NUM_ZOMBIE_SPRITES};                      // ZOMBIE
+struct ent_zombie {
     ENT_BASICS
     struct sprite sprites[NUM_RABBIT_SPRITES];
     vec2f wanderDir;

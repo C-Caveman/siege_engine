@@ -217,6 +217,8 @@ int main() {
     printf("*Type name: '%s'\n", get_type_name(s->type));
     struct ent_basics* bunny = (struct ent_basics*)spawn_ent(rabbit_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
     bunny->pos = vec2f{RSIZE*2, RSIZE*2};
+    struct ent_basics* zombieGuy = (struct ent_basics*)spawn_ent(zombie_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+    zombieGuy->pos = vec2f{RSIZE*2, RSIZE*4};
     
     
     
@@ -238,6 +240,7 @@ int main() {
         collide_wall((struct ent_basics*)p);                                    //- Collision.
         collide_wall((struct ent_basics*)s);
         collide_wall((struct ent_basics*)bunny);
+        collide_wall((struct ent_basics*)zombieGuy);
                                                                                 //=================// Update the player's camera position. //
         player_client.camera_pos =
             vec2f {p->pos.x - window_x/2*(RSIZE/tile_scale) + RSIZE/2, p->pos.y - window_y/2*(RSIZE/tile_scale) + RSIZE/2};

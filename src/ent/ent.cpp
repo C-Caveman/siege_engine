@@ -106,6 +106,24 @@ void ent_rabbit::think() {
         wanderWait = 100;
         wanderDir = vec2f{ (float)(rand()) / (float)(RAND_MAX) - 0.5f, (float)(rand()) / (float)RAND_MAX - 0.5f };
         vel = wanderDir.normalized() * 800.f;
+        playSound(tik);
+    }
+}
+
+void ent_zombie::init() {                               // ZOMBIE
+    wanderDir = vec2f{1,0};
+    wanderWait = 100;
+    num_sprites = 1;
+    sprites[0].flags |= LOOPING;
+    sprites[0].anim = zombie;
+}
+void ent_zombie::think() {
+    wanderWait -= 1;
+    if (wanderWait <= 0) {
+        wanderWait = 100;
+        wanderDir = vec2f{ (float)(rand()) / (float)(RAND_MAX) - 0.5f, (float)(rand()) / (float)RAND_MAX - 0.5f };
+        vel = wanderDir.normalized() * 800.f;
+        sprites[0].rotation += 10;
     }
 }
 

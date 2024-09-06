@@ -27,7 +27,8 @@
     DO(wall_steel) \
     DO(wall_steel_side) \
     DO(grass1Floor) \
-    DO(grass1Side)
+    DO(grass1Side) \
+    DO(zombie)
 
 enum animation_ids {
     ANIMATION_LIST(TO_ENUM)
