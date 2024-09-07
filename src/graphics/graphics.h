@@ -7,6 +7,7 @@
 #include "animations.h"
 #include <SDL2/SDL.h>
 
+#define TILE_PIXEL_DIAMETER 32
 
 // Data stored for a particular animation.
 struct anim_info {
@@ -25,7 +26,7 @@ extern SDL_Window* window;
 extern SDL_Rect window_size;
 extern SDL_Rect background;
 //extern int fullscreen, window_x, window_y, fps_cap;
-extern float tile_scale, VERTICAL_TILES_VISIBLE;
+extern float tileWidth, VERTICAL_TILES_VISIBLE;
 extern int running;
 extern float last_frame_end, cur_frame_start, frame_time, frame_count, last_sec, fps;
 extern float dt;
@@ -36,6 +37,8 @@ extern int mouse_x;
 extern int mouse_y;
 
 void init_graphics();
+void goFullscreen();
+void goWindowed();
 void track_fps();
 void draw_ent_sprites(vec2f camera_pos, struct ent_basics* ent);
 void draw_all_ents(vec2f camera_pos, char* array, int array_len);

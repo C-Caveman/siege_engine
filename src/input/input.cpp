@@ -95,21 +95,10 @@ void client_input(client* client) {
                         break;
                     
                     case SDLK_f:
-                        if (fullscreen) {
-                            SDL_SetWindowFullscreen(window, 0);
-                            SDL_SetWindowSize(window, 800, 800);
-                            window_x = 800;
-                            window_y = 800;
-                        }
-                        else {
-                            SDL_SetWindowSize(window, window_size.w,window_size.h);
-                            SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
-                            window_x = window_size.w;
-                            window_y = window_size.h;
-                        }
-                        fullscreen = !fullscreen;
-                        tile_scale = window_y / VERTICAL_TILES_VISIBLE;
-                        std::cout << "tile_scale for res (" << window_x << ", " << window_y << ") = " << tile_scale << "\n";
+                        if (fullscreen)
+                            goWindowed();
+                        else
+                            goFullscreen();
                         break;
                         
                     // end of key down processing
@@ -211,8 +200,8 @@ void client_input(client* client) {
     //TODO something with this
     // only override keyboard aim if mouse is moving
     SDL_GetMouseState(&client->aim_pixel_pos.x, &client->aim_pixel_pos.y);
-    client->aim_pixel_pos.x = (client->aim_pixel_pos.x*(RSIZE/tile_scale) - window_x/2*(RSIZE/tile_scale));
-    client->aim_pixel_pos.y = (client->aim_pixel_pos.y*(RSIZE/tile_scale) - window_y/2*(RSIZE/tile_scale));
+    client->aim_pixel_pos.x = (client->aim_pixel_pos.x*(RSIZE/tileWidth) - window_x/2*(RSIZE/tileWidth));
+    client->aim_pixel_pos.y = (client->aim_pixel_pos.y*(RSIZE/tileWidth) - window_y/2*(RSIZE/tileWidth));
     if (mouse_moved == true) {
         client->aim_dir = atan2(client->aim_pixel_pos.y, client->aim_pixel_pos.x) * 180 / M_PI;
     }

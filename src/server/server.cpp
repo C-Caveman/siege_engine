@@ -243,7 +243,7 @@ int main() {
         collide_wall((struct ent_basics*)zombieGuy);
                                                                                 //=================// Update the player's camera position. //
         player_client.camera_pos =
-            vec2f {p->pos.x - window_x/2*(RSIZE/tile_scale) + RSIZE/2, p->pos.y - window_y/2*(RSIZE/tile_scale) + RSIZE/2};
+            vec2f {p->pos.x - window_x/2*(RSIZE/tileWidth) + RSIZE/2, p->pos.y - window_y/2*(RSIZE/tileWidth) + RSIZE/2};
         player_client.camera_center =
             vec2f {p->pos.x, p->pos.y};
                                                                                 //================// Building/Destroying tiles. //

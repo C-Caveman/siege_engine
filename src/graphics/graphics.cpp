@@ -7,7 +7,8 @@
 #include <SDL2/SDL_ttf.h>
 
 float VERTICAL_TILES_VISIBLE = 14;
-float tile_scale = 1;
+float tileWidth = RSIZE;
+float texelWidth = tileWidth / TILE_PIXEL_DIAMETER;
 constexpr int ANIM_FPS = 4;
 constexpr int MS_PER_ANIM_FRAME = 1000 / ANIM_FPS;
 #define MAX_PATH_LEN 256
@@ -149,8 +150,9 @@ void init_graphics() {
             std::cout << "SDL window/renderer init failed" << SDL_GetError() << "\n";
     }
     SDL_SetWindowTitle(window, windowName);
-    tile_scale = window_y / VERTICAL_TILES_VISIBLE;
-    std::cout << "tile_scale for res (" << window_x << ", " << window_y << ") = " << tile_scale << "\n";
+    tileWidth = window_y / VERTICAL_TILES_VISIBLE;
+    texelWidth = tileWidth / TILE_PIXEL_DIAMETER;
+    std::cout << "tileWidth for res (" << window_x << ", " << window_y << ") = " << tileWidth << "\n";
     // set the framerate via the config
     if (fps_cap > 0)
         min_frame_time = 1000/fps_cap;
@@ -166,6 +168,27 @@ void init_graphics() {
     load_animations();
     // init the font rendering
     init_fonts();
+}
+
+void goFullscreen() {
+    SDL_SetWindowSize(window, window_size.w,window_size.h);
+    SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+    window_x = window_size.w;
+    window_y = window_size.h;
+    fullscreen = 1;
+    tileWidth = window_y / VERTICAL_TILES_VISIBLE;
+    texelWidth = tileWidth / TILE_PIXEL_DIAMETER;
+    std::cout << "tileWidth for res (" << window_x << ", " << window_y << "): " << tileWidth << " texelWidth: " << texelWidth << "\n";
+}
+void goWindowed() {
+    SDL_SetWindowFullscreen(window, 0);
+    SDL_SetWindowSize(window, 800, 800);
+    window_x = 800;
+    window_y = 800;
+    fullscreen = 0;
+    tileWidth = window_y / VERTICAL_TILES_VISIBLE;
+    texelWidth = tileWidth / TILE_PIXEL_DIAMETER;
+    std::cout << "tileWidth for res (" << window_x << ", " << window_y << "): " << tileWidth << " texelWidth: " << texelWidth << "\n";
 }
 
 void track_fps() {
@@ -188,7 +211,7 @@ void draw_ent_sprites(vec2f camera_pos, struct ent_basics* e) {
     int ms_since_last_frame;
     float rotation;
     SDL_Rect ent_render_pos;
-    ent_render_pos.w = ent_render_pos.h = tile_scale;
+    ent_render_pos.w = ent_render_pos.h = tileWidth;
     if (DEBUG_GRAPHICS) { printf("Num sprites in %s entity: %d\n", get_type_name(e->type), num_sprites); }
     sprite* sprites = (sprite*)( (char*)e+sizeof(struct ent_basics) );
     sprite* s;
@@ -221,8 +244,8 @@ void draw_ent_sprites(vec2f camera_pos, struct ent_basics* e) {
             sprites[i].frame = 0;
         }
         // Adjust for screen position:
-        ent_render_pos.x = (p.x - camera_pos.x)*(tile_scale/RSIZE);
-        ent_render_pos.y = (p.y - camera_pos.y)*(tile_scale/RSIZE);
+        ent_render_pos.x = (p.x - camera_pos.x)*(tileWidth/RSIZE);
+        ent_render_pos.y = (p.y - camera_pos.y)*(tileWidth/RSIZE);
         //
         // Render the sprite:
         //
@@ -272,9 +295,9 @@ void draw_tile_floor(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f came
     int cur_anim = 0;
     int cur_frame = 0;
     SDL_Rect render_pos;
-    render_pos.w = render_pos.h = tile_scale;
-    render_pos.x = (x*RSIZE - camera_pos.x)*(tile_scale/RSIZE);
-    render_pos.y = (y*RSIZE - camera_pos.y)*(tile_scale/RSIZE);
+    render_pos.w = render_pos.h = tileWidth;
+    render_pos.x = (x*RSIZE - camera_pos.x)*(tileWidth/RSIZE);
+    render_pos.y = (y*RSIZE - camera_pos.y)*(tileWidth/RSIZE);
     //SDL_Rect tile_pos = render_pos;
     // Draw floor:
     cur_anim = anim_data[t.floor_anim].texture_index;
@@ -286,6 +309,10 @@ void draw_tile_floor(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f came
     );
 }
 
+// DELTA between layers needs to be less than one TEXEL_WIDTH.
+// TEXEL_WIDTH = TILE_WIDTH / 32_TEXELS_ACROSS
+//
+//
 constexpr float TILE_SLIDE_INCREMENT = 20;
 //constexpr float growth = TILE_SLIDE_INCREMENT/window_x;
 void draw_tile_wall_side(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f camera_pos, vec2f camera_center) {
@@ -296,9 +323,9 @@ void draw_tile_wall_side(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f 
     int cur_anim = 0;
     int cur_frame = 0;
     SDL_Rect render_pos;
-    render_pos.w = render_pos.h = tile_scale;
-    render_pos.x = (x*RSIZE - camera_pos.x)*(tile_scale/RSIZE);
-    render_pos.y = (y*RSIZE - camera_pos.y)*(tile_scale/RSIZE);
+    render_pos.w = render_pos.h = tileWidth;
+    render_pos.x = (x*RSIZE - camera_pos.x)*(tileWidth/RSIZE);
+    render_pos.y = (y*RSIZE - camera_pos.y)*(tileWidth/RSIZE);
     SDL_Rect tile_pos = render_pos;
     // Draw wall:
     cur_anim = anim_data[t.wall_side_anim].texture_index;
@@ -307,7 +334,7 @@ void draw_tile_wall_side(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f 
         render_pos = tile_pos;
         render_pos.x = render_pos.x + offset.x*(i) - i/2;
         render_pos.y = render_pos.y + offset.y*(i) - i/2;
-        render_pos.w = render_pos.h = tile_scale + i;
+        render_pos.w = render_pos.h = tileWidth + i;
         SDL_RenderCopy(
             renderer,
             textures[cur_anim+cur_frame],
@@ -325,9 +352,9 @@ void draw_tile_wall_top(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f c
     int cur_anim = 0;
     //int cur_frame = 0;
     SDL_Rect render_pos;
-    render_pos.w = render_pos.h = tile_scale;
-    render_pos.x = (-camera_pos.x + x * RSIZE)*(tile_scale/RSIZE);
-    render_pos.y = (-camera_pos.y + y * RSIZE)*(tile_scale/RSIZE);
+    render_pos.w = render_pos.h = tileWidth;
+    render_pos.x = (-camera_pos.x + x * RSIZE)*(tileWidth/RSIZE);
+    render_pos.y = (-camera_pos.y + y * RSIZE)*(tileWidth/RSIZE);
     SDL_Rect tile_pos = render_pos;
     // Draw wall:
     cur_anim = anim_data[t.wall_side_anim].texture_index;
@@ -338,7 +365,7 @@ void draw_tile_wall_top(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f c
         render_pos = tile_pos;
         render_pos.x = render_pos.x + offset.x * t.wall_height - t.wall_height/2;
         render_pos.y = render_pos.y + offset.y * t.wall_height - t.wall_height/2;
-        render_pos.w = render_pos.h = tile_scale + t.wall_height;
+        render_pos.w = render_pos.h = tileWidth + t.wall_height;
         SDL_RenderCopy(
             renderer,
             textures[cur_anim],
