@@ -221,7 +221,7 @@ int main() {
     zombieGuy->pos = vec2f{RSIZE*2, RSIZE*4};
     
     
-    
+    playSoundChannel(arcLamp1, 6);
     playMusicLoop(spookyWind1); //TODO todon't do this
     
     
@@ -333,6 +333,9 @@ int main() {
         char c = welcomeMessage[textBoxCharsPrinted];
         int isPunctuation = (c == '.' || c == '!' || c == '?');
         int isSpace = (c == ' ');
+        
+        //showTextBox(char* message,);
+        
         if (msSinceTextBoxUpdate > 70 && !(isSpace && msSinceTextBoxUpdate < 140) && !(isPunctuation && msSinceTextBoxUpdate < 200) && textBoxCharsPrinted < numTextBoxChars) {
             textBoxTick = anim_tick;
             textBoxCharsPrinted++;

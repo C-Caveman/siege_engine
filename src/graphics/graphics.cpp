@@ -311,11 +311,11 @@ void draw_tile_floor(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f came
 
 // DELTA between layers needs to be less than one TEXEL_WIDTH.
 // TEXEL_WIDTH = TILE_WIDTH / 32_TEXELS_ACROSS
-//
+// MAX_DISP = 
 //
 constexpr float TILE_SLIDE_INCREMENT = 20;
 //constexpr float growth = TILE_SLIDE_INCREMENT/window_x;
-void draw_tile_wall_side(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f camera_pos, vec2f camera_center) {
+void draw_tile_wall_side(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f camera_pos, vec2f camera_center) { // ;;
     if (x < 0 || x > CHUNK_WIDTH-1 || y < 0 || y > CHUNK_WIDTH-1 || tiles[y][x].wall_height < 1)
         return;
     //float growth = 2;
