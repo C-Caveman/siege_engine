@@ -106,7 +106,6 @@ void ent_rabbit::think() {
         wanderWait = 100;
         wanderDir = vec2f{ (float)(rand()) / (float)(RAND_MAX) - 0.5f, (float)(rand()) / (float)RAND_MAX - 0.5f };
         vel = wanderDir.normalized() * 800.f;
-        playSound(tik);
     }
 }
 
@@ -116,14 +115,23 @@ void ent_zombie::init() {                               // ZOMBIE
     num_sprites = 1;
     sprites[0].flags |= LOOPING;
     sprites[0].anim = zombie;
+    target = 1; // first entity handle should be the player TODO add a player-finding function for reliability! TODO
+    targetPos = {0,0};
 }
 void ent_zombie::think() {
+    struct ent_basics* e = get_ent(target);
     wanderWait -= 1;
-    if (wanderWait <= 0) {
-        wanderWait = 100;
-        wanderDir = vec2f{ (float)(rand()) / (float)(RAND_MAX) - 0.5f, (float)(rand()) / (float)RAND_MAX - 0.5f };
-        vel = wanderDir.normalized() * 800.f;
-        sprites[0].rotation += 10;
+    if (wanderWait <= 0 && e != 0) {
+        wanderWait = 60;
+        playSound(tik);
+        //wanderDir = vec2f{ (float)(rand()) / (float)(RAND_MAX) - 0.5f, (float)(rand()) / (float)RAND_MAX - 0.5f };
+        wanderDir = targetPos - this->pos;
+        vel = wanderDir.normalized() * 2000.f;
+        
+        
+        sprites[0].rotation = atan2(wanderDir.y, wanderDir.x) * 180. / M_PI + 270.0;
+        sprites[0].rotation = (float)((int)sprites[0].rotation % 360);
+        targetPos = e->pos;
     }
 }
 

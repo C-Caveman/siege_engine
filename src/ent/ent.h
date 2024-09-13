@@ -101,6 +101,8 @@ enum zombie_sprites {ZOMBIE_SPRITE_1, NUM_ZOMBIE_SPRITES};                      
 struct ent_zombie {
     ENT_BASICS
     struct sprite sprites[NUM_RABBIT_SPRITES];
+    handle target;
+    vec2f targetPos;
     vec2f wanderDir;
     int wanderWait;
 
