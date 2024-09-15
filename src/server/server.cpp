@@ -55,8 +55,8 @@ void destroy_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
                     wall_steel,wall_steel_side, chonk->tiles[sel.y][sel.x].wall_height - 1 );
 }
 
-vec2i select_tile(struct client* c) {
-    if (c == nullptr) { printf("*** null client in select_tile!\n"); exit(-1); }
+vec2i getTileAtCursor(struct client* c) {
+    if (c == nullptr) { printf("*** null client in getTileAtCursor!\n"); exit(-1); }
     return (struct vec2i)(((c->camera_center + c->aim_pixel_pos.to_float()) / RSIZE).to_int_round_up());
 }
 
@@ -186,6 +186,21 @@ tile* raycast_into_selected_tile(vec2f pos, vec2f dir, vec2i sel) {
     }
     return cur_tile;
 }
+int isPathToTileClear(vec2f pos, vec2f dir, vec2i sel) {
+    tile* cur_tile = nullptr;
+    vec2i tile_index;
+    dir = dir.normalized();
+    for (int i=0; i<MAX_RAYCAST_DISTANCE; i++) {
+        pos = pos + dir * RSIZE/4; //------------- Step forward.
+        tile_index = (pos / RSIZE).to_int_round_up();
+        cur_tile = main_world->get_tile(tile_index);
+        if (cur_tile == nullptr || cur_tile->wall_height >= 1)
+            return 0;
+        if (tile_index == sel)
+            break;
+    }
+    return 1;
+}
 //TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO delete this! make this an entity! TODO
 int textBoxTick = SDL_GetTicks() % 256;
 int textBoxCharsPrinted = 0;
@@ -262,24 +277,28 @@ int main() {
             tile* timmy = raycast_into_selected_tile(p->pos,
                                                    vec2f{cos(player_client.aim_dir/180*(float)M_PI),
                                                          sin(player_client.aim_dir/180*(float)M_PI)},
-                                                   select_tile(&player_client));
+                                                   getTileAtCursor(&player_client));
             if (timmy != nullptr && timmy->wall_height != 0) { timmy->wall_height = 0; playSound(thud); }
         }
         if (player_client.building && (cur_frame_start - player_client.lastBuildTime) > 150) {
-            player_client.lastBuildTime = cur_frame_start;
             //build_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
             //
+            int isClear = isPathToTileClear(p->pos,
+                                            vec2f{cos(player_client.aim_dir/180*(float)M_PI),
+                                            sin(player_client.aim_dir/180*(float)M_PI)},
+                                            getTileAtCursor(&player_client));
             tile* timmy = raycast_upto_selected_tile(p->pos,
                                                    vec2f{cos(player_client.aim_dir/180*(float)M_PI),
                                                          sin(player_client.aim_dir/180*(float)M_PI)},
-                                                   select_tile(&player_client));
+                                                   getTileAtCursor(&player_client));
             for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
                 if (timmy == nullptr)
                     break;
                 if (timmy->ents[i] != 0)
                     timmy = nullptr;
             }
-            if (timmy != nullptr) {
+            if (isClear && timmy != nullptr) {
+                player_client.lastBuildTime = cur_frame_start;
                 timmy->wall_height = 8;
                 timmy->floor_anim = grass1Floor;
                 timmy->wall_side_anim = grass1Side;
