@@ -295,7 +295,7 @@ void draw_tile_floor(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f came
     int cur_anim = 0;
     int cur_frame = 0;
     SDL_Rect render_pos;
-    render_pos.w = render_pos.h = tileWidth;
+    render_pos.w = render_pos.h = tileWidth+1; //TODO this is an ugly HACK TODO find a cleaner solution to this!
     render_pos.x = (x*RSIZE - camera_pos.x)*(tileWidth/RSIZE);
     render_pos.y = (y*RSIZE - camera_pos.y)*(tileWidth/RSIZE);
     //SDL_Rect tile_pos = render_pos;

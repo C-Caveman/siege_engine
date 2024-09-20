@@ -150,7 +150,7 @@ void move_all_ents(char* array, int array_len) {
         tile* new_tile_ptr = &main_world->chunks[e->chunk.y][e->chunk.x].tiles[e->tile.y][e->tile.x];
         if (changed_tile) {
             for (int i=0; i<MAX_ENTS_PER_TILE; i++) {                               //- Remove handle from old tile.
-                if (old_chunk_was_valid && old_tile_ptr->ents[i] == e->h) { old_tile_ptr->ents[i] = 0; old_tile_ptr->floor_anim = stonedk; }
+                if (old_chunk_was_valid && old_tile_ptr->ents[i] == e->h) { old_tile_ptr->ents[i] = 0; /* old_tile_ptr->floor_anim = stonedk; */ }
             }
             for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------------------------------------ Store handle in new tile.
                 if (new_chunk_was_valid && new_tile_ptr->ents[i] == 0) { new_tile_ptr->ents[i] = e->h; break; }
@@ -214,7 +214,8 @@ int main() {
                                                                                //==============// Place tiles. //
     chunk* chunk_0 = &test_world.chunks[0][0];
     test_world.chunks[1][0].tiles[4][4].wall_height = 16;
-    chunk_0->set_floors(floor_test);
+    //chunk_0->set_floors(floor_test);
+    chunk_0->set_floors(tileDirt01);
     for (int y=0; y<CHUNK_WIDTH; y++) {
         chunk_0->set_wall(0,y, wall_steel,wall_steel_side,16);
         chunk_0->set_wall(CHUNK_WIDTH-1,y, wall_steel,wall_steel_side,16);
