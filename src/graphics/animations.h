@@ -29,6 +29,7 @@
     DO(grass1Floor) \
     DO(grass1Side) \
     DO(zombie) \
+    DO(tileGold01) \
     DO(tileDirt01)
 
 enum animation_ids {

@@ -121,6 +121,12 @@ void init_fonts() {
     if (font == 0) { printf("Failed to load font %s\n%s\n", font_placeholder_path, TTF_GetError()); exit(-1); }
 }
 
+void setTileWidth() {
+    tileWidth = std::ceil(window_y / VERTICAL_TILES_VISIBLE);
+    texelWidth = tileWidth / TILE_PIXEL_DIAMETER;
+    std::cout << "tileWidth for res (" << window_x << ", " << window_y << ") = " << tileWidth << "\n";
+}
+
 void init_graphics() {
     // find the file path of the executable, primarily to build an absolute path to the font file
     get_path();
@@ -150,9 +156,7 @@ void init_graphics() {
             std::cout << "SDL window/renderer init failed" << SDL_GetError() << "\n";
     }
     SDL_SetWindowTitle(window, windowName);
-    tileWidth = window_y / VERTICAL_TILES_VISIBLE;
-    texelWidth = tileWidth / TILE_PIXEL_DIAMETER;
-    std::cout << "tileWidth for res (" << window_x << ", " << window_y << ") = " << tileWidth << "\n";
+    setTileWidth();
     // set the framerate via the config
     if (fps_cap > 0)
         min_frame_time = 1000/fps_cap;
@@ -176,9 +180,7 @@ void goFullscreen() {
     window_x = window_size.w;
     window_y = window_size.h;
     fullscreen = 1;
-    tileWidth = window_y / VERTICAL_TILES_VISIBLE;
-    texelWidth = tileWidth / TILE_PIXEL_DIAMETER;
-    std::cout << "tileWidth for res (" << window_x << ", " << window_y << "): " << tileWidth << " texelWidth: " << texelWidth << "\n";
+    setTileWidth();
 }
 void goWindowed() {
     SDL_SetWindowFullscreen(window, 0);
@@ -186,9 +188,7 @@ void goWindowed() {
     window_x = 800;
     window_y = 800;
     fullscreen = 0;
-    tileWidth = window_y / VERTICAL_TILES_VISIBLE;
-    texelWidth = tileWidth / TILE_PIXEL_DIAMETER;
-    std::cout << "tileWidth for res (" << window_x << ", " << window_y << "): " << tileWidth << " texelWidth: " << texelWidth << "\n";
+    setTileWidth();
 }
 
 void track_fps() {
@@ -295,7 +295,7 @@ void draw_tile_floor(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f came
     int cur_anim = 0;
     int cur_frame = 0;
     SDL_Rect render_pos;
-    render_pos.w = render_pos.h = tileWidth+1; //TODO this is an ugly HACK TODO find a cleaner solution to this!
+    render_pos.w = render_pos.h = tileWidth;
     render_pos.x = (x*RSIZE - camera_pos.x)*(tileWidth/RSIZE);
     render_pos.y = (y*RSIZE - camera_pos.y)*(tileWidth/RSIZE);
     //SDL_Rect tile_pos = render_pos;

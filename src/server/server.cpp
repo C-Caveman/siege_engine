@@ -215,7 +215,7 @@ int main() {
     chunk* chunk_0 = &test_world.chunks[0][0];
     test_world.chunks[1][0].tiles[4][4].wall_height = 16;
     //chunk_0->set_floors(floor_test);
-    chunk_0->set_floors(tileDirt01);
+    chunk_0->set_floors(tileGold01);
     for (int y=0; y<CHUNK_WIDTH; y++) {
         chunk_0->set_wall(0,y, wall_steel,wall_steel_side,16);
         chunk_0->set_wall(CHUNK_WIDTH-1,y, wall_steel,wall_steel_side,16);
