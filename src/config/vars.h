@@ -20,7 +20,8 @@ void print_vars();
     expand(fullscreen) \
     expand(window_x) \
     expand(window_y) \
-    expand(fps_cap)
+    expand(fps_cap) \
+    expand(vsync)
 
 #define FLOAT_VARS_LIST(expand) \
     expand(example_float_variable) \

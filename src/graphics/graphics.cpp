@@ -172,6 +172,7 @@ void init_graphics() {
     load_animations();
     // init the font rendering
     init_fonts();
+    SDL_RenderSetVSync(renderer, vsync);
 }
 
 void goFullscreen() {

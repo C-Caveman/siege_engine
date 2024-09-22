@@ -247,6 +247,8 @@ int main() {
     while (running) {                                                           //======================// GAME LOOP //
         cur_frame_start = SDL_GetTicks();
         dt = (cur_frame_start - last_frame_end) / 1000;
+        if (dt > 0.1f) // Cap the delta time.
+            dt = 0.1f;
         anim_tick = SDL_GetTicks() % 256;                                       //- 8-bit timestamp for animations.
         last_frame_end = SDL_GetTicks();
         track_fps();

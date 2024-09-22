@@ -9,6 +9,8 @@ float vec2f::vlen() {
     float length = sqrt(x*x + y*y);
     if (this->x && this->y && length > 2)
         length -= 2;
+    if (length != length)
+        length = 0;
     return length;
 }
 float vec2f::dist(vec2f &b) {

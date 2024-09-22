@@ -269,8 +269,8 @@ void think_all_ents(char* array, int array_len) {
 void move_ent(struct ent_basics* e) { //------------ Update an ent's position based on its velocity:
     e->pos = e->pos + (e->vel * dt);
     // Apply friction:
-    float friction = e->vel.vlen();
-    friction = (friction * friction) / 10000;
+    float speed = e->vel.vlen();
+    float friction = speed*8*dt;
     int hasFriction = (e->flags & NOFRICTION) == 0;
     e->vel = e->vel - (e->vel.normalized() * friction * hasFriction);
     if (e->vel.vlen() < 5) { e->vel = vec2f{0,0}; } // Minimum vel.
