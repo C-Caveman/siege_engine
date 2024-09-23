@@ -8,6 +8,8 @@
 
 struct client {
     void update_player_entity();
+    void startDialog(char* message);
+    void showDialog();
     // Player entity:
     struct ent_player* player;
     //
@@ -27,6 +29,10 @@ struct client {
     vec2f camera_center; // Center of the camera.
     int lastAttackTime; // Last time the player attacked.
     int lastBuildTime; // Last time the player built.
+    int  dialogTick;
+    int  dialogVisible;
+    int  dialogCharsPrinted;
+    char dialogString[1024];
 };
 
 // TODO use these for packets TODO

@@ -201,9 +201,6 @@ int isPathToTileClear(vec2f pos, vec2f dir, vec2i sel) {
     }
     return 1;
 }
-//TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO delete this! make this an entity! TODO
-int textBoxTick = SDL_GetTicks() % 256;
-int textBoxCharsPrinted = 0;
 int main() {
     applyConfig((char*)"config/config.txt");                                                           //===========// Initialize server. //
     running = 1;
@@ -240,7 +237,8 @@ int main() {
     playSoundChannel(arcLamp1, 6);
     playMusicLoop(spookyWind1); //TODO todon't do this
     
-    
+    //char message[] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
+    //player_client.startDialog(message);
     
     
     
@@ -348,37 +346,7 @@ int main() {
         drawFps(fps);
         
         //char message[] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
-        //char* message = welcomeMessage;
-        int msSinceTextBoxUpdate = anim_tick - textBoxTick + (anim_tick < textBoxTick)*256;
-        int numTextBoxChars = strlen(welcomeMessage);
-        char prevChar = welcomeMessage[(textBoxCharsPrinted > 0) ? textBoxCharsPrinted-1 : 0];
-        char c = welcomeMessage[textBoxCharsPrinted];
-        int isPunctuation = (c == '.' || c == '!' || c == '?');
-        int isSpace = (c == ' ');
-        
-        //showTextBox(char* message,);
-        
-        if (msSinceTextBoxUpdate > 70 && !(isSpace && msSinceTextBoxUpdate < 140) && !(isPunctuation && msSinceTextBoxUpdate < 200) && textBoxCharsPrinted < numTextBoxChars) {
-            textBoxTick = anim_tick;
-            textBoxCharsPrinted++;
-            if (isPunctuation && rand() > RAND_MAX/2)
-                playSoundChannel(typewriterAPunct2, 5);
-            else if (isPunctuation && rand() > RAND_MAX/4)
-                playSoundChannel(typewriterAPunct3, 5);
-            else if (isPunctuation)
-                playSoundChannel(typewriterAPunct1, 5);
-            else if (c != ' ' && rand() > RAND_MAX/2)
-                playSoundChannel(typewriterARattle1, rand() % 4);
-            else if (c != ' ' && prevChar == ' ')
-                playSoundChannel(typewriterARattle2, 4);
-            else if (c != ' ' && rand() < RAND_MAX/1.1 && prevChar == ' ')
-                playSoundChannel(typewriterARattle1, rand() % 4);
-            else if (c != ' ')
-                playSoundChannel(typewriterARattle2, rand() % 4);
-        }
-        if (textBoxCharsPrinted == numTextBoxChars)
-            textBoxCharsPrinted = 0;
-        drawTextBox((char*)&welcomeMessage, textBoxCharsPrinted);
+        player_client.showDialog();
         //draw_ent_sprites(player_client.camera_pos, (struct ent_basics*)p);
         
         think_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); //==========// Update/draw the entities. //

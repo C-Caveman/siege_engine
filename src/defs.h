@@ -139,4 +139,5 @@ struct world { //---------------------------------------------- Collection of ch
     tile* get_tile(vec2i tile_i);
 };
 extern struct world* main_world; //---------------------------- Main world.
+extern uint8_t anim_tick; //----------------------------------- Frame counter for animations.
 #endif
