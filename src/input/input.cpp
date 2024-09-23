@@ -174,7 +174,7 @@ void client_input(client* client) {
             switch(event.button.button) {
                 case 1: // left click
                     //printf("Left click up.\n");
-                    player_client.attacking = false;
+                    playerClient.attacking = false;
                     break;
                 case 2: // middle click
                     //printf("Middle click up.\n");

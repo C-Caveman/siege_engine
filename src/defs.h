@@ -140,4 +140,5 @@ struct world { //---------------------------------------------- Collection of ch
 };
 extern struct world* main_world; //---------------------------- Main world.
 extern uint8_t anim_tick; //----------------------------------- Frame counter for animations.
+extern struct client playerClient; //-------------------------- Player client.
 #endif

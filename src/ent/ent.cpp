@@ -1,6 +1,7 @@
 // Implementations of entity functions.
 #include "ent.h"
 #include "../audio/audio.h"
+#include "../client/client.h"
 
 extern volatile float mouse_angle; // Direction the mouse is pointed in.
 extern volatile int mouse_x;
@@ -118,8 +119,12 @@ void ent_zombie::init() {                               // ZOMBIE
     target = 1; // first entity handle should be the player TODO add a player-finding function for reliability! TODO
     targetPos = {0,0};
 }
+char message[] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
 void ent_zombie::think() {
     struct ent_basics* e = get_ent(target);
+    if (e != 0 && e->pos.dist(pos) < RSIZE/2 && playerClient.dialogVisible == 0) {
+        playerClient.startDialog(message);
+    }
     wanderWait -= 1;
     if (wanderWait <= 0 && e != 0) {
         wanderWait = 60;

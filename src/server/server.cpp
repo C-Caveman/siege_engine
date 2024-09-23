@@ -8,7 +8,7 @@
 int num_entities = 0;
 int num_clients = 0;
 
-client player_client;
+client playerClient;
 
 // each entity gets a unique ID number
 int id = 0;
@@ -39,7 +39,7 @@ void build_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
     //t->wall_side_anim = solid_grey;
 }
 void destroy_wall(vec2f camera_center, vec2i aim_pixel, chunk* chonk) {
-    //destroy_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
+    //destroy_wall(playerClient.camera_center, playerClient.aim_pixel_pos, chunk_0);
     vec2i sel = ((camera_center + aim_pixel.to_float()) / RSIZE).to_int_round_up();
     if (sel.x < 0) sel.x = 0;
     if (sel.y < 0) sel.y = 0;
@@ -223,7 +223,7 @@ int main() {
     }                                                                          //==============// Spawn entities. //
     ent_player* p = (struct ent_player*)spawn_ent(player_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
     p->pos = vec2f{RSIZE,RSIZE};
-    player_client.player = (struct ent_player*)p;
+    playerClient.player = (struct ent_player*)p;
     ent_scenery* s = (ent_scenery*)spawn_ent(scenery_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
     s->pos = vec2f{(float)(RSIZE*1.5), RSIZE*CHUNK_WIDTH/2};
     s->fren = p->h;
@@ -238,7 +238,7 @@ int main() {
     playMusicLoop(spookyWind1); //TODO todon't do this
     
     //char message[] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
-    //player_client.startDialog(message);
+    //playerClient.startDialog(message);
     
     
     
@@ -251,47 +251,47 @@ int main() {
         last_frame_end = SDL_GetTicks();
         track_fps();
                                                                                 //==================// Client inputs and movement. //
-        client_input(&player_client);
-        player_client.update_player_entity();                                   //- Client_Inputs -> Player_Entity.
+        client_input(&playerClient);
+        playerClient.update_player_entity();                                   //- Client_Inputs -> Player_Entity.
         collide_wall((struct ent_basics*)p);                                    //- Collision.
         collide_wall((struct ent_basics*)s);
         collide_wall((struct ent_basics*)bunny);
         collide_wall((struct ent_basics*)zombieGuy);
                                                                                 //=================// Update the player's camera position. //
-        player_client.camera_pos =
+        playerClient.camera_pos =
             vec2f {p->pos.x - window_x/2*(RSIZE/tileWidth) + RSIZE/2, p->pos.y - window_y/2*(RSIZE/tileWidth) + RSIZE/2};
-        player_client.camera_center =
+        playerClient.camera_center =
             vec2f {p->pos.x, p->pos.y};
                                                                                 //================// Building/Destroying tiles. //
-        if (player_client.attacking && (cur_frame_start - player_client.lastAttackTime) > 70) {
-            player_client.lastAttackTime = cur_frame_start;
+        if (playerClient.attacking && (cur_frame_start - playerClient.lastAttackTime) > 70) {
+            playerClient.lastAttackTime = cur_frame_start;
             playSound(placeholderSound);
             void* e = spawn_ent(projectile_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-            vec2f aimDir = vec2f{cos(player_client.aim_dir/180*(float)M_PI), sin(player_client.aim_dir/180*(float)M_PI)};
-            ((struct ent_basics*)e)->pos = player_client.player->pos + aimDir*100;
-            ((struct ent_basics*)e)->tile = (player_client.player->pos + aimDir*100).to_int() / RSIZE;
+            vec2f aimDir = vec2f{cos(playerClient.aim_dir/180*(float)M_PI), sin(playerClient.aim_dir/180*(float)M_PI)};
+            ((struct ent_basics*)e)->pos = playerClient.player->pos + aimDir*100;
+            ((struct ent_basics*)e)->tile = (playerClient.player->pos + aimDir*100).to_int() / RSIZE;
             ((struct ent_basics*)e)->vel = aimDir * 800;
         }
-        if (player_client.attacking && (cur_frame_start - player_client.lastAttackTime) > 200) {
-            //destroy_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
-            player_client.lastAttackTime = cur_frame_start;
+        if (playerClient.attacking && (cur_frame_start - playerClient.lastAttackTime) > 200) {
+            //destroy_wall(playerClient.camera_center, playerClient.aim_pixel_pos, chunk_0);
+            playerClient.lastAttackTime = cur_frame_start;
             tile* timmy = raycast_into_selected_tile(p->pos,
-                                                   vec2f{cos(player_client.aim_dir/180*(float)M_PI),
-                                                         sin(player_client.aim_dir/180*(float)M_PI)},
-                                                   getTileAtCursor(&player_client));
+                                                   vec2f{cos(playerClient.aim_dir/180*(float)M_PI),
+                                                         sin(playerClient.aim_dir/180*(float)M_PI)},
+                                                   getTileAtCursor(&playerClient));
             if (timmy != nullptr && timmy->wall_height != 0) { timmy->wall_height = 0; playSound(thud); }
         }
-        if (player_client.building && (cur_frame_start - player_client.lastBuildTime) > 150) {
-            //build_wall(player_client.camera_center, player_client.aim_pixel_pos, chunk_0);
+        if (playerClient.building && (cur_frame_start - playerClient.lastBuildTime) > 150) {
+            //build_wall(playerClient.camera_center, playerClient.aim_pixel_pos, chunk_0);
             //
             int isClear = isPathToTileClear(p->pos,
-                                            vec2f{cos(player_client.aim_dir/180*(float)M_PI),
-                                            sin(player_client.aim_dir/180*(float)M_PI)},
-                                            getTileAtCursor(&player_client));
+                                            vec2f{cos(playerClient.aim_dir/180*(float)M_PI),
+                                            sin(playerClient.aim_dir/180*(float)M_PI)},
+                                            getTileAtCursor(&playerClient));
             tile* timmy = raycast_upto_selected_tile(p->pos,
-                                                   vec2f{cos(player_client.aim_dir/180*(float)M_PI),
-                                                         sin(player_client.aim_dir/180*(float)M_PI)},
-                                                   getTileAtCursor(&player_client));
+                                                   vec2f{cos(playerClient.aim_dir/180*(float)M_PI),
+                                                         sin(playerClient.aim_dir/180*(float)M_PI)},
+                                                   getTileAtCursor(&playerClient));
             for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
                 if (timmy == nullptr)
                     break;
@@ -299,7 +299,7 @@ int main() {
                     timmy = nullptr;
             }
             if (isClear && timmy != nullptr) {
-                player_client.lastBuildTime = cur_frame_start;
+                playerClient.lastBuildTime = cur_frame_start;
                 timmy->wall_height = 8;
                 timmy->floor_anim = grass1Floor;
                 timmy->wall_side_anim = grass1Side;
@@ -319,7 +319,7 @@ int main() {
             vec2i next_chunk = p->chunk + order[i];
             if ( next_chunk.in_bounds(0,WORLD_WIDTH) ) {                        //- Floor pass.
                 draw_chunk_floor(
-                    player_client.camera_pos, player_client.camera_center,
+                    playerClient.camera_pos, playerClient.camera_center,
                     &test_world.chunks[next_chunk.y][next_chunk.x],
                     vec2i{next_chunk.x, next_chunk.y});
             }
@@ -328,7 +328,7 @@ int main() {
             vec2i next_chunk = p->chunk + order[i];
             if ( next_chunk.in_bounds(0,WORLD_WIDTH) ) {                        //- Wall/entity pass.
                 draw_chunk_ents(
-                    player_client.camera_pos, player_client.camera_center,
+                    playerClient.camera_pos, playerClient.camera_center,
                     &test_world.chunks[next_chunk.y][next_chunk.x],
                     vec2i{next_chunk.x, next_chunk.y});
             }
@@ -337,7 +337,7 @@ int main() {
             vec2i next_chunk = p->chunk + order[i];
             if ( next_chunk.in_bounds(0,WORLD_WIDTH) ) {                        //- Wall/entity pass.
                 draw_chunk_walls(
-                    player_client.camera_pos, player_client.camera_center,
+                    playerClient.camera_pos, playerClient.camera_center,
                     &test_world.chunks[next_chunk.y][next_chunk.x],
                     vec2i{next_chunk.x, next_chunk.y});
             }
@@ -346,12 +346,12 @@ int main() {
         drawFps(fps);
         
         //char message[] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
-        player_client.showDialog();
-        //draw_ent_sprites(player_client.camera_pos, (struct ent_basics*)p);
+        playerClient.showDialog();
+        //draw_ent_sprites(playerClient.camera_pos, (struct ent_basics*)p);
         
         think_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); //==========// Update/draw the entities. //
         move_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-        //draw_all_ents(player_client.camera_pos, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+        //draw_all_ents(playerClient.camera_pos, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         present_frame(); // Put the frame on the screen:
     }
     printf("Server was running for %d seconds.\n", SDL_GetTicks() / 1000);

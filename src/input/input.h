@@ -13,6 +13,6 @@ void client_input(client* client);
 
 
 // TODO replace old ent system TODO
-extern struct client player_client;
+extern struct client playerClient;
 
 #endif

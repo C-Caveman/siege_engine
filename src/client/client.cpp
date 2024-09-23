@@ -55,7 +55,10 @@ void client::showDialog() { // Draw an animated dialog string onto the screen.
         else if (c != ' ')
             playSoundChannel(typewriterARattle2, rand() % 4);
     }
-    if (dialogCharsPrinted == numTextBoxChars)
+    if (dialogCharsPrinted == numTextBoxChars) {
         dialogCharsPrinted = 0;
+        dialogVisible = 0;
+        return;
+    }
     drawTextBox((char*)&dialogString, dialogCharsPrinted);
 }
