@@ -16,7 +16,7 @@ char path[MAX_PATH_LEN]; // path to the executable
 SDL_Texture* textures[MAX_TEXTURES];
 // Details for each animation.
 struct anim_info anim_data[NUM_ANIM];
-float min_frame_time = 1000/60; // second / frames
+float min_frame_time = 1000/60; // default is 60 fps
 SDL_Renderer* renderer;
 SDL_Window* window;
 SDL_Rect window_size; // Dimensions of the screen. Set in the init_graphics() method.
@@ -506,11 +506,6 @@ void drawFps(float fps) {
         SDL_DestroyTexture(charTexture);
     }
 }
-struct textBox {
-    char text[1024]; //TODO define a size constant
-    vec2i pos;
-    int image;
-};
 void drawTextBox(char* text, int numCharsToPrint) {
     SDL_Color White = {255, 255, 255};
     int charWidth = window_x / 64;
@@ -521,8 +516,6 @@ void drawTextBox(char* text, int numCharsToPrint) {
     int maxLineChars = (window_x / charWidth) - 1;
     if (maxLineChars > MAX_LINE_BUFFER_SIZE)
         maxLineChars = MAX_LINE_BUFFER_SIZE;
-    //int numLines = std::ceil(numChars / maxLineChars) + 1; //TODO re-implement the numLines counter, or set a fixed line count!! TODO
-    //int numCharsPrinted = 0;
     int wrapThreshold = maxLineChars * 0.8;
     int lineNumber = 0;
     int curLineChars = 0;
@@ -536,6 +529,11 @@ void drawTextBox(char* text, int numCharsToPrint) {
             //Skip leading whitespace.
             while (text[i] == ' ')
                 i++;
+        }
+        if (text[i] == '\n') {
+            lineNumber++;
+            curLineChars = 0;
+            continue;
         }
         lineBuffer[0] = text[i];
         SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, lineBuffer, White);

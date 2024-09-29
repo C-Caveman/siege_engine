@@ -119,10 +119,25 @@ void ent_zombie::init() {                               // ZOMBIE
     target = 1; // first entity handle should be the player TODO add a player-finding function for reliability! TODO
     targetPos = {0,0};
 }
-char message[] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
+#define MSIZE 1024
+char message[MSIZE] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
+void loadMessage(char* fName, char* outString) {
+    FILE* fp = fopen(fName, "r");
+    if (!fp) {
+        printf("Couldn't open %s\n", fName);
+        exit(1);
+    }
+    for (int i=0; i<MSIZE; i++) {
+        char c = fgetc(fp);
+        if (feof(fp))
+            break;
+        outString[i] = c;
+    } 
+}
 void ent_zombie::think() {
     struct ent_basics* e = get_ent(target);
     if (e != 0 && e->pos.dist(pos) < RSIZE/2 && playerClient.dialogVisible == 0) {
+        loadMessage((char*)"assets/worlds/testWorld/hello.txt", message);
         playerClient.startDialog(message);
     }
     wanderWait -= 1;
