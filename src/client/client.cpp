@@ -24,22 +24,39 @@ void client::update_player_entity() {
 void client::startDialog(char* message) {
     dialogTick = anim_tick;
     strncpy(dialogString, message, sizeof(dialogString)-1);
+    memset(dialogPrintString, 0, sizeof(dialogPrintString)-1);
     dialogVisible = 1;
     dialogCharsPrinted = 0;
+    dialogStringPos = 0;
 }
 
-void client::showDialog() { // Draw an animated dialog string onto the screen.
+void client::updateDialogue() { // Animate the dialog box.
     if (dialogVisible == 0)
         return;
     int msSinceTextBoxUpdate = anim_tick - dialogTick + (anim_tick < dialogTick)*256;
     int numTextBoxChars = strlen(dialogString);
-    char prevChar = dialogString[(dialogCharsPrinted > 0) ? dialogCharsPrinted-1 : 0];
-    char c = dialogString[dialogCharsPrinted];
+    char prevChar = dialogPrintString[(dialogCharsPrinted > 0) ? dialogCharsPrinted-1 : 0];
+    char c = dialogString[dialogStringPos];
+    if (c == '<') {
+        printf("!!! <");
+        while (dialogString[dialogStringPos] != '>' && dialogStringPos < 1024) {
+            printf("%c", dialogString[dialogStringPos]);
+            dialogStringPos++;
+        }
+        printf(">\n");
+        dialogStringPos++;
+        c = dialogString[dialogStringPos];
+    }
     int isPunctuation = (c == '.' || c == '!' || c == '?');
     int isSpace = (c == ' ');
-    if (msSinceTextBoxUpdate > 70 && !(isSpace && msSinceTextBoxUpdate < 140) && !(isPunctuation && msSinceTextBoxUpdate < 200) && dialogCharsPrinted < numTextBoxChars) {
+    int timeToAddChar = (msSinceTextBoxUpdate > 70);
+    int waitedForPunct = !(isSpace && msSinceTextBoxUpdate < 140) && !(isPunctuation && msSinceTextBoxUpdate < 200);
+    if (timeToAddChar && waitedForPunct && dialogCharsPrinted < numTextBoxChars) {
         dialogTick = anim_tick;
+        dialogPrintString[dialogCharsPrinted] = c;
+        dialogPrintString[dialogCharsPrinted+1] = 0;
         dialogCharsPrinted++;
+        dialogStringPos++;
         if (isPunctuation && rand() > RAND_MAX/2)
             playSoundChannel(typewriterAPunct2, 5);
         else if (isPunctuation && rand() > RAND_MAX/4)
@@ -60,5 +77,11 @@ void client::showDialog() { // Draw an animated dialog string onto the screen.
         dialogVisible = 0;
         return;
     }
-    drawTextBox((char*)&dialogString, dialogCharsPrinted);
+}
+
+void client::showDialog() { // Draw an animated dialog string onto the screen.
+    if (dialogVisible == 0)
+        return;
+    updateDialogue();
+    drawTextBox((char*)&dialogPrintString, dialogCharsPrinted);
 }

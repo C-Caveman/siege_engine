@@ -9,6 +9,7 @@
 struct client {
     void update_player_entity();
     void startDialog(char* message);
+    void updateDialogue();
     void showDialog();
     // Player entity:
     struct ent_player* player;
@@ -32,7 +33,9 @@ struct client {
     int  dialogTick;
     int  dialogVisible;
     int  dialogCharsPrinted;
+    int  dialogStringPos;
     char dialogString[1024];
+    char dialogPrintString[1024];
 };
 
 // TODO use these for packets TODO
