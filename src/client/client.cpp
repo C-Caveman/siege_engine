@@ -5,6 +5,28 @@
 #include "../audio/audio.h"
 extern float dt;
 
+#define MAX_ACTOR_NAME_LEN 128
+#define MAX_ACTOR_VOICES 128
+#define MAX_ACTOR_ANIMS 256
+struct dialogActor { // Set by annotations in the dialog strings.
+    char name[MAX_ACTOR_NAME_LEN];
+    int voices[MAX_ACTOR_VOICES];
+    int anim[MAX_ACTOR_ANIMS];
+};
+struct dialogActor actors[] = {
+    {"pig", {voiceMetalA, voiceMetalB1}, {cubeFace, faceNecronomicon} }
+};
+char dialogAnnotationTypeNames[][MAX_ANNOTATION_LEN] = {
+    dialogAnnotationTypesList(TO_STRING)
+    "invalidAnnotation"
+};
+char* nameOfAnnotationType(int t) {
+    if (t >= 0 && t < NUM_DIALOG_ANNOTATION_TYPES)
+        return (char*)&dialogAnnotationTypeNames[t];
+    else
+        return (char*)&dialogAnnotationTypeNames[invalidAnnotation];
+}
+
 float PLAYER_ACCELERATION = 4000;
 void client::update_player_entity() {
     // Player movement:
@@ -38,12 +60,31 @@ void client::updateDialogue() { // Animate the dialog box.
     char prevChar = dialogPrintString[(dialogCharsPrinted > 0) ? dialogCharsPrinted-1 : 0];
     char c = dialogString[dialogStringPos];
     if (c == '<') {
-        printf("!!! <");
-        while (dialogString[dialogStringPos] != '>' && dialogStringPos < 1024) {
-            printf("%c", dialogString[dialogStringPos]);
-            dialogStringPos++;
+        dialogStringPos++;
+        dialogAnnotationLen = 0;
+        switch (dialogString[dialogStringPos]) {
+            case 'a':
+                dialogAnnotationType = setActor;
+                break;
+            case 'f':
+                dialogAnnotationType = setFaceAnim;
+                break;
+            case 'v':
+                dialogAnnotationType = setVoice;
+                break;
+            default:
+                dialogAnnotationType = -1;
         }
-        printf(">\n");
+        printf("Annotation: '%s' ", nameOfAnnotationType(dialogAnnotationType));
+        if (dialogStringPos != -1)
+            dialogStringPos++;
+        while (dialogString[dialogStringPos] != '>' && dialogStringPos < MAX_DIALOG_LEN) {
+            dialogAnnotation[dialogAnnotationLen] = dialogString[dialogStringPos];
+            dialogStringPos++;
+            dialogAnnotationLen++;
+        }
+        dialogAnnotation[dialogAnnotationLen] = 0;
+        printf("'%s'\n", dialogAnnotation);
         dialogStringPos++;
         c = dialogString[dialogStringPos];
     }

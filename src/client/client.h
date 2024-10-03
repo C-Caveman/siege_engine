@@ -5,6 +5,18 @@
 #include <stdio.h>
 #include "../ent/ent.h"
 
+#define MAX_DIALOG_LEN 2048
+#define MAX_ANNOTATION_LEN 64
+
+#define dialogAnnotationTypesList(f) \
+    f(setActor) \
+    f(setFaceAnim) \
+    f(setVoice)
+enum dialogAnnotationTypes {
+    dialogAnnotationTypesList(TO_ENUM)
+    invalidAnnotation,
+    NUM_DIALOG_ANNOTATION_TYPES
+};
 
 struct client {
     void update_player_entity();
@@ -34,8 +46,11 @@ struct client {
     int  dialogVisible;
     int  dialogCharsPrinted;
     int  dialogStringPos;
-    char dialogString[1024];
-    char dialogPrintString[1024];
+    int  dialogAnnotationLen;
+    int  dialogAnnotationType;
+    char dialogString[MAX_DIALOG_LEN];      // Dialog with <annotations> included.
+    char dialogPrintString[MAX_DIALOG_LEN]; // Printed text with <annotations> removed.
+    char dialogAnnotation[MAX_ANNOTATION_LEN]; // Current <annotation> being read in from the dialogString.
 };
 
 // TODO use these for packets TODO
