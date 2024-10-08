@@ -14,11 +14,13 @@ struct dialogActor { // Set by annotations in the dialog strings.
     int anim[MAX_ACTOR_ANIMS];
 };
 struct dialogActor actors[] = {
-    {"pig", {voiceMetalA, voiceMetalB1}, {cubeFace, faceNecronomicon} }
+    {"default", {voiceMetalA, voiceMetalB1}, {black, black} },
+    {"pig", {voiceMetalA, voiceMetalB1}, {facePig01, facePigTalk01} },
+    {"pig2", {voiceMetalA, voiceMetalB1}, {facePig01, facePigTalk01} },
+    {"", {}, {}} // null terminator
 };
 char dialogAnnotationTypeNames[][MAX_ANNOTATION_LEN] = {
     dialogAnnotationTypesList(TO_STRING)
-    "invalidAnnotation"
 };
 char* nameOfAnnotationType(int t) {
     if (t >= 0 && t < NUM_DIALOG_ANNOTATION_TYPES)
@@ -52,6 +54,27 @@ void client::startDialog(char* message) {
     dialogStringPos = 0;
 }
 
+void client::changeActor() {
+    dialogActorIndex = 0; // Set to default actor.
+    dialogActorFaceIndex = 0;
+    dialogActorVoiceIndex = 0;
+    int foundMatch = 0;
+    for (int i=0; actors[i].name[0] != 0; i++) {
+        int isMatch = strncmp(dialogAnnotation, actors[i].name, MAX_ACTOR_NAME_LEN);
+        if (isMatch == 0) {
+            dialogActorIndex = i;
+            foundMatch = 1;
+            break;
+        }
+    }
+    if (foundMatch == 1) {
+        printf("[dialogActor = '%s']\n", actors[dialogActorIndex].name);
+    }
+    else {
+        printf("*** changeActor didn't find '%s'\n", dialogAnnotation);
+    }
+}
+
 void client::updateDialogue() { // Animate the dialog box.
     if (dialogVisible == 0)
         return;
@@ -73,9 +96,8 @@ void client::updateDialogue() { // Animate the dialog box.
                 dialogAnnotationType = setVoice;
                 break;
             default:
-                dialogAnnotationType = -1;
+                dialogAnnotationType = invalidAnnotation;
         }
-        printf("Annotation: '%s' ", nameOfAnnotationType(dialogAnnotationType));
         if (dialogStringPos != -1)
             dialogStringPos++;
         while (dialogString[dialogStringPos] != '>' && dialogStringPos < MAX_DIALOG_LEN) {
@@ -84,7 +106,22 @@ void client::updateDialogue() { // Animate the dialog box.
             dialogAnnotationLen++;
         }
         dialogAnnotation[dialogAnnotationLen] = 0;
-        printf("'%s'\n", dialogAnnotation);
+        printf("[%s] <%s>\n", nameOfAnnotationType(dialogAnnotationType), dialogAnnotation);
+        switch (dialogAnnotationType) {
+            case setActor:
+                changeActor();
+                break;
+            case setFaceAnim:
+                dialogActorFaceIndex = std::stoi(dialogAnnotation);
+                printf("[dialogActorFaceIndex = %d]\n", dialogActorFaceIndex);
+                break;
+            case setVoice:
+                dialogActorVoiceIndex = std::stoi(dialogAnnotation);
+                printf("[dialogActorVoiceIndex = %d]\n", dialogActorVoiceIndex);
+                break;
+            default:
+                break;
+        }
         dialogStringPos++;
         c = dialogString[dialogStringPos];
     }

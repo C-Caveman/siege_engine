@@ -9,12 +9,12 @@
 #define MAX_ANNOTATION_LEN 64
 
 #define dialogAnnotationTypesList(f) \
+    f(invalidAnnotation) \
     f(setActor) \
     f(setFaceAnim) \
     f(setVoice)
 enum dialogAnnotationTypes {
     dialogAnnotationTypesList(TO_ENUM)
-    invalidAnnotation,
     NUM_DIALOG_ANNOTATION_TYPES
 };
 
@@ -23,6 +23,7 @@ struct client {
     void startDialog(char* message);
     void updateDialogue();
     void showDialog();
+    void changeActor();
     // Player entity:
     struct ent_player* player;
     //
@@ -51,6 +52,9 @@ struct client {
     char dialogString[MAX_DIALOG_LEN];      // Dialog with <annotations> included.
     char dialogPrintString[MAX_DIALOG_LEN]; // Printed text with <annotations> removed.
     char dialogAnnotation[MAX_ANNOTATION_LEN]; // Current <annotation> being read in from the dialogString.
+    int  dialogActorIndex;      // Array index of the current actor who is speaking.
+    int  dialogActorFaceIndex;  // Actor's current face animation.
+    int  dialogActorVoiceIndex; // Actor's current talk sound.
 };
 
 // TODO use these for packets TODO

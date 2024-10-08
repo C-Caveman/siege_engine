@@ -82,11 +82,12 @@ void ent_projectile::init() {                           // PROJECTILE
 }
 void ent_projectile::think() {
     lifetime -= 1;
-    struct tile* cur_tile = main_world->get_tile( (pos + vec2f{RSIZE/2,RSIZE/2}).to_int() / RSIZE);
-    if (cur_tile != 0 && cur_tile->wall_height > 0) {
+    struct tile* curTile = main_world->get_tile( (pos + vec2f{RSIZE/2,RSIZE/2}).to_int() / RSIZE);
+    if (curTile != 0 && curTile->wall_height > 0) {
         lifetime = 0;
         despawn_ent((ent_basics*)this);
-        cur_tile->wall_height = 0;
+        curTile->wall_height = 0;
+        curTile->floor_anim = tileGold01;
         playSound(chow);
         return;
     }
@@ -98,8 +99,10 @@ void ent_rabbit::init() {                               // RABBIT
     wanderDir = vec2f{1,0};
     wanderWait = 100;
     num_sprites = 1;
-    sprites[0].flags |= LOOPING;
-    sprites[0].anim = faceNecronomicon;
+    //sprites[0].flags |= LOOPING;
+    sprites[0].anim = rabbitHop01;
+    sprites[0].flags |= PAUSED;
+    sprites[0].frame = 2;
 }
 void ent_rabbit::think() {
     wanderWait -= 1;
@@ -107,6 +110,10 @@ void ent_rabbit::think() {
         wanderWait = 100;
         wanderDir = vec2f{ (float)(rand()) / (float)(RAND_MAX) - 0.5f, (float)(rand()) / (float)RAND_MAX - 0.5f };
         vel = wanderDir.normalized() * 800.f;
+        sprites[0].rotation = atan2(wanderDir.y, wanderDir.x) * 180. / M_PI + 90;
+        sprites[0].rotation = (float)((int)sprites[0].rotation % 360);
+        sprites[0].frame = 0;
+        sprites[0].flags &= ~PAUSED;
     }
 }
 
@@ -143,7 +150,7 @@ void ent_zombie::think() {
     wanderWait -= 1;
     if (wanderWait <= 0 && e != 0) {
         wanderWait = 60;
-        playSound(tik);
+        //playSound(tik);
         //wanderDir = vec2f{ (float)(rand()) / (float)(RAND_MAX) - 0.5f, (float)(rand()) / (float)RAND_MAX - 0.5f };
         wanderDir = targetPos - this->pos;
         vel = wanderDir.normalized() * 2000.f;

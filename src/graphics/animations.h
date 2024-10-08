@@ -30,7 +30,10 @@
     DO(grass1Side) \
     DO(zombie) \
     DO(tileGold01) \
-    DO(tileDirt01)
+    DO(tileDirt01) \
+    DO(facePig01) \
+    DO(facePigTalk01) \
+    DO(rabbitHop01)
 
 enum animation_ids {
     ANIMATION_LIST(TO_ENUM)
