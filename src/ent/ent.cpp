@@ -21,7 +21,7 @@ handle claim_handle(struct ent_basics* e) { //-------- Bind a handle to an entit
     handles[h].copies = 1;
     handles[h].ent = e;
     handles[h].claimed = 1;
-    printf("Handle %d claimed by a '%s' ent.\n", h, get_type_name(handles[h].ent->type));
+    //printf("Handle %d claimed by a '%s' ent.\n", h, get_type_name(handles[h].ent->type));
     return h;
 }
 void unclaim_handle(handle i) { //-------------------- Unbind a handle (not a copy of one).

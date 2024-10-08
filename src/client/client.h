@@ -18,6 +18,16 @@ enum dialogAnnotationTypes {
     NUM_DIALOG_ANNOTATION_TYPES
 };
 
+#define MAX_ACTOR_NAME_LEN 128
+#define MAX_ACTOR_VOICES 128
+#define MAX_ACTOR_ANIMS 256
+struct dialogActor { // Set by annotations in the dialog strings.
+    char name[MAX_ACTOR_NAME_LEN];
+    int voices[MAX_ACTOR_VOICES];
+    int anim[MAX_ACTOR_ANIMS];
+};
+extern struct dialogActor actors[];
+
 struct client {
     void update_player_entity();
     void startDialog(char* message);

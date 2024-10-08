@@ -5,14 +5,7 @@
 #include "../audio/audio.h"
 extern float dt;
 
-#define MAX_ACTOR_NAME_LEN 128
-#define MAX_ACTOR_VOICES 128
-#define MAX_ACTOR_ANIMS 256
-struct dialogActor { // Set by annotations in the dialog strings.
-    char name[MAX_ACTOR_NAME_LEN];
-    int voices[MAX_ACTOR_VOICES];
-    int anim[MAX_ACTOR_ANIMS];
-};
+
 struct dialogActor actors[] = {
     {"default", {voiceMetalA, voiceMetalB1}, {black, black} },
     {"pig", {voiceMetalA, voiceMetalB1}, {facePig01, facePigTalk01} },
@@ -161,5 +154,5 @@ void client::showDialog() { // Draw an animated dialog string onto the screen.
     if (dialogVisible == 0)
         return;
     updateDialogue();
-    drawTextBox((char*)&dialogPrintString, dialogCharsPrinted);
+    drawDialogBox(this);
 }

@@ -1,5 +1,6 @@
 // draw to the game window 
 #include "graphics.h"
+#include "../client/client.h"
 #include <unistd.h>
 #include <iostream>
 #include <stdlib.h> // snprintf used for tex fname generation
@@ -544,6 +545,63 @@ void drawTextBox(char* text, int numCharsToPrint) {
         SDL_FreeSurface(surfaceMessage);
         SDL_DestroyTexture(charTexture);
     }
+}
+void drawDialogBox(struct client* cl) {
+    char* text = cl->dialogPrintString;
+    int numCharsToPrint = cl->dialogCharsPrinted;
+    SDL_Color White = {255, 255, 255};
+    int charWidth = window_x / 64;
+    int charHeight = charWidth * 2;
+    int numChars = strlen(text);
+    #define MAX_LINE_BUFFER_SIZE 256
+    char lineBuffer[MAX_LINE_BUFFER_SIZE] = {0};
+    int portraitSize = window_x / 5;
+    int portraitPadding = window_x / 20;
+    int maxLineChars = (window_x - portraitSize) / charWidth - 1;
+    if (maxLineChars > MAX_LINE_BUFFER_SIZE)
+        maxLineChars = MAX_LINE_BUFFER_SIZE;
+    int wrapThreshold = maxLineChars * 0.8;
+    int lineNumber = 0;
+    int curLineChars = 0;
+    // Print the text:
+    for (int i=0; i<numChars; i++, curLineChars++) {
+        if (i > numCharsToPrint)
+            break;
+        if ( (curLineChars >= wrapThreshold && text[i] == ' ') || (curLineChars >= maxLineChars) ) {
+            lineNumber++;
+            curLineChars = 0;
+            //Skip leading whitespace.
+            while (text[i] == ' ')
+                i++;
+        }
+        if (text[i] == '\n') {
+            lineNumber++;
+            curLineChars = 0;
+            continue;
+        }
+        lineBuffer[0] = text[i];
+        SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, lineBuffer, White);
+        SDL_Texture* charTexture = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+        SDL_Rect charBox = SDL_Rect {
+            charWidth*(curLineChars+1) + portraitSize + portraitPadding, 
+            charHeight*lineNumber + window_y-portraitSize, 
+            charWidth, charHeight
+        };
+        SDL_RenderCopy(renderer, textures[anim_data[black].texture_index], NULL, &charBox);
+        SDL_RenderCopy(renderer, charTexture, NULL, &charBox);
+        SDL_FreeSurface(surfaceMessage);
+        SDL_DestroyTexture(charTexture);
+    }
+    // Draw the portrait:
+    SDL_Rect portraitBox = SDL_Rect {
+        portraitPadding,
+        window_y - portraitSize,
+        portraitSize, portraitSize
+    };
+    SDL_RenderCopy(renderer, textures[anim_data[black].texture_index], NULL, &portraitBox);
+    int portraitTextureID = anim_data[actors[cl->dialogActorIndex].anim[cl->dialogActorFaceIndex]].texture_index;
+    int portraitAnimationLen = anim_data[actors[cl->dialogActorIndex].anim[cl->dialogActorFaceIndex]].len;
+    SDL_RenderCopy(renderer, textures[portraitTextureID+ (numCharsToPrint / 2 % portraitAnimationLen)], NULL, &portraitBox);
 }
 void cleanup_graphics() {
     SDL_DestroyRenderer(renderer);
