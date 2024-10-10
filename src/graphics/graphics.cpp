@@ -584,7 +584,7 @@ void drawDialogBox(struct client* cl) {
         SDL_Texture* charTexture = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
         SDL_Rect charBox = SDL_Rect {
             charWidth*(curLineChars+1) + portraitSize + portraitPadding, 
-            charHeight*lineNumber + window_y-portraitSize, 
+            charHeight*lineNumber + window_y - portraitSize - portraitPadding, 
             charWidth, charHeight
         };
         SDL_RenderCopy(renderer, textures[anim_data[black].texture_index], NULL, &charBox);
@@ -595,7 +595,7 @@ void drawDialogBox(struct client* cl) {
     // Draw the portrait:
     SDL_Rect portraitBox = SDL_Rect {
         portraitPadding,
-        window_y - portraitSize,
+        window_y - portraitSize - portraitPadding,
         portraitSize, portraitSize
     };
     SDL_RenderCopy(renderer, textures[anim_data[black].texture_index], NULL, &portraitBox);

@@ -7,9 +7,9 @@ extern float dt;
 
 
 struct dialogActor actors[] = {
-    {"default", {voiceMetalA, voiceMetalB1}, {black, black} },
-    {"pig", {voiceMetalA, voiceMetalB1}, {facePig01, facePigTalk01} },
-    {"pig2", {voiceMetalA, voiceMetalB1}, {facePig01, facePigTalk01} },
+    {".", {voiceMetalA, voiceMetalB1}, {black, black} },
+    {"pig", {voiceMetalA, voiceMetalB1}, {facePigTalk01, facePig01} },
+    {"book", {tikLower, tik}, {faceBookTalk01, faceBook01} },
     {"", {}, {}} // null terminator
 };
 char dialogAnnotationTypeNames[][MAX_ANNOTATION_LEN] = {
