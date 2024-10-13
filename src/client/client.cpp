@@ -7,8 +7,8 @@ extern float dt;
 
 
 struct dialogActor actors[] = {
-    {".", {voiceMetalA, voiceMetalB1}, {black, black} },
-    {"pig", {voiceMetalA, voiceMetalB1}, {facePigTalk01, facePig01} },
+    {".", {typewriterA01, voiceThudA3}, {black, black} },
+    {"pig", {tik, voiceMetalB1}, {facePigTalk01, facePig01} },
     {"book", {tikLower, tik}, {faceBookTalk01, faceBook01} },
     {"", {}, {}} // null terminator
 };
@@ -73,7 +73,7 @@ void client::updateDialogue() { // Animate the dialog box.
         return;
     int msSinceTextBoxUpdate = anim_tick - dialogTick + (anim_tick < dialogTick)*256;
     int numTextBoxChars = strlen(dialogString);
-    char prevChar = dialogPrintString[(dialogCharsPrinted > 0) ? dialogCharsPrinted-1 : 0];
+    //char prevChar = dialogPrintString[(dialogCharsPrinted > 0) ? dialogCharsPrinted-1 : 0];
     char c = dialogString[dialogStringPos];
     if (c == '<') {
         dialogStringPos++;
@@ -87,6 +87,9 @@ void client::updateDialogue() { // Animate the dialog box.
                 break;
             case 'v':
                 dialogAnnotationType = setVoice;
+                break;
+            case 'c':
+                dialogAnnotationType = clearDialog;
                 break;
             default:
                 dialogAnnotationType = invalidAnnotation;
@@ -112,6 +115,10 @@ void client::updateDialogue() { // Animate the dialog box.
                 dialogActorVoiceIndex = std::stoi(dialogAnnotation);
                 printf("[dialogActorVoiceIndex = %d]\n", dialogActorVoiceIndex);
                 break;
+            case clearDialog:
+                dialogCharsPrinted = 0;
+                memset(dialogPrintString, 0, sizeof(dialogPrintString)-1);
+                break;
             default:
                 break;
         }
@@ -128,6 +135,10 @@ void client::updateDialogue() { // Animate the dialog box.
         dialogPrintString[dialogCharsPrinted+1] = 0;
         dialogCharsPrinted++;
         dialogStringPos++;
+        if (!isSpace) {
+            playSoundChannel(actors[dialogActorIndex].voices[dialogActorVoiceIndex], 5);
+        }
+        /*
         if (isPunctuation && rand() > RAND_MAX/2)
             playSoundChannel(typewriterAPunct2, 5);
         else if (isPunctuation && rand() > RAND_MAX/4)
@@ -142,8 +153,9 @@ void client::updateDialogue() { // Animate the dialog box.
             playSoundChannel(typewriterARattle1, rand() % 4);
         else if (c != ' ')
             playSoundChannel(typewriterARattle2, rand() % 4);
+        */
     }
-    if (dialogCharsPrinted == numTextBoxChars) {
+    if (dialogStringPos == numTextBoxChars) {
         dialogCharsPrinted = 0;
         dialogVisible = 0;
         return;

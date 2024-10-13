@@ -555,7 +555,7 @@ void drawDialogBox(struct client* cl) {
     int numChars = strlen(text);
     #define MAX_LINE_BUFFER_SIZE 256
     char lineBuffer[MAX_LINE_BUFFER_SIZE] = {0};
-    int portraitSize = window_x / 5;
+    int portraitSize = window_y / 5;
     int portraitPadding = window_x / 20;
     int maxLineChars = (window_x - portraitSize) / charWidth - 1;
     if (maxLineChars > MAX_LINE_BUFFER_SIZE)
@@ -567,6 +567,11 @@ void drawDialogBox(struct client* cl) {
     for (int i=0; i<numChars; i++, curLineChars++) {
         if (i > numCharsToPrint)
             break;
+        if (lineNumber > 4) {
+            cl->dialogCharsPrinted = numCharsToPrint = 0;
+            memset(cl->dialogPrintString, 0, sizeof(cl->dialogPrintString)-1);
+            break;
+        }
         if ( (curLineChars >= wrapThreshold && text[i] == ' ') || (curLineChars >= maxLineChars) ) {
             lineNumber++;
             curLineChars = 0;
@@ -574,8 +579,12 @@ void drawDialogBox(struct client* cl) {
             while (text[i] == ' ')
                 i++;
         }
-        if (text[i] == '\n') {
+        if (text[i] == '\n' && curLineChars > 1) {
             lineNumber++;
+            curLineChars = 0;
+            continue;
+        }
+        else if (text[i] == '\n') { // Don't try to draw the newline as a symbol.
             curLineChars = 0;
             continue;
         }
@@ -601,7 +610,7 @@ void drawDialogBox(struct client* cl) {
     SDL_RenderCopy(renderer, textures[anim_data[black].texture_index], NULL, &portraitBox);
     int portraitTextureID = anim_data[actors[cl->dialogActorIndex].anim[cl->dialogActorFaceIndex]].texture_index;
     int portraitAnimationLen = anim_data[actors[cl->dialogActorIndex].anim[cl->dialogActorFaceIndex]].len;
-    SDL_RenderCopy(renderer, textures[portraitTextureID+ (numCharsToPrint / 2 % portraitAnimationLen)], NULL, &portraitBox);
+    SDL_RenderCopy(renderer, textures[portraitTextureID+ ((numCharsToPrint / 2) % portraitAnimationLen)], NULL, &portraitBox);
 }
 void cleanup_graphics() {
     SDL_DestroyRenderer(renderer);

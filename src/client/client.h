@@ -12,7 +12,8 @@
     f(invalidAnnotation) \
     f(setActor) \
     f(setFaceAnim) \
-    f(setVoice)
+    f(setVoice) \
+    f(clearDialog)
 enum dialogAnnotationTypes {
     dialogAnnotationTypesList(TO_ENUM)
     NUM_DIALOG_ANNOTATION_TYPES
