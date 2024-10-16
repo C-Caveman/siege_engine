@@ -9,6 +9,10 @@
 
 #define TILE_PIXEL_DIAMETER 32
 
+#define MAX_TEXTURES 2048 // space allocated for textures
+#define BKGRND_TEX 8
+#define ANIM_NAME_LEN 16 // max length for an animation filename
+
 // Data stored for a particular animation.
 struct anim_info {
     uint32_t texture_index;  // First frame in texture array.

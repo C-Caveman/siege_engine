@@ -26,12 +26,21 @@ o/vars.o: src/config/vars.h src/config/vars.c
 	${CC} ${CFLAGS} -c src/config/vars.c -o o/vars.o ${INCLUDES}
 o/client.o: src/client/client.cpp src/client/client.h
 	${CC} ${CFLAGS} -c src/client/client.cpp -o o/client.o ${INCLUDES}
-o/server.o: src/server/server.cpp src/server/server.h o/graphics.o o/input.o o/ent.o o/defs.o o/client.o
+o/server.o: src/server/server.cpp src/server/server.h o/graphics.o o/input.o o/ent.o o/defs.o o/client.o o/audio.o
 	${CC} ${CFLAGS} -c src/server/server.cpp -o o/server.o ${INCLUDES}
 o/audio.o: src/audio/audio.cpp src/audio/audio.h src/audio/sfx.h src/audio/music.h
 	${CC} ${CFLAGS} -c src/audio/audio.cpp -o o/audio.o ${INCLUDES}
+src/audio/sfx.h: assets/audio/sfx src/buildScripts/makeSFXEnum.sh
+	# sfx dir was modified!
+	bash src/buildScripts/makeSFXEnum.sh
+src/audio/music.h: assets/audio/music src/buildScripts/makeMusicEnum.sh
+	# music dir was modified!
+	bash src/buildScripts/makeMusicEnum.sh
 o/graphics.o: src/graphics/graphics.cpp src/graphics/graphics.h src/graphics/animations.h o/world.o o/ent.o o/defs.o
 	${CC} ${CFLAGS} -c src/graphics/graphics.cpp -o o/graphics.o ${INCLUDES}
+src/graphics/animations.h: assets/graphics/animations src/buildScripts/makeAnimationEnum.sh
+	# animations dir was modified!
+	bash src/buildScripts/makeAnimationEnum.sh
 o/input.o: src/input/input.cpp src/input/input.h o/ent.o o/defs.o
 	${CC} ${CFLAGS} -c src/input/input.cpp -o o/input.o ${INCLUDES}
 o/world.o: src/world/world.cpp src/defs.h o/ent.o o/defs.o o/chunk.o

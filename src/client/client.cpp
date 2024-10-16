@@ -10,6 +10,8 @@ struct dialogActor actors[] = {
     {".", {typewriterA01, voiceThudA3}, {black, black} },
     {"pig", {tik, voiceMetalB1}, {facePigTalk01, facePig01} },
     {"book", {tikLower, tik}, {faceBookTalk01, faceBook01} },
+    {"goat", {chuh02, chuh01}, {faceSkullGoat01, faceSkullGoat01} },
+    {"robot", {voiceRobot02b, voiceRobot01b}, {faceRobot01, faceRobot01} },
     {"", {}, {}} // null terminator
 };
 char dialogAnnotationTypeNames[][MAX_ANNOTATION_LEN] = {

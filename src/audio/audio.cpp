@@ -8,7 +8,7 @@
 Mix_Music* musics[NUM_MUSIC] = {0};
 Mix_Chunk* sfx[NUM_SFX]  = {0};
 
-char musicNames[NUM_SFX][MAX_MUSIC_NAME_LEN] = { MUSIC_LIST(TO_STRING) };
+char musicNames[NUM_MUSIC][MAX_MUSIC_NAME_LEN] = { MUSIC_LIST(TO_STRING) };
 char sfxNames[NUM_SFX][MAX_SFX_NAME_LEN] = { SFX_LIST(TO_STRING) };
 
 void loadSFX() {
@@ -61,7 +61,7 @@ void init_audio() {
     }
     // set initial volume TODO make configurable TODO
     Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
-    Mix_Volume(-1, MIX_MAX_VOLUME / 4);
+    Mix_Volume(-1, MIX_MAX_VOLUME / 3);
     loadSFX();
     loadMusic();
 }

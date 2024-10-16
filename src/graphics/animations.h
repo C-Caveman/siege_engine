@@ -1,41 +1,55 @@
 #ifndef ANIMATIONS
 #define ANIMATIONS 
 
-#define MAX_TEXTURES 256 // space allocated for textures
-#define BKGRND_TEX 8
-#define ANIM_NAME_LEN 16 // max length for an animation filename
-
-// each animation loaded by the game (filenames)
-#define ANIMATION_LIST(DO) \
-    DO(floor_test) \
-    DO(black) \
-    DO(rocket_tank) \
-    DO(faceNecronomicon) \
-    DO(cubeFace) \
-    DO(gun_0) \
-    DO(gun_chaingun) \
-    DO(gun_grenade) \
-    DO(gun_railgun) \
-    DO(projectilePlasma) \
-    DO(sand) \
-    DO(stone) \
-    DO(stonedk) \
-    DO(tiledark) \
-    DO(solid_grey) \
-    DO(firepit) \
-    DO(knight_1) \
-    DO(wall_steel) \
-    DO(wall_steel_side) \
-    DO(grass1Floor) \
-    DO(grass1Side) \
-    DO(zombie) \
-    DO(tileGold01) \
-    DO(tileDirt01) \
-    DO(facePig01) \
-    DO(facePigTalk01) \
-    DO(faceBook01) \
-    DO(faceBookTalk01) \
-    DO(rabbitHop01)
+#define ANIMATION_LIST(f) \
+    f(big_chungus) \
+    f(black) \
+    f(cubeFace) \
+    f(cubeFace2) \
+    f(faceBook01) \
+    f(faceBookTalk01) \
+    f(faceDemonA) \
+    f(faceNecronomicon) \
+    f(facePig01) \
+    f(facePigTalk01) \
+    f(faceRobot01) \
+    f(faceSkullGoat01) \
+    f(firepit) \
+    f(floor_test) \
+    f(grass1Floor) \
+    f(grass1Side) \
+    f(gun_0) \
+    f(gun_chaingun) \
+    f(gun_grenade) \
+    f(gun_grenade_backup) \
+    f(gun_plasma) \
+    f(gun_railgun) \
+    f(knight_1) \
+    f(missing) \
+    f(player_2) \
+    f(player_old) \
+    f(projectilePlasma) \
+    f(rabbitHop01) \
+    f(_reference) \
+    f(rocket_tank) \
+    f(sand) \
+    f(solid_grey) \
+    f(stone) \
+    f(stonedk) \
+    f(stonedk02) \
+    f(sword) \
+    f(tileCobble01) \
+    f(tileCobble02) \
+    f(tiledark) \
+    f(tiledark_backup) \
+    f(tileDirt01) \
+    f(tileGold01) \
+    f(tilegrate01) \
+    f(tileMetal01) \
+    f(wall_steel) \
+    f(wall_steel_side) \
+    f(zombie) \
+    f(zzz_unused) \
 
 enum animation_ids {
     ANIMATION_LIST(TO_ENUM)

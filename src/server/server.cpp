@@ -213,6 +213,10 @@ int main() {
     test_world.chunks[1][0].tiles[4][4].wall_height = 16;
     //chunk_0->set_floors(floor_test);
     chunk_0->set_floors(tileGold01);
+    for (int y=0; y<WORLD_WIDTH; y++) {
+        for (int x=0; x<WORLD_WIDTH; x++)
+            test_world.chunks[y][x].set_floors(tileGold01);
+    }
     for (int y=0; y<CHUNK_WIDTH; y++) {
         chunk_0->set_wall(0,y, wall_steel,wall_steel_side,16);
         chunk_0->set_wall(CHUNK_WIDTH-1,y, wall_steel,wall_steel_side,16);
@@ -234,8 +238,9 @@ int main() {
     zombieGuy->pos = vec2f{RSIZE*2, RSIZE*4};
     
     
-    playSoundChannel(arcLamp1, 6);
-    playMusicLoop(spookyWind1); //TODO todon't do this
+    //playSoundChannel(arcLamp1, 6);
+    //playMusicLoop(spookyWind1); //TODO todon't do this
+    //playMusicLoop(dorian01);
     
     //char message[] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
     //playerClient.startDialog(message);

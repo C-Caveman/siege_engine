@@ -556,7 +556,8 @@ void drawDialogBox(struct client* cl) {
     #define MAX_LINE_BUFFER_SIZE 256
     char lineBuffer[MAX_LINE_BUFFER_SIZE] = {0};
     int portraitSize = window_y / 5;
-    int portraitPadding = window_x / 20;
+    int portraitPaddingX = window_x / 20;
+    int portraitPaddingY = window_y / 20;
     int maxLineChars = (window_x - portraitSize) / charWidth - 1;
     if (maxLineChars > MAX_LINE_BUFFER_SIZE)
         maxLineChars = MAX_LINE_BUFFER_SIZE;
@@ -567,7 +568,7 @@ void drawDialogBox(struct client* cl) {
     for (int i=0; i<numChars; i++, curLineChars++) {
         if (i > numCharsToPrint)
             break;
-        if (lineNumber > 4) {
+        if (lineNumber > 3) {
             cl->dialogCharsPrinted = numCharsToPrint = 0;
             memset(cl->dialogPrintString, 0, sizeof(cl->dialogPrintString)-1);
             break;
@@ -592,8 +593,8 @@ void drawDialogBox(struct client* cl) {
         SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, lineBuffer, White);
         SDL_Texture* charTexture = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
         SDL_Rect charBox = SDL_Rect {
-            charWidth*(curLineChars+1) + portraitSize + portraitPadding, 
-            charHeight*lineNumber + window_y - portraitSize - portraitPadding, 
+            charWidth*(curLineChars+1) + portraitSize + portraitPaddingX, 
+            charHeight*lineNumber + window_y - portraitSize - portraitPaddingY, 
             charWidth, charHeight
         };
         SDL_RenderCopy(renderer, textures[anim_data[black].texture_index], NULL, &charBox);
@@ -603,8 +604,8 @@ void drawDialogBox(struct client* cl) {
     }
     // Draw the portrait:
     SDL_Rect portraitBox = SDL_Rect {
-        portraitPadding,
-        window_y - portraitSize - portraitPadding,
+        portraitPaddingX,
+        window_y - portraitSize - portraitPaddingY,
         portraitSize, portraitSize
     };
     SDL_RenderCopy(renderer, textures[anim_data[black].texture_index], NULL, &portraitBox);
