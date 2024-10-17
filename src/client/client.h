@@ -13,7 +13,8 @@
     f(setActor) \
     f(setFaceAnim) \
     f(setVoice) \
-    f(clearDialog)
+    f(clearDialog) \
+    f(waitDialog)
 enum dialogAnnotationTypes {
     dialogAnnotationTypesList(TO_ENUM)
     NUM_DIALOG_ANNOTATION_TYPES
@@ -54,6 +55,7 @@ struct client {
     vec2f camera_center; // Center of the camera.
     int lastAttackTime; // Last time the player attacked.
     int lastBuildTime; // Last time the player built.
+    int  dialogWaitTimer;
     int  dialogTick;
     int  dialogVisible;
     int  dialogCharsPrinted;

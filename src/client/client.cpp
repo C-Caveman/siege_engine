@@ -47,6 +47,7 @@ void client::startDialog(char* message) {
     dialogVisible = 1;
     dialogCharsPrinted = 0;
     dialogStringPos = 0;
+    dialogWaitTimer = 0;
 }
 
 void client::changeActor() {
@@ -74,6 +75,12 @@ void client::updateDialogue() { // Animate the dialog box.
     if (dialogVisible == 0)
         return;
     int msSinceTextBoxUpdate = anim_tick - dialogTick + (anim_tick < dialogTick)*256;
+    if (dialogWaitTimer > 0) {
+        dialogWaitTimer -= msSinceTextBoxUpdate;
+        dialogTick = anim_tick;
+        msSinceTextBoxUpdate = 0;
+        return;
+    }
     int numTextBoxChars = strlen(dialogString);
     //char prevChar = dialogPrintString[(dialogCharsPrinted > 0) ? dialogCharsPrinted-1 : 0];
     char c = dialogString[dialogStringPos];
@@ -92,6 +99,9 @@ void client::updateDialogue() { // Animate the dialog box.
                 break;
             case 'c':
                 dialogAnnotationType = clearDialog;
+                break;
+            case 'w':
+                dialogAnnotationType = waitDialog;
                 break;
             default:
                 dialogAnnotationType = invalidAnnotation;
@@ -121,6 +131,9 @@ void client::updateDialogue() { // Animate the dialog box.
                 dialogCharsPrinted = 0;
                 memset(dialogPrintString, 0, sizeof(dialogPrintString)-1);
                 break;
+            case waitDialog:
+                dialogWaitTimer = std::stoi(dialogAnnotation) * 100;
+                break;
             default:
                 break;
         }
@@ -129,7 +142,7 @@ void client::updateDialogue() { // Animate the dialog box.
     }
     int isPunctuation = (c == '.' || c == '!' || c == '?');
     int isSpace = (c == ' ');
-    int timeToAddChar = (msSinceTextBoxUpdate > 70);
+    int timeToAddChar = (msSinceTextBoxUpdate > 70) && (dialogWaitTimer <= 0);
     int waitedForPunct = !(isSpace && msSinceTextBoxUpdate < 140) && !(isPunctuation && msSinceTextBoxUpdate < 200);
     if (timeToAddChar && waitedForPunct && dialogCharsPrinted < numTextBoxChars) {
         dialogTick = anim_tick;
