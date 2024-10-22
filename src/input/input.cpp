@@ -2,13 +2,29 @@
 #include "../graphics/graphics.h"
 #include "../audio/audio.h"
 
-#define ACCEL 1
-// give access to the var needed to quit the game
-//extern bool running;
-
-// give access to screen size data
-//extern int window_x, window_y;
-
+struct inputKeybindings inputs[NUM_INPUTS] = {
+    {}, {SDLK_q},{SDLK_f},{SDLK_w},{SDLK_s},{SDLK_a},{SDLK_d}, {1073742049}
+};
+// Get the index of the input associated with a given key.
+int inputFromKey(int scancode) {
+    for (int i=0; i<NUM_INPUTS; i++) {
+        for (int j=0; j<MAX_KEYS_PER_BIND; j++) {
+            if (scancode == inputs[i].keys[j])
+                return i;
+        }
+    }
+    return enum_inputKeyUnbound;
+}
+#define MAX_INPUT_NAME_LEN 64
+char inputNames[NUM_INPUTS][MAX_INPUT_NAME_LEN] = {
+    INPUTS_LIST(TO_STRING)
+};
+void setBinding(int inputIndex, int keyCode) {
+    inputs[inputIndex].keys[0] = keyCode;
+}
+int getBinding(int inputIndex) {
+    return inputs[inputIndex].keys[0];
+}
 
 // detect the BOGUS x11 keyup event generated on keydown
 bool just_keyed_down = false;
@@ -26,131 +42,103 @@ void client_input(client* client) {
         mouse_moved = false;
         just_keyed_down = false;
         just_clicked = false;
+        int inputIndex = enum_inputKeyUnbound;
         if (event.type == SDL_QUIT) // window was closed (not a keyboard event)
             running = false;
-        switch( event.type ) {
-            //
-            // key was pressed
-            //
-            case SDL_KEYDOWN:
-                // ignore auto repeat
-                if (event.key.repeat == 1)
-                    continue;
-                // used to detect bogus inputs
-                just_keyed_down = true;
-                //
-                // find the key codes with this:
-                //
-                //printf("Key was pressed: %d\n", event.key.keysym.sym);
-                switch(event.key.keysym.sym) {
-                    // here are the keyboard inputs!
+        if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
+            inputIndex = inputFromKey(event.key.keysym.sym);
+        }
+        if (event.type == SDL_KEYDOWN) {
+            if (event.key.repeat == 1)
+                continue;
+            printf("Key pressed: %s, (%d)\n", inputNames[inputIndex], event.key.keysym.sym);
+            // used to detect bogus inputs
+            just_keyed_down = true;
+            // Input just activated:
+            switch (inputIndex) {
+                case enum_inputKeyUnbound:
+                    break;
+                case enum_inputMoveUp:
+                    client->accel_dir.y -= 1;
+                    break;
+                case enum_inputMoveDown:
+                    client->accel_dir.y += 1;
+                    break;
+                case enum_inputMoveLeft:
+                    client->accel_dir.x -= 1;
+                    break;
+                case enum_inputMoveRight:
+                    client->accel_dir.x += 1;
+                    break;
                     
-                    // close the game
-                    case SDLK_ESCAPE:
-                    case SDLK_q:
-                        running = false;
-                        client->quitting = true;
-                        break;
+                case enum_inputSprint:
+                    client->sprinting = !client->sprinting;
+                    break;
+                case enum_inputSneak:
+                    break;
                     
-                    // movement with WASD
-                    case SDLK_a:
-                        client->accel_dir.x -= 1;
-                        break;
-                    case SDLK_d:
-                        client->accel_dir.x += 1;
-                        break;
-                    case SDLK_w:
-                        client->accel_dir.y -= 1;
-                        break;
-                    case SDLK_s:
-                        client->accel_dir.y += 1;
-                        break;
-                        
-                    // sprint
-                    case 1073742049: // shift key
-                        client->sprinting = !client->sprinting;
-                        break;
-                        
-                    // sneak
-                    case 1073742048: // ctrl key
-                        // toggle sneaking state
-                        break;
-                        
-                    // aim left
-                    case 1073741904: // left arrow
-                        client->aim_dir_rotation -= 1;
-                        break;
-                        
-                    // aim right
-                    case 1073741903: // right arrow
-                        client->aim_dir_rotation += 1;
-                        break;
+                case enum_inputAimLeft:
+                    client->aim_dir_rotation -= 1;
+                    break;
+                case enum_inputAimRight:
+                    client->aim_dir_rotation += 1;
+                    break;
+                case enum_inputAimReverse:
+                    client->aim_dir += 180;
+                    break;
+                
+                case enum_inputQuit:
+                    running = false;
+                    client->quitting = true;
+                    break;
                     
-                    // aim reverse (180 degree turn)
-                    case 1073741906: // up arrow
-                        //TODO redo this
-                        client->aim_dir += 180;
-                        printf("Rotating...\n");
-                        playMusic(brown);
-                        break;
+                case enum_inputFullscreen:
+                    if (fullscreen)
+                        goWindowed();
+                    else
+                        goFullscreen();
+                    break;
                     
-                    case SDLK_f:
-                        if (fullscreen)
-                            goWindowed();
-                        else
-                            goFullscreen();
-                        break;
-                        
-                    // end of key down processing
-                    default:
-                        break;
-                }
-            //
-            // key was released
-            //
-            // a bogus keyup is generated by the x server on key down (very annoying)
-            case SDL_KEYUP:
-                // ignore auto repeat
-                if (event.key.repeat == 1 || just_keyed_down)
-                    continue;
-                switch(event.key.keysym.sym) {                        
-                    // WASD
-                    case SDLK_a:
-                        client->accel_dir.x += 1;
-                        break;
-                    case SDLK_d:
-                        client->accel_dir.x -= 1;
-                        break;
-                    case SDLK_w:
-                       client->accel_dir.y += 1;
-                        break;
-                    case SDLK_s:
-                        client->accel_dir.y -= 1;
-                        break;
-                        
-                    // aim left
-                    case 1073741904: // left arrow
-                        client->aim_dir_rotation += 1;
-                        break;
-                        
-                    // aim right
-                    case 1073741903: // right arrow
-                        client->aim_dir_rotation -= 1;
-                        break;
-                        
-                        
-                    default:
-                        break;
+                default:
+                    break;
             }
-        //
-        // mouse events
-        //
-        case (SDL_MOUSEMOTION):
+        }
+        if (event.type == SDL_KEYUP) {
+            // ignore auto repeat
+            if (event.key.repeat == 1 || just_keyed_down)
+                continue;
+            // Input just deactivated:
+            switch (inputIndex) {
+                case enum_inputMoveLeft:
+                    client->accel_dir.x += 1;
+                    break;
+                case enum_inputMoveRight:
+                    client->accel_dir.x -= 1;
+                    break;
+                case enum_inputMoveUp:
+                    client->accel_dir.y += 1;
+                    break;
+                case enum_inputMoveDown:
+                    client->accel_dir.y -= 1;
+                    break;
+                    
+                case enum_inputAimLeft:
+                    client->aim_dir_rotation += 1;
+                    break;
+                case enum_inputAimRight:
+                    client->aim_dir_rotation -= 1;
+                    break;
+            }
+        }
+        if (event.type == SDL_MOUSEMOTION) {
             if (event.type != 769) { // ignore bogus "keyup" move event
                 mouse_moved = true;
             }
-            break;
-        case (SDL_MOUSEBUTTONDOWN):
+        }
+        if (event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP) { //TODO rebindable mouse buttons! TODO
+            
+        }
+        if (event.type == SDL_MOUSEBUTTONDOWN) {
             just_clicked = true;
             switch(event.button.button) {
                 case 1: // left click
@@ -166,8 +154,9 @@ void client_input(client* client) {
                     break;
                 default:
                     break;
+            }
         }
-        case (SDL_MOUSEBUTTONUP):
+        if (event.type == SDL_MOUSEBUTTONUP) {
             // ignore the bogus click up event
             if (just_clicked)
                 continue;
@@ -185,19 +174,15 @@ void client_input(client* client) {
                     break;
                 default:
                     break;
+            }
         }
-        default:
-            break;
-        }
-    } // end of input event queue loop
+    }
     
     // send the rotation to the gun
     if (client->aim_dir_rotation < 0)
         client->aim_dir -= 1;
     if (client->aim_dir_rotation > 0)
         client->aim_dir += 1;
-    // TODO change rotation
-    //TODO something with this
     // only override keyboard aim if mouse is moving
     SDL_GetMouseState(&client->aim_pixel_pos.x, &client->aim_pixel_pos.y);
     client->aim_pixel_pos.x = (client->aim_pixel_pos.x*(RSIZE/tileWidth) - window_x/2*(RSIZE/tileWidth));

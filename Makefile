@@ -16,13 +16,15 @@ CC = g++
 CFLAGS = -g -Wall -Werror -Wpedantic -std=gnu++11
 INCLUDES=-Io/includes
 LIBS = -lSDL2 -lSDL2_ttf -lSDL2_mixer
-OBJECTS = o/vars.o o/server.o o/audio.o o/graphics.o o/input.o o/world.o o/chunk.o o/ent.o o/defs.o o/client.o
+OBJECTS = o/vars.o o/server.o o/audio.o o/graphics.o o/input.o o/world.o o/chunk.o o/ent.o o/defs.o o/client.o o/keyEnum.o
 
 ex: ${OBJECTS} Makefile
 	cd o/
 	${CC} ${CFLAGS} ${OBJECTS} -o ex ${LIBS} ${INCLUDES}
 
-o/vars.o: src/config/vars.h src/config/vars.c
+o/keyEnum.o: src/config/keyEnum.c src/config/keyEnum.h
+	${CC} ${CFLAGS} -c src/config/keyEnum.c -o o/keyEnum.o ${INCLUDES}
+o/vars.o: src/config/vars.h src/config/vars.c o/keyEnum.o
 	${CC} ${CFLAGS} -c src/config/vars.c -o o/vars.o ${INCLUDES}
 o/client.o: src/client/client.cpp src/client/client.h
 	${CC} ${CFLAGS} -c src/client/client.cpp -o o/client.o ${INCLUDES}

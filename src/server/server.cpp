@@ -244,7 +244,7 @@ int main() {
     
     //char message[] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
     //playerClient.startDialog(message);
-    
+    print_vars();
     
     
     while (running) {                                                           //======================// GAME LOOP //

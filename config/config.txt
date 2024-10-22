@@ -16,3 +16,15 @@ fps_cap 110
 vsync 0
 windowName Siege Engine
 welcomeMessage Tiles and triggers. Entities and dialogue boxes. Atmosphere and music. Story and characters. Smoking embers and a steady wind.
+inputFullscreen f
+inputMoveUp w
+inputMoveDown s
+inputMoveLeft a
+inputMoveRight d
+inputSprint LSHIFT
+inputSneak LCTRL
+inputAttack ???????
+inputBuild ????????
+inputAimLeft LEFT
+inputAimRight RIGHT
+inputAimReverse DOWN

@@ -1,6 +1,7 @@
 // Load values from a config file.
 // See LICENSE file for copyright and license details.
 #include "vars.h"
+#include "keyEnum.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -21,6 +22,7 @@ void* VAR_ADDRESSES[] = {
 #define TO_STRINGS(x) #x, //=========================================================// CONVERT VAR_NAMES TO SEARCHABLE STRING ARRAYS //
 char VAR_NAMES[][VAR_NAME_SIZE] = {
     VAR_LIST(TO_STRINGS)
+    INPUTS_LIST(TO_STRINGS)
 };
 
 //=============================================================================// GET VAR INDEX BY NAME //
@@ -70,6 +72,7 @@ void read_line(FILE* fp) {
         pos++;
     }
 }
+extern void setBinding(int inputIndex, int keyCode); // Set a keybind.
 void applyConfig(char* fname) { //===============================================// Load config variables from file. //
     FILE* fp = fopen(fname, "r");
     if (fp == 0) { printf("File %s not found!\n", fname); exit(-1); }
@@ -86,9 +89,14 @@ void applyConfig(char* fname) { //==============================================
             *(float*)VAR_ADDRESSES[index] = atof(value_string); //------------------- Set float var.
         else if (index < NUM_INT_VARS + NUM_FLOAT_VARS + NUM_STRING_VARS)
             memcpy((char**)VAR_ADDRESSES[index], value_string, STRING_VAR_SIZE); //-- Set string var.
+        else if (index < NUM_INT_VARS + NUM_FLOAT_VARS + NUM_STRING_VARS + NUM_INPUTS) {
+            setBinding(index-allVarsEnum_inputKeyUnbound, keycodeFromBindName(value_string)); //--------------------- Set keyBind for input.
+            std::cout << "[keybind: " << VAR_NAMES[index] << " = " << keyNameFromKeyCode(keycodeFromBindName(value_string)) << "]\n";
+        }
     }
     fclose(fp);
 }
+extern int getBinding(int inputIndex);
 void print_vars() { //=========================================================// Print the names of each variable. //
     printf("o=====================================================o\n");
     printf("| Summary of Vars:                                    |\n");
@@ -107,5 +115,10 @@ void print_vars() { //=========================================================/
     printf("o=====================================================o\n");
     #define LIST_PRINT_STRING(x) printf("| %-32s = %-16.*s |\n", #x, 16, x);
     STRING_VARS_LIST(LIST_PRINT_STRING)
+    printf("o-----------------------------------------------------o\n");
+    printf("| KeyBinds                                            |\n");
+    printf("o=====================================================o\n");
+    #define LIST_PRINT_KEYBIND(x)  printf("| %-32s = %-16s |\n",    #x, keyNameFromKeyCode(getBinding(enum_##x))); 
+    INPUTS_LIST(LIST_PRINT_KEYBIND)
     printf("o=====================================================o\n\n");
 }

@@ -48,12 +48,14 @@ void client::startDialog(char* message) {
     dialogCharsPrinted = 0;
     dialogStringPos = 0;
     dialogWaitTimer = 0;
+    dialogActorFrame = 0;
 }
 
 void client::changeActor() {
     dialogActorIndex = 0; // Set to default actor.
     dialogActorFaceIndex = 0;
     dialogActorVoiceIndex = 0;
+    dialogActorFrame = 0;
     int foundMatch = 0;
     for (int i=0; actors[i].name[0] != 0; i++) {
         int isMatch = strncmp(dialogAnnotation, actors[i].name, MAX_ACTOR_NAME_LEN);
@@ -141,7 +143,7 @@ void client::updateDialogue() { // Animate the dialog box.
         c = dialogString[dialogStringPos];
     }
     int isPunctuation = (c == '.' || c == '!' || c == '?');
-    int isSpace = (c == ' ');
+    int isSpace = isspace(c);
     int timeToAddChar = (msSinceTextBoxUpdate > 70) && (dialogWaitTimer <= 0);
     int waitedForPunct = !(isSpace && msSinceTextBoxUpdate < 140) && !(isPunctuation && msSinceTextBoxUpdate < 200);
     if (timeToAddChar && waitedForPunct && dialogCharsPrinted < numTextBoxChars) {
@@ -152,6 +154,7 @@ void client::updateDialogue() { // Animate the dialog box.
         dialogStringPos++;
         if (!isSpace) {
             playSoundChannel(actors[dialogActorIndex].voices[dialogActorVoiceIndex], 5);
+            dialogActorFrame++;
         }
         /*
         if (isPunctuation && rand() > RAND_MAX/2)

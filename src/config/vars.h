@@ -2,6 +2,7 @@
 //
 // See LICENSE file for copyright and license details.
 #ifndef VARS
+#define VARS
 #include "../defs.h"
 
 #define VAR_NAME_SIZE 64
@@ -16,35 +17,59 @@ void applyConfig(char* fname);
 void print_vars();
 
 // List of variables!
-#define INT_VARS_LIST(expand) \
-    expand(fullscreen) \
-    expand(window_x) \
-    expand(window_y) \
-    expand(fps_cap) \
-    expand(vsync)
+#define INT_VARS_LIST(f) \
+    f(fullscreen) \
+    f(window_x) \
+    f(window_y) \
+    f(fps_cap) \
+    f(vsync) \
 
-#define FLOAT_VARS_LIST(expand) \
-    expand(example_float_variable) \
-    expand(floaty_mc_floatpants) \
-    expand(floaty_flops)
+#define FLOAT_VARS_LIST(f) \
+    f(example_float_variable) \
+    f(floaty_mc_floatpants) \
+    f(floaty_flops)
 
-#define STRING_VARS_LIST(expand) \
-    expand(welcomeMessage) \
-    expand(windowName) \
-    expand(billy_jean) \
-    expand(lima_bean)
-
-#define VAR_LIST(expand) \
-    INT_VARS_LIST(expand) \
-    FLOAT_VARS_LIST(expand) \
-    STRING_VARS_LIST(expand)
-
+#define STRING_VARS_LIST(f) \
+    f(welcomeMessage) \
+    f(windowName) \
+    f(billy_jean) \
+    f(lima_bean)
+    
+#define INPUTS_LIST(f) \
+    f(inputKeyUnbound) \
+    f(inputQuit) \
+    f(inputFullscreen) \
+    f(inputMoveUp) \
+    f(inputMoveDown) \
+    f(inputMoveLeft) \
+    f(inputMoveRight) \
+    f(inputSprint) \
+    f(inputSneak) \
+    f(inputAttack) \
+    f(inputBuild) \
+    f(inputAimLeft) \
+    f(inputAimRight) \
+    f(inputAimReverse) \
+    
+#define VAR_LIST(f) \
+    INT_VARS_LIST(f) \
+    FLOAT_VARS_LIST(f) \
+    STRING_VARS_LIST(f) \
+    
 // Make the enums. (each enum listing has 'enum_' in front of it)
 #define TO_PREFIXED_ENUM(name) enum_##name, 
-enum INTEGERS { INT_VARS_LIST(TO_PREFIXED_ENUM) NUM_INT_VARS };
+enum { INT_VARS_LIST(TO_PREFIXED_ENUM) NUM_INT_VARS };
 enum { FLOAT_VARS_LIST(TO_PREFIXED_ENUM) NUM_FLOAT_VARS };
 enum { STRING_VARS_LIST(TO_PREFIXED_ENUM) NUM_STRING_VARS };
-#define TOTAL_VARS (NUM_INT_VARS + NUM_FLOAT_VARS + NUM_STRING_VARS)
+enum { INPUTS_LIST(TO_PREFIXED_ENUM) NUM_INPUTS };
+#define TO_ALTERNATE_PREFIXED_ENUM(name) allVarsEnum_##name, 
+enum allVarsEnumeration {
+    INT_VARS_LIST(TO_ALTERNATE_PREFIXED_ENUM)
+    FLOAT_VARS_LIST(TO_ALTERNATE_PREFIXED_ENUM)
+    STRING_VARS_LIST(TO_ALTERNATE_PREFIXED_ENUM)
+    INPUTS_LIST(TO_ALTERNATE_PREFIXED_ENUM)
+    TOTAL_VARS
+};
 
 // Expose all global vars with extern (definitions done config_loader.c).
 #define TO_EXTERN_INT(name) extern int name;

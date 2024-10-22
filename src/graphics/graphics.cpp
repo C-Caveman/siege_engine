@@ -565,19 +565,19 @@ void drawDialogBox(struct client* cl) {
     int lineNumber = 0;
     int curLineChars = 0;
     // Print the text:
-    for (int i=0; i<numChars; i++, curLineChars++) {
+    for (int i=0; i<numChars; i++) {
         if (i > numCharsToPrint)
             break;
         if (lineNumber > 3) {
             cl->dialogCharsPrinted = numCharsToPrint = 0;
-            memset(cl->dialogPrintString, 0, sizeof(cl->dialogPrintString)-1);
+            memset(cl->dialogPrintString, 0, sizeof(cl->dialogPrintString)-1); //TODO handle this in client::dialogUpdate()
             break;
         }
         if ( (curLineChars >= wrapThreshold && text[i] == ' ') || (curLineChars >= maxLineChars) ) {
             lineNumber++;
             curLineChars = 0;
             //Skip leading whitespace.
-            while (text[i] == ' ')
+            while (isspace(text[i]) && i < numChars)
                 i++;
         }
         if (text[i] == '\n' && curLineChars > 1) {
@@ -589,6 +589,7 @@ void drawDialogBox(struct client* cl) {
             curLineChars = 0;
             continue;
         }
+        curLineChars++;
         lineBuffer[0] = text[i];
         SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, lineBuffer, White);
         SDL_Texture* charTexture = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
@@ -611,7 +612,7 @@ void drawDialogBox(struct client* cl) {
     SDL_RenderCopy(renderer, textures[anim_data[black].texture_index], NULL, &portraitBox);
     int portraitTextureID = anim_data[actors[cl->dialogActorIndex].anim[cl->dialogActorFaceIndex]].texture_index;
     int portraitAnimationLen = anim_data[actors[cl->dialogActorIndex].anim[cl->dialogActorFaceIndex]].len;
-    SDL_RenderCopy(renderer, textures[portraitTextureID+ ((numCharsToPrint / 2) % portraitAnimationLen)], NULL, &portraitBox);
+    SDL_RenderCopy(renderer, textures[portraitTextureID+ ((cl->dialogActorFrame/2) % portraitAnimationLen)], NULL, &portraitBox);
 }
 void cleanup_graphics() {
     SDL_DestroyRenderer(renderer);
