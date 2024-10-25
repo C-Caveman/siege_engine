@@ -25,8 +25,8 @@ void print_vars();
     f(vsync) \
 
 #define FLOAT_VARS_LIST(f) \
-    f(example_float_variable) \
-    f(floaty_mc_floatpants) \
+    f(aimSpeedA) \
+    f(aimSpeedB) \
     f(floaty_flops)
 
 #define STRING_VARS_LIST(f) \
@@ -50,6 +50,7 @@ void print_vars();
     f(inputAimLeft) \
     f(inputAimRight) \
     f(inputAimReverse) \
+    f(inputAimSpeed) \
     
 #define VAR_LIST(f) \
     INT_VARS_LIST(f) \

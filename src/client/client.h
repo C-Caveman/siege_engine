@@ -49,6 +49,7 @@ struct client {
     float jerk; // Rate of acceleration.
     float aim_dir_rotation; // Desired auto rotation for aim.
     float aim_dir; // Desired aim direction.
+    float aimSpeed; // Keyboard aim sensitivity.
     vec2i aim_pixel_pos; // Current pixel the cursor is on.
     // Current camera position:
     vec2f camera_pos; // Top-left corner of the camera.

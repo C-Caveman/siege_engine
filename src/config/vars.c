@@ -91,7 +91,7 @@ void applyConfig(char* fname) { //==============================================
             memcpy((char**)VAR_ADDRESSES[index], value_string, STRING_VAR_SIZE); //-- Set string var.
         else if (index < NUM_INT_VARS + NUM_FLOAT_VARS + NUM_STRING_VARS + NUM_INPUTS) {
             setBinding(index-allVarsEnum_inputKeyUnbound, keycodeFromBindName(value_string)); //--------------------- Set keyBind for input.
-            std::cout << "[keybind: " << VAR_NAMES[index] << " = " << keyNameFromKeyCode(keycodeFromBindName(value_string)) << "]\n";
+            //std::cout << "[keybind: " << VAR_NAMES[index] << " = " << keyNameFromKeyCode(keycodeFromBindName(value_string)) << "]\n";
         }
     }
     fclose(fp);

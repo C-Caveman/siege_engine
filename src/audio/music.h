@@ -5,6 +5,7 @@
 #define MUSIC_LIST(f) \
     f(placeholderMusic) \
     f(brown) \
+    f(campfire01) \
     f(dorian01) \
     f(spookyWind1) \
     f(squaretoothX01) \

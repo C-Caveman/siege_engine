@@ -77,6 +77,10 @@ void client_input(client* client) {
                 case enum_inputSneak:
                     break;
                     
+                case enum_inputAttack:
+                    client->attacking = true;
+                    break;
+                    
                 case enum_inputAimLeft:
                     client->aim_dir_rotation -= 1;
                     break;
@@ -85,6 +89,10 @@ void client_input(client* client) {
                     break;
                 case enum_inputAimReverse:
                     client->aim_dir += 180;
+                    break;
+                case enum_inputAimSpeed:
+                    client->aimSpeed = aimSpeedB;
+                    client->attacking = true;
                     break;
                 
                 case enum_inputQuit:
@@ -122,11 +130,19 @@ void client_input(client* client) {
                     client->accel_dir.y -= 1;
                     break;
                     
+                case enum_inputAttack:
+                    client->attacking = false;
+                    break;
+                    
                 case enum_inputAimLeft:
                     client->aim_dir_rotation += 1;
                     break;
                 case enum_inputAimRight:
                     client->aim_dir_rotation -= 1;
+                    break;
+                case enum_inputAimSpeed:
+                    client->aimSpeed = aimSpeedA;
+                    client->attacking = false;
                     break;
             }
         }
@@ -142,14 +158,11 @@ void client_input(client* client) {
             just_clicked = true;
             switch(event.button.button) {
                 case 1: // left click
-                    //printf("Left click down.\n");
                     client->attacking = true;
                     break;
                 case 2: // middle click
-                    //printf("Middle click down.\n");
                     break;
                 case 3: // right click
-                    //printf("Right click down.\n");
                     client->building = true;
                     break;
                 default:
@@ -177,12 +190,18 @@ void client_input(client* client) {
             }
         }
     }
-    
+    // Default keyboard aim sensitivity.
+    if (aimSpeedA == 0)
+        aimSpeedA = 2;
+    if (aimSpeedA == 0)
+        aimSpeedA = 4;
+    if (client->aimSpeed == 0)
+        client->aimSpeed = aimSpeedA;
     // send the rotation to the gun
     if (client->aim_dir_rotation < 0)
-        client->aim_dir -= 1;
+        client->aim_dir -= client->aimSpeed;
     if (client->aim_dir_rotation > 0)
-        client->aim_dir += 1;
+        client->aim_dir += client->aimSpeed;
     // only override keyboard aim if mouse is moving
     SDL_GetMouseState(&client->aim_pixel_pos.x, &client->aim_pixel_pos.y);
     client->aim_pixel_pos.x = (client->aim_pixel_pos.x*(RSIZE/tileWidth) - window_x/2*(RSIZE/tileWidth));

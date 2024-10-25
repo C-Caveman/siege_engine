@@ -239,7 +239,7 @@ int main() {
     
     
     //playSoundChannel(arcLamp1, 6);
-    //playMusicLoop(spookyWind1); //TODO todon't do this
+    playMusicLoop(campfire01); //TODO todon't do this
     //playMusicLoop(dorian01);
     
     //char message[] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
