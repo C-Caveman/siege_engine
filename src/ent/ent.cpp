@@ -7,6 +7,7 @@ extern volatile float mouse_angle; // Direction the mouse is pointed in.
 extern volatile int mouse_x;
 extern volatile int mouse_y;
 extern float dt; // Delta time.
+extern struct anim_info anim_data[];
 
 struct handle_info handles[NUM_HANDLES] = { //=================================// ENTITY HANDLES //
     {nullptr,1,true}, // Handle 0 is the Null handle.
@@ -56,6 +57,7 @@ void ent_player::init() {
     num_sprites = NUM_PLAYER_SPRITES;
     sprites[PLAYER_BODY].anim = rocket_tank;
     sprites[PLAYER_GUN].anim = gun_grenade;
+    sprites[PLAYER_GUN].flags |= LOOPING;
     // Sprint by default:
     movetype = MOVE_SPRINT;
 }
@@ -76,23 +78,43 @@ void ent_scenery::think() {
 
 void ent_projectile::init() {                           // PROJECTILE
     num_sprites = 1;
-    sprites[0].anim = projectilePlasma;
+    sprites[0].anim = grenade01Blink;
+    sprites[0].flags |= LOOPING;
     flags = NOFRICTION;
     lifetime = 100;
+    isExploding = 0;
 }
 void ent_projectile::think() {
     lifetime -= 1;
     struct tile* curTile = main_world->get_tile( (pos + vec2f{RSIZE/2,RSIZE/2}).to_int() / RSIZE);
-    if (curTile != 0 && curTile->wall_height > 0) {
-        lifetime = 0;
-        despawn_ent((ent_basics*)this);
-        curTile->wall_height = 0;
-        curTile->floor_anim = tileGold01;
-        playSound(chow);
+    if (lifetime <= 0 && !isExploding) {
+        isExploding = 1;
+        sprites[0].anim = grenade01Explode;
+        sprites[0].frame = 0;
+        sprites[0].flags &= ~LOOPING;
+        //vel = vec2f {0,0};
+        lifetime = 500;
+    }
+    if (curTile != 0 && curTile->wall_height > 0 && !isExploding) {
+        isExploding = 1;
+        //playSound(chow);
+        sprites[0].anim = grenade01Explode;
+        sprites[0].frame = 3;
+        sprites[0].flags &= ~LOOPING;
+        vel = vec2f {0,0};
+        lifetime = 500;
+        //despawn_ent((ent_basics*)this);
+        
         return;
     }
-    if (lifetime <= 0)
+    if (lifetime <= 0 || sprites[0].frame >= anim_data[grenade01Explode].len-1) {
+        playSound(explosion01);
+        if (curTile != 0 && curTile->wall_height > 0) {
+            curTile->wall_height = 0;
+            curTile->floor_anim = tileGold01;
+        }
         despawn_ent((ent_basics*)this);
+    }
 }
 
 void ent_rabbit::init() {                               // RABBIT

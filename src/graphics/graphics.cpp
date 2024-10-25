@@ -10,7 +10,7 @@
 float VERTICAL_TILES_VISIBLE = 14;
 float tileWidth = RSIZE;
 float texelWidth = tileWidth / TILE_PIXEL_DIAMETER;
-constexpr int ANIM_FPS = 4;
+constexpr int ANIM_FPS = 32;
 constexpr int MS_PER_ANIM_FRAME = 1000 / ANIM_FPS;
 #define MAX_PATH_LEN 256
 char path[MAX_PATH_LEN]; // path to the executable

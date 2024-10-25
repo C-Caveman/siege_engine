@@ -244,7 +244,7 @@ int main() {
     
     //char message[] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
     //playerClient.startDialog(message);
-    print_vars();
+    //print_vars();
     
     
     while (running) {                                                           //======================// GAME LOOP //
@@ -286,7 +286,7 @@ int main() {
                                                    getTileAtCursor(&playerClient));
             if (timmy != nullptr && timmy->wall_height != 0) { timmy->wall_height = 0; playSound(thud); }
         }
-        if (playerClient.building && (cur_frame_start - playerClient.lastBuildTime) > 150) {
+        if (playerClient.building && (cur_frame_start - playerClient.lastBuildTime) > 50) {
             //build_wall(playerClient.camera_center, playerClient.aim_pixel_pos, chunk_0);
             //
             int isClear = isPathToTileClear(p->pos,

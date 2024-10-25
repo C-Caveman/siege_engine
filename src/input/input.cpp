@@ -51,7 +51,7 @@ void client_input(client* client) {
         if (event.type == SDL_KEYDOWN) {
             if (event.key.repeat == 1)
                 continue;
-            printf("Key pressed: %s, (%d)\n", inputNames[inputIndex], event.key.keysym.sym);
+            //printf("Key pressed: %s, (%d)\n", inputNames[inputIndex], event.key.keysym.sym);
             // used to detect bogus inputs
             just_keyed_down = true;
             // Input just activated:

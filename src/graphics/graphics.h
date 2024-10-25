@@ -13,14 +13,7 @@
 #define BKGRND_TEX 8
 #define ANIM_NAME_LEN 16 // max length for an animation filename
 
-// Data stored for a particular animation.
-struct anim_info {
-    uint32_t texture_index;  // First frame in texture array.
-    uint8_t  len;            // Number of frames.
-    uint8_t  keyframe_0;     // Frame where an event occurs.
-    uint8_t  keyframe_1;     // Frame where an event occurs.
-    uint8_t  keyframe_2;     // Frame where an event occurs.
-};
+extern struct anim_info anim_data[];
 
 // variables used by graphics.cpp and server.cpp
 extern SDL_Texture* textures[];

@@ -67,6 +67,14 @@ struct vec2i {
     vec2i operator * (const float& scale);
     vec2i operator / (const int& scale);
 };
+//===================================================== Data stored for a particular animation.
+struct anim_info {
+    uint32_t texture_index;  // First frame in texture array.
+    uint8_t  len;            // Number of frames.
+    uint8_t  keyframe_0;     // Frame where an event occurs.
+    uint8_t  keyframe_1;     // Frame where an event occurs.
+    uint8_t  keyframe_2;     // Frame where an event occurs.
+};
 //=======================================================================// Entities //
 #define RSIZE 80    //--------------- Diameter of entities and tiles.
 //--------------------------- Required components of every entity.
@@ -137,6 +145,7 @@ struct world { //---------------------------------------------- Collection of ch
 
     world();
     tile* get_tile(vec2i tile_i);
+    tile* tileFromPos(vec2f pos);
 };
 extern struct world* main_world; //---------------------------- Main world.
 extern uint8_t anim_tick; //----------------------------------- Frame counter for animations.

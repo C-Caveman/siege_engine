@@ -15,3 +15,12 @@ tile* world::get_tile(vec2i tile_i) {
     vec2i local_i = tile_i % CHUNK_WIDTH;
     return &chunks[chunk_i.y][chunk_i.x].tiles[local_i.y][local_i.x];
 }
+
+tile* world::tileFromPos(vec2f pos) {
+    vec2i tile_i = (pos / RSIZE).to_int();
+    if (!tile_i.in_bounds(0, WORLD_WIDTH*CHUNK_WIDTH-1))
+        return nullptr;
+    vec2i chunk_i = tile_i / CHUNK_WIDTH;
+    vec2i local_i = tile_i % CHUNK_WIDTH;
+    return &chunks[chunk_i.y][chunk_i.x].tiles[local_i.y][local_i.x];
+}

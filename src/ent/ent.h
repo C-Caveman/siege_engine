@@ -83,6 +83,7 @@ struct ent_projectile {
     struct sprite sprites[NUM_PLAYER_SPRITES];
     handle parent;
     int lifetime;
+    char isExploding;
 
     void init();
     void think();

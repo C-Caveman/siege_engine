@@ -49,7 +49,7 @@ o/world.o: src/world/world.cpp src/defs.h o/ent.o o/defs.o o/chunk.o
 	${CC} ${CFLAGS} -c src/world/world.cpp -o o/world.o ${INCLUDES}
 o/chunk.o: src/world/chunk.cpp src/defs.h
 	${CC} ${CFLAGS} -c src/world/chunk.cpp -o o/chunk.o ${INCLUDES}
-o/ent.o: src/ent/ent.cpp src/ent/ent.h o/defs.o
+o/ent.o: src/ent/ent.cpp src/ent/ent.h o/defs.o o/audio.o
 	${CC} ${CFLAGS} -c src/ent/ent.cpp -o o/ent.o ${INCLUDES}
 o/defs.o: src/defs/defs.cpp src/defs.h
 	${CC} ${CFLAGS} -c src/defs/defs.cpp -o o/defs.o ${INCLUDES}

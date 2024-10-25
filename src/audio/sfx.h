@@ -9,10 +9,13 @@
     f(chow) \
     f(chuh01) \
     f(chuh02) \
+    f(explosion01) \
+    f(fump) \
     f(fwaf) \
     f(metalFadeIn) \
     f(metalPing) \
     f(metalThunder) \
+    f(phbowav) \
     f(thud) \
     f(tikLowerBackup) \
     f(tikLower) \

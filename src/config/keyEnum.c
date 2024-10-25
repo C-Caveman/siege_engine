@@ -245,7 +245,6 @@ int keycodeFromBindName(char* bindName) {
             return namedKeys[i].keyCode;
         }
     }
-    printf("Unknown key '%s'\n", bindName);
     return 0;
 }
 char* keyNameFromKeyCode(int keyCode) {

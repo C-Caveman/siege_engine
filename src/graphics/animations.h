@@ -18,6 +18,8 @@
     f(floor_test) \
     f(grass1Floor) \
     f(grass1Side) \
+    f(grenade01Blink) \
+    f(grenade01Explode) \
     f(gun_0) \
     f(gun_chaingun) \
     f(gun_grenade) \
