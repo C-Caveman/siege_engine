@@ -4,6 +4,7 @@
 #define ANIMATION_LIST(f) \
     f(big_chungus) \
     f(black) \
+    f(crosshair01) \
     f(cubeFace) \
     f(cubeFace2) \
     f(faceBook01) \

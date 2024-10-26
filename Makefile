@@ -26,7 +26,7 @@ o/keyEnum.o: src/config/keyEnum.c src/config/keyEnum.h
 	${CC} ${CFLAGS} -c src/config/keyEnum.c -o o/keyEnum.o ${INCLUDES}
 o/vars.o: src/config/vars.h src/config/vars.c o/keyEnum.o
 	${CC} ${CFLAGS} -c src/config/vars.c -o o/vars.o ${INCLUDES}
-o/client.o: src/client/client.cpp src/client/client.h
+o/client.o: src/client/client.cpp src/client/client.h src/graphics/animations.h
 	${CC} ${CFLAGS} -c src/client/client.cpp -o o/client.o ${INCLUDES}
 o/server.o: src/server/server.cpp src/server/server.h o/graphics.o o/input.o o/ent.o o/defs.o o/client.o o/audio.o
 	${CC} ${CFLAGS} -c src/server/server.cpp -o o/server.o ${INCLUDES}

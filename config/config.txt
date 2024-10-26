@@ -23,11 +23,11 @@ inputMoveLeft a
 inputMoveRight d
 inputSprint LSHIFT
 inputSneak LCTRL
-inputAttack SPACE
 inputBuild ????????
+inputAttack SPACE
 
-aimSpeedA 4
-aimSpeedB 2
+aimSpeedA 1.5
+aimSpeedB 3
 inputAimSpeed UP
 inputAimReverse DOWN
 inputAimLeft LEFT

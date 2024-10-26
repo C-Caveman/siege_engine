@@ -92,7 +92,6 @@ void client_input(client* client) {
                     break;
                 case enum_inputAimSpeed:
                     client->aimSpeed = aimSpeedB;
-                    client->attacking = true;
                     break;
                 
                 case enum_inputQuit:
@@ -142,7 +141,6 @@ void client_input(client* client) {
                     break;
                 case enum_inputAimSpeed:
                     client->aimSpeed = aimSpeedA;
-                    client->attacking = false;
                     break;
             }
         }

@@ -58,10 +58,14 @@ void ent_player::init() {
     sprites[PLAYER_BODY].anim = rocket_tank;
     sprites[PLAYER_GUN].anim = gun_grenade;
     sprites[PLAYER_GUN].flags |= LOOPING;
+    sprites[PLAYER_CROSSHAIR].anim = crosshair01;
     // Sprint by default:
     movetype = MOVE_SPRINT;
 }
 void ent_player::think() {                              // PLAYER
+    float theta = sprites[PLAYER_GUN].rotation;
+    vec2f aimOffset = vec2f{cos(theta/180*(float)M_PI), sin(theta/180*(float)M_PI)};
+    sprites[PLAYER_CROSSHAIR].pos = aimOffset*RSIZE*4;
 }
 
 void ent_scenery::init() {                              // SCENERY
