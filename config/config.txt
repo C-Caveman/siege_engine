@@ -32,3 +32,5 @@ inputAimSpeed UP
 inputAimReverse DOWN
 inputAimLeft LEFT
 inputAimRight RIGHT
+
+inputSpawnZombie z

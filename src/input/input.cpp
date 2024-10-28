@@ -105,6 +105,10 @@ void client_input(client* client) {
                     else
                         goFullscreen();
                     break;
+                
+                case enum_inputSpawnZombie:
+                    spawn(zombie_type, client->camera_center);
+                    break;
                     
                 default:
                     break;

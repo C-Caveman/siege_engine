@@ -137,7 +137,7 @@ struct chunk { //------------------------------------- 16x16 region of tiles
 #define MAX_WORLD_NAME_LEN 64
 #define MAX_ENTS 2048 //  temp value
 #define MAX_CLIENTS 1 // temp value
-#define ENTITY_BYTES_ARRAY_LEN 8192
+#define ENTITY_BYTES_ARRAY_LEN 8192*16
 #define MAX_DRAW_DISTANCE 32
 struct world { //---------------------------------------------- Collection of chunks and entities.
     char name[MAX_WORLD_NAME_LEN];

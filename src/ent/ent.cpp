@@ -86,20 +86,30 @@ void ent_projectile::init() {                           // PROJECTILE
     num_sprites = 1;
     sprites[0].anim = grenade01Blink;
     sprites[0].flags |= LOOPING;
-    flags = NOFRICTION;
+    flags = NOFRICTION | NOCOLLISION;
     lifetime = 100;
     isExploding = 0;
 }
 void ent_projectile::think() {
     lifetime -= 1;
-    struct tile* curTile = main_world->tileFromPos(pos + HW);
-    if (curTile) {
-        ent_basics* victim = get_ent(curTile->ents[0]);
-        if (victim && victim->type != projectile_type) {
-            //printf("Hit a %s!\n", get_type_name(victim->type));
-            victim->health -= 1;
+    struct tile* curTile = 0;
+    vec2f p = pos - HW;
+    for (int i=0; i<3; i++) {
+        for (int j=0; j<3; j++) {
+            for (int k=0; k<MAX_ENTS_PER_TILE; k++) {
+                curTile = main_world->tileFromPos(p + vec2f{0,RSIZE/2}*(float)(i) + vec2f{RSIZE/2,0}*(float)(j));
+                if (curTile) {
+                    ent_basics* victim = get_ent(curTile->ents[k]);
+                    if (victim && victim->type == zombie_type) {
+                        //printf("Hit a %s!\n", get_type_name(victim->type));
+                        victim->health -= 1;
+                        lifetime = 0;
+                    }
+                }
+            }
         }
     }
+    curTile = main_world->tileFromPos(pos + HW);
     if (lifetime <= 0 && !isExploding) {
         isExploding = 1;
         sprites[0].anim = grenade01Explode;
@@ -116,16 +126,14 @@ void ent_projectile::think() {
         sprites[0].flags &= ~LOOPING;
         vel = vec2f {0,0};
         lifetime = 500;
-        //despawn_ent((ent_basics*)this);
-        
-        return;
-    }
-    if (lifetime <= 0 || sprites[0].frame >= anim_data[grenade01Explode].len-1) {
-        playSound(explosion01);
         if (curTile != 0 && curTile->wall_height > 0) {
             curTile->wall_height = 0;
             curTile->floor_anim = tileGold01;
         }
+        return;
+    }
+    if (lifetime <= 0 || sprites[0].frame >= anim_data[grenade01Explode].len-1) {
+        playSound(explosion01);
         despawn_ent((ent_basics*)this);
     }
 }
@@ -320,6 +328,54 @@ void* spawn_ent(int type, char* array, int array_len) {
     }
     return &array[i];
 }
+void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
+    char* array = main_world->entity_bytes_array;
+    int array_len = ENTITY_BYTES_ARRAY_LEN;
+    int required_space = get_ent_size(type);
+    int empty_space_len = 0;
+    int i = 0;
+    while (i<array_len) {
+        // Empty slot?
+        if (array[i] != HEADER_BYTE) {
+            if (DEBUG_ENT_SPAWNING) { printf("Found an open slot at %d.\n", i); }
+            empty_space_len += 1;
+            i += 1;
+        }
+        // Slot occupied.
+        else {
+            int skip_bytes = ((struct ent_basics*)&array[i])->size;
+            if (DEBUG_ENT_SPAWNING) { printf("Slots [%d, %d] already taken.\n", i, i+skip_bytes-1); }
+            empty_space_len = 0;
+            i += skip_bytes;
+        }
+        // Got enough space to store the ent.
+        if (empty_space_len == required_space) {
+            if (DEBUG_ENT_SPAWNING) { printf("Found enough space for ent in [%d, %d]\n", i-required_space, i-1); }
+            i = i-required_space;
+            break;
+        }
+    }
+    if (i >= array_len-1) {
+        printf("***\n*** No space left in the entity array!!!\n***\n");
+        exit(-1);
+    }
+    // Initialize the entity's header info:
+    struct ent_basics* new_entity = (struct ent_basics*)&array[i];
+    new_entity->header_byte = HEADER_BYTE;
+    new_entity->type = type;
+    new_entity->size = required_space;
+    new_entity->h = claim_handle((struct ent_basics*)&array[i]);
+    new_entity->pos = pos;
+    // Initialize the entity.
+    switch (type) {
+        #define ENT_INIT_CASES(name) case name##_type:  ((struct ent_##name *)(&array[i]))->init(); break; //--- Init the entity.
+        ENTITY_TYPES_LIST(ENT_INIT_CASES)
+        default:
+            printf("*** spawn_ent() error: invalid entity type: %d", type);
+            exit(-1);
+    }
+    return &array[i];
+}
 // Remove an entity from an entity segment array. TODO ent-specific cleanup TODO
 void despawn_ent(struct ent_basics* e) {
     tile* old_tile = &main_world->chunks[e->chunk.y][e->chunk.x].tiles[e->tile.y][e->tile.x];
@@ -361,4 +417,76 @@ void move_ent(struct ent_basics* e) { //------------ Update an ent's position ba
     int hasFriction = (e->flags & NOFRICTION) == 0;
     e->vel = e->vel - (e->vel.normalized() * friction * hasFriction);
     if (e->vel.vlen() < 5) { e->vel = vec2f{0,0}; } // Minimum vel.
+}
+
+float PLAYER_WIDTH = RSIZE;
+float MIN_SQUARE_DISTANCE = PLAYER_WIDTH/2 + RSIZE/2;
+void collide_wall(struct ent_basics* e) {
+    vec2f* position = &e->pos;
+    vec2f centered_position = e->pos + vec2f{RSIZE/2, RSIZE/2};
+    vec2f nearest_corner = centered_position;
+    nearest_corner = nearest_corner / RSIZE;
+    nearest_corner = vec2f{std::floor(nearest_corner.x + 0.5f),std::floor(nearest_corner.y + 0.5f)}; //--- Nearest corner.
+    nearest_corner = nearest_corner * RSIZE;
+    vec2f tile_pos;//------------------------------------------------------------------------------------- Adjacent tiles.
+    vec2i tile_index;
+    float sign_x = -1;
+    float sign_y = -1;
+    bool collisions[2][2];
+    int num_collisions = 0;
+     for (int i=0; i<2; i++) {
+        for (int j=0; j<2; j++) {
+            tile_pos = nearest_corner + vec2f{RSIZE/2*sign_x, RSIZE/2*sign_y};
+            tile_index = (tile_pos / RSIZE).to_int();  //vec2i{int(tile_pos.x/RSIZE), int(tile_pos.y/RSIZE)} % CHUNK_WIDTH;
+            tile* cur_tile = main_world->get_tile(tile_index);
+            if (cur_tile != nullptr && cur_tile->wall_height >= 1)
+                { collisions[i][j] = true; num_collisions++; }
+            else
+                { collisions[i][j] = false; }
+            sign_x *= -1;
+        }
+        sign_y *= -1;
+    }
+    bool is_vertical_pair = (num_collisions == 2) && (collisions[0][0] == collisions[1][0]);
+    bool is_horizontal_pair = (num_collisions == 2) && (collisions[0][0] == collisions[0][1]);
+    if (num_collisions == 0) return;
+    for (int i=0; i<2; i++) { // -------------------------------------------------------------- Apply the collisions.
+        for (int j=0; j<2; j++) {
+            tile_pos = nearest_corner + vec2f{RSIZE/2*sign_x, RSIZE/2*sign_y};
+            sign_x *= -1;
+            tile_pos = tile_pos / RSIZE;
+            tile_pos = vec2f{std::floor(tile_pos.x), std::floor(tile_pos.y)} * RSIZE;
+            tile_index = vec2i{int(tile_pos.x/RSIZE), int(tile_pos.y/RSIZE)};
+            tile* cur_tile = main_world->get_tile(tile_index);
+            if (cur_tile == nullptr || cur_tile->wall_height <=0) { continue; } // Skip the tile.
+            vec2f delta = *position - tile_pos;
+            bool in_square = abs(delta.x) < MIN_SQUARE_DISTANCE && abs(delta.y) < MIN_SQUARE_DISTANCE;
+            bool in_diamond = abs(delta.x) + abs(delta.y) > RSIZE*1.2;
+            if (in_square) {
+                float x_delta_sign = 1;
+                float y_delta_sign = 1;
+                if (delta.x < 0) x_delta_sign = -1;
+                if (delta.y < 0) y_delta_sign = -1;
+                if (in_diamond && num_collisions == 1) { //------------------------------------- Circle-style collision on tile corners.
+                    if (delta.vlen() < RSIZE) { *position = *position + delta.normalized()*(RSIZE-delta.vlen()); }
+                }
+                else if (abs(delta.x) > abs(delta.y) && !is_horizontal_pair) //----------------- Square-style collision on tile sides.
+                    { *position = *position + vec2f{x_delta_sign*MIN_SQUARE_DISTANCE-delta.x, 0}; }
+                else if (abs(delta.x) < abs(delta.y) && !is_vertical_pair)
+                    { *position = *position + vec2f{0, y_delta_sign*MIN_SQUARE_DISTANCE-delta.y}; }
+            }
+        }
+        sign_y *= -1;
+    }
+}
+void wallCollision(char* array, int array_len) {
+    for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
+        if (array[i] != HEADER_BYTE) {
+            if (DEBUG_ENTS) { printf("*** Invalid index given by get_next_ent() in think_all_ents()\n"); }
+            break;
+        }
+        struct ent_basics* e = ((struct ent_basics*)&array[i]);
+        if ((e->flags & NOCOLLISION) != NOCOLLISION)
+            collide_wall(e);
+    }
 }

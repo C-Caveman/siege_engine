@@ -51,6 +51,7 @@ void print_vars();
     f(inputAimRight) \
     f(inputAimReverse) \
     f(inputAimSpeed) \
+    f(inputSpawnZombie) \
     
 #define VAR_LIST(f) \
     INT_VARS_LIST(f) \

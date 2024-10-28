@@ -125,6 +125,7 @@ struct ent_gib {
 };
 //======================================================================// Generic entity functions. //
 void* spawn_ent(int type, char* array, int array_len);
+void* spawn(int type, vec2f pos);
 void despawn_ent(struct ent_basics* ent);
 void think_all_ents(char* array, int array_len);
 char* get_type_name(int type);
@@ -133,5 +134,7 @@ int get_first_ent(char* array, int array_len);
 int get_next_ent(int i, char* array, int array_len);
 void move_ent(struct ent_basics* ent);
 char* get_type_name(int type);
+void collide_wall(struct ent_basics* e);
+void wallCollision(char* array, int array_len);
 
 #endif

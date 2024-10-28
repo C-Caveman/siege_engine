@@ -60,67 +60,6 @@ vec2i getTileAtCursor(struct client* c) {
     return (struct vec2i)(((c->camera_center + c->aim_pixel_pos.to_float()) / RSIZE).to_int_round_up());
 }
 
-//TODO move this to ent.cpp
-float PLAYER_WIDTH = RSIZE;
-float MIN_SQUARE_DISTANCE = PLAYER_WIDTH/2 + RSIZE/2;
-void collide_wall(struct ent_basics* e) {
-    vec2f* position = &e->pos;
-    vec2f centered_position = e->pos + vec2f{RSIZE/2, RSIZE/2};
-    vec2f nearest_corner = centered_position;
-    nearest_corner = nearest_corner / RSIZE;
-    nearest_corner = vec2f{std::floor(nearest_corner.x + 0.5f),std::floor(nearest_corner.y + 0.5f)}; //--- Nearest corner.
-    nearest_corner = nearest_corner * RSIZE;
-    vec2f tile_pos;//------------------------------------------------------------------------------------- Adjacent tiles.
-    vec2i tile_index;
-    float sign_x = -1;
-    float sign_y = -1;
-    bool collisions[2][2];
-    int num_collisions = 0;
-     for (int i=0; i<2; i++) {
-        for (int j=0; j<2; j++) {
-            tile_pos = nearest_corner + vec2f{RSIZE/2*sign_x, RSIZE/2*sign_y};
-            tile_index = (tile_pos / RSIZE).to_int();  //vec2i{int(tile_pos.x/RSIZE), int(tile_pos.y/RSIZE)} % CHUNK_WIDTH;
-            tile* cur_tile = main_world->get_tile(tile_index);
-            if (cur_tile != nullptr && cur_tile->wall_height >= 1)
-                { collisions[i][j] = true; num_collisions++; }
-            else
-                { collisions[i][j] = false; }
-            sign_x *= -1;
-        }
-        sign_y *= -1;
-    }
-    bool is_vertical_pair = (num_collisions == 2) && (collisions[0][0] == collisions[1][0]);
-    bool is_horizontal_pair = (num_collisions == 2) && (collisions[0][0] == collisions[0][1]);
-    if (num_collisions == 0) return;
-    for (int i=0; i<2; i++) { // -------------------------------------------------------------- Apply the collisions.
-        for (int j=0; j<2; j++) {
-            tile_pos = nearest_corner + vec2f{RSIZE/2*sign_x, RSIZE/2*sign_y};
-            sign_x *= -1;
-            tile_pos = tile_pos / RSIZE;
-            tile_pos = vec2f{std::floor(tile_pos.x), std::floor(tile_pos.y)} * RSIZE;
-            tile_index = vec2i{int(tile_pos.x/RSIZE), int(tile_pos.y/RSIZE)};
-            tile* cur_tile = main_world->get_tile(tile_index);
-            if (cur_tile == nullptr || cur_tile->wall_height <=0) { continue; } // Skip the tile.
-            vec2f delta = *position - tile_pos;
-            bool in_square = abs(delta.x) < MIN_SQUARE_DISTANCE && abs(delta.y) < MIN_SQUARE_DISTANCE;
-            bool in_diamond = abs(delta.x) + abs(delta.y) > RSIZE*1.2;
-            if (in_square) {
-                float x_delta_sign = 1;
-                float y_delta_sign = 1;
-                if (delta.x < 0) x_delta_sign = -1;
-                if (delta.y < 0) y_delta_sign = -1;
-                if (in_diamond && num_collisions == 1) { //------------------------------------- Circle-style collision on tile corners.
-                    if (delta.vlen() < RSIZE) { *position = *position + delta.normalized()*(RSIZE-delta.vlen()); }
-                }
-                else if (abs(delta.x) > abs(delta.y) && !is_horizontal_pair) //----------------- Square-style collision on tile sides.
-                    { *position = *position + vec2f{x_delta_sign*MIN_SQUARE_DISTANCE-delta.x, 0}; }
-                else if (abs(delta.x) < abs(delta.y) && !is_vertical_pair)
-                    { *position = *position + vec2f{0, y_delta_sign*MIN_SQUARE_DISTANCE-delta.y}; }
-            }
-        }
-        sign_y *= -1;
-    }
-}
 /*
 > Save the current pos.
 > Update the position.
@@ -258,17 +197,17 @@ int main() {
                                                                                 //==================// Client inputs and movement. //
         client_input(&playerClient);
         playerClient.update_player_entity();                                   //- Client_Inputs -> Player_Entity.
-        collide_wall((struct ent_basics*)p);                                    //- Collision.
-        collide_wall((struct ent_basics*)s);
-        collide_wall((struct ent_basics*)bunny);
-        collide_wall((struct ent_basics*)zombieGuy);
+        //collide_wall((struct ent_basics*)p);                                    //- Collision.
+        //collide_wall((struct ent_basics*)s);
+        //collide_wall((struct ent_basics*)bunny);
+        //collide_wall((struct ent_basics*)zombieGuy);
                                                                                 //=================// Update the player's camera position. //
         playerClient.camera_pos =
             vec2f {p->pos.x - window_x/2*(RSIZE/tileWidth) + RSIZE/2, p->pos.y - window_y/2*(RSIZE/tileWidth) + RSIZE/2};
         playerClient.camera_center =
             vec2f {p->pos.x, p->pos.y};
                                                                                 //================// Building/Destroying tiles. //
-        if (playerClient.attacking && (cur_frame_start - playerClient.lastAttackTime) > 70) {
+        if (playerClient.attacking && (cur_frame_start - playerClient.lastAttackTime) > 200) {
             playerClient.lastAttackTime = cur_frame_start;
             playSound(placeholderSound);
             void* e = spawn_ent(projectile_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
@@ -356,6 +295,7 @@ int main() {
         
         think_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); //==========// Update/draw the entities. //
         move_all_ents(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+        wallCollision(main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         //draw_all_ents(playerClient.camera_pos, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         present_frame(); // Put the frame on the screen:
     }
