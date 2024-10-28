@@ -56,6 +56,7 @@
     f(voiceThudA1) \
     f(voiceThudA2) \
     f(voiceThudA3) \
+    f(zombieDie01) \
 
 enum SFX_ENUM {
     SFX_LIST(TO_ENUM)

@@ -38,14 +38,18 @@ handle              uncopy_handle(handle i); //----------- Delete a handle to an
 
 //====== ENTITY_TYPES_LIST =============================================================// ENTITY_TYPES_LIST //
 #define MAX_ENTITY_TYPE_NAME_LEN 32
-#define ENTITY_TYPES_LIST \
-    expand(player) \
-    expand(scenery) \
-    expand(projectile) \
-    expand(rabbit) \
-    expand(zombie)
-#define expand(name) name##_type, 
-enum entity_types { ENTITY_TYPES_LIST    NUM_ENT_TYPES };
+#define ENTITY_TYPES_LIST(f) \
+    f(player) \
+    f(scenery) \
+    f(projectile) \
+    f(rabbit) \
+    f(zombie) \
+    f(gib)
+#define TO_TYPE_ENUM(name) name##_type, 
+enum entity_types {
+    ENTITY_TYPES_LIST(TO_TYPE_ENUM)
+    NUM_ENT_TYPES
+};
 #undef expand
 enum example_sprites {FIRST_SPRITE, SECOND_SPRITE, NUM_EXAMPLE_SPRITES}; //---------- EXAMPLE ENTITY!!!!!!!!!!!!!!!!!!!!!!
 struct ent_example {
@@ -106,6 +110,15 @@ struct ent_zombie {
     vec2f targetPos;
     vec2f wanderDir;
     int wanderWait;
+
+    void init();
+    void think();
+};
+enum gib_sprites {GIB_SPRITE_1, NUM_GIB_SPRITES};                            // GIB
+struct ent_gib {
+    ENT_BASICS
+    struct sprite sprites[NUM_GIB_SPRITES];
+    int lifetime;
 
     void init();
     void think();

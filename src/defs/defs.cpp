@@ -188,3 +188,12 @@ vec2i vec2i::operator * (const float& scale){
 vec2i vec2i::operator / (const int& scale){
     return vec2i{x / scale, y / scale};
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Utility functions:
+float randf() {
+    return (float)((float)rand() / RAND_MAX);
+}
+float randfn() {
+    return (float)((float)rand() / RAND_MAX) - 0.5;
+}

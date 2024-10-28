@@ -52,6 +52,7 @@
     f(wall_steel) \
     f(wall_steel_side) \
     f(zombie) \
+    f(zombieGibs) \
     f(zzz_unused) \
 
 enum animation_ids {

@@ -66,7 +66,7 @@ void client::changeActor() {
         }
     }
     if (foundMatch == 1) {
-        printf("[dialogActor = '%s']\n", actors[dialogActorIndex].name);
+        //printf("[dialogActor = '%s']\n", actors[dialogActorIndex].name);
     }
     else {
         printf("*** changeActor didn't find '%s'\n", dialogAnnotation);
@@ -116,18 +116,18 @@ void client::updateDialogue() { // Animate the dialog box.
             dialogAnnotationLen++;
         }
         dialogAnnotation[dialogAnnotationLen] = 0;
-        printf("[%s] <%s>\n", nameOfAnnotationType(dialogAnnotationType), dialogAnnotation);
+        //printf("[%s] <%s>\n", nameOfAnnotationType(dialogAnnotationType), dialogAnnotation);
         switch (dialogAnnotationType) {
             case setActor:
                 changeActor();
                 break;
             case setFaceAnim:
                 dialogActorFaceIndex = std::stoi(dialogAnnotation);
-                printf("[dialogActorFaceIndex = %d]\n", dialogActorFaceIndex);
+                //printf("[dialogActorFaceIndex = %d]\n", dialogActorFaceIndex);
                 break;
             case setVoice:
                 dialogActorVoiceIndex = std::stoi(dialogAnnotation);
-                printf("[dialogActorVoiceIndex = %d]\n", dialogActorVoiceIndex);
+                //printf("[dialogActorVoiceIndex = %d]\n", dialogActorVoiceIndex);
                 break;
             case clearDialog:
                 dialogCharsPrinted = 0;

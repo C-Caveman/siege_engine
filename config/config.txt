@@ -27,7 +27,7 @@ inputBuild ????????
 inputAttack SPACE
 
 aimSpeedA 1.5
-aimSpeedB 3
+aimSpeedB 1.0
 inputAimSpeed UP
 inputAimReverse DOWN
 inputAimLeft LEFT

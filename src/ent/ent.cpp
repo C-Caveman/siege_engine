@@ -52,6 +52,7 @@ struct ent_basics*  get_ent(handle i) { //------------ Get an entity by its hand
 }//===============================================================================// ENTITY FUNCTIONS. //
 void ent_player::init() {
     if (DEBUG_ENTS) { printf("Player entity initializing!\n"); }
+    health = 1;
     pos = vec2f{0,0};
     // Init the sprites:
     num_sprites = NUM_PLAYER_SPRITES;
@@ -81,6 +82,7 @@ void ent_scenery::think() {
 }
 
 void ent_projectile::init() {                           // PROJECTILE
+    health = 1;
     num_sprites = 1;
     sprites[0].anim = grenade01Blink;
     sprites[0].flags |= LOOPING;
@@ -90,7 +92,14 @@ void ent_projectile::init() {                           // PROJECTILE
 }
 void ent_projectile::think() {
     lifetime -= 1;
-    struct tile* curTile = main_world->get_tile( (pos + vec2f{RSIZE/2,RSIZE/2}).to_int() / RSIZE);
+    struct tile* curTile = main_world->tileFromPos(pos + HW);
+    if (curTile) {
+        ent_basics* victim = get_ent(curTile->ents[0]);
+        if (victim && victim->type != projectile_type) {
+            //printf("Hit a %s!\n", get_type_name(victim->type));
+            victim->health -= 1;
+        }
+    }
     if (lifetime <= 0 && !isExploding) {
         isExploding = 1;
         sprites[0].anim = grenade01Explode;
@@ -122,6 +131,7 @@ void ent_projectile::think() {
 }
 
 void ent_rabbit::init() {                               // RABBIT
+    health = 1;
     wanderDir = vec2f{1,0};
     wanderWait = 100;
     num_sprites = 1;
@@ -144,6 +154,7 @@ void ent_rabbit::think() {
 }
 
 void ent_zombie::init() {                               // ZOMBIE
+    health = 1;
     wanderDir = vec2f{1,0};
     wanderWait = 100;
     num_sprites = 1;
@@ -168,6 +179,21 @@ void loadMessage(char* fName, char* outString) {
     } 
 }
 void ent_zombie::think() {
+    if (health <= 0) {
+        playSound(zombieDie01);
+        int numGibs = anim_data[zombieGibs].len;
+        for (int i=0; i<numGibs; i++) {
+            struct ent_basics* newGib = (struct ent_basics*)spawn_ent(gib_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+            if (newGib) {
+                ((struct ent_gib*)newGib)->pos = pos;
+                ((struct ent_gib*)newGib)->sprites[0].rotation = sprites[0].rotation;
+                ((struct ent_gib*)newGib)->sprites[0].anim = zombieGibs;
+                ((struct ent_gib*)newGib)->sprites[0].frame = i;
+                ((struct ent_gib*)newGib)->vel = vec2f{randfn()*10000,randfn()*10000};
+            }
+        }
+        despawn_ent((ent_basics*)this);
+    }
     struct ent_basics* e = get_ent(target);
     if (e != 0 && e->pos.dist(pos) < RSIZE/2 && playerClient.dialogVisible == 0) {
         loadMessage((char*)"assets/worlds/testWorld/hello.txt", message);
@@ -187,12 +213,23 @@ void ent_zombie::think() {
         targetPos = e->pos;
     }
 }
-
+void ent_gib::init() {
+    num_sprites = 1;
+    sprites[0].anim = zombieGibs;
+    sprites[0].flags |= PAUSED;
+    lifetime = 100000;
+}
+void ent_gib::think() {
+    lifetime--;
+    if (lifetime < 0)
+        despawn_ent((ent_basics*)this);
+}
+//======================================================================================================================//
 //=====================================================// Entity management functions. (spawn, despawn, get_next, ect.) //
 // X macro for ENTITY_TYPES_LIST:
-#define expand(name) #name, 
-char entity_type_names[NUM_ENT_TYPES][MAX_ENTITY_TYPE_NAME_LEN] = { ENTITY_TYPES_LIST };
-#undef expand
+char entity_type_names[NUM_ENT_TYPES][MAX_ENTITY_TYPE_NAME_LEN] = {
+    ENTITY_TYPES_LIST(TO_STRING)
+};
 // Return the name for a given entity type.
 char* get_type_name(int type) {
     return entity_type_names[type];
@@ -202,9 +239,8 @@ int get_ent_size(int type) {
     int size = -1;
     switch (type) {
     // X macro for ENTITY_TYPES_LIST:
-    #define expand(name) case name##_type:  size = sizeof(struct ent_##name); break; 
-    ENTITY_TYPES_LIST
-    #undef expand
+    #define GET_ENT_SIZES(name) case name##_type:  size = sizeof(struct ent_##name); break; 
+    ENTITY_TYPES_LIST(GET_ENT_SIZES)
     default:
         printf("*** Unknown entity type in get_ent_size()\n");
         exit(-1);
@@ -276,9 +312,8 @@ void* spawn_ent(int type, char* array, int array_len) {
     new_entity->h = claim_handle((struct ent_basics*)&array[i]);
     // Initialize the entity.
     switch (type) {
-        #define expand(name) case name##_type:  ((struct ent_##name *)(&array[i]))->init(); break; //--- Init the entity.
-        ENTITY_TYPES_LIST
-        #undef expand
+        #define ENT_INIT_CASES(name) case name##_type:  ((struct ent_##name *)(&array[i]))->init(); break; //--- Init the entity.
+        ENTITY_TYPES_LIST(ENT_INIT_CASES)
         default:
             printf("*** spawn_ent() error: invalid entity type: %d", type);
             exit(-1);
@@ -310,9 +345,8 @@ void think_all_ents(char* array, int array_len) {
         //printf("Thinking entity type: '%s' at index %d.\n", get_type_name(type), i);
         switch (type) {
             // X macro for ENTITY_TYPES_LIST:
-            #define expand(name) case name##_type:  ((struct ent_##name *)(&array[i])) -> think(); break; 
-            ENTITY_TYPES_LIST
-            #undef expand
+            #define ENT_THINK_CASES(name) case name##_type:  ((struct ent_##name *)(&array[i])) -> think(); break; 
+            ENTITY_TYPES_LIST(ENT_THINK_CASES)
             default:
                 printf("*** entity at %d not recognized in think_all_ents().\n",  i);
                 exit(-1);

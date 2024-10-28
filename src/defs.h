@@ -77,6 +77,7 @@ struct anim_info {
 };
 //=======================================================================// Entities //
 #define RSIZE 80    //--------------- Diameter of entities and tiles.
+#define HW vec2f{RSIZE/2,RSIZE/2} //- Half the width of a tile/entity.
 //--------------------------- Required components of every entity.
 #define ENT_BASICS       \
     char header_byte;    \
@@ -116,7 +117,7 @@ struct sprite {
     float rotation;
 };
 //================================================================// Tiles, Chunks, and Worlds //
-#define MAX_ENTS_PER_TILE 4
+#define MAX_ENTS_PER_TILE 8
 #define CHUNK_WIDTH 16
 #define CHUNK_DIAMETER (RSIZE * CHUNK_WIDTH)
 struct tile { //-------------------------------------- Square tile containing a wall/floor.
@@ -150,4 +151,13 @@ struct world { //---------------------------------------------- Collection of ch
 extern struct world* main_world; //---------------------------- Main world.
 extern uint8_t anim_tick; //----------------------------------- Frame counter for animations.
 extern struct client playerClient; //-------------------------- Player client.
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////
+// Utility functions:
+float randf(); // Random float in range: [0,1]
+float randfn(); // Random float in range: [-1,1]
+
 #endif
