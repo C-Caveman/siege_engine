@@ -65,8 +65,8 @@ void ent_player::init() {
 }
 void ent_player::think() {                              // PLAYER
     float theta = sprites[PLAYER_GUN].rotation;
-    vec2f aimOffset = vec2f{cos(theta/180*(float)M_PI), sin(theta/180*(float)M_PI)};
-    sprites[PLAYER_CROSSHAIR].pos = aimOffset*RSIZE*4;
+    vec2f crosshairDir = vec2f{cos(theta/180*(float)M_PI), sin(theta/180*(float)M_PI)};
+    sprites[PLAYER_CROSSHAIR].pos = crosshairDir*RSIZE*4;
 }
 
 void ent_scenery::init() {                              // SCENERY
@@ -93,15 +93,20 @@ void ent_projectile::init() {                           // PROJECTILE
 void ent_projectile::think() {
     lifetime -= 1;
     struct tile* curTile = 0;
-    vec2f p = pos - HW;
+    vec2f p = pos + HW;
+    p = p - vec2f{RSIZE,RSIZE};
+    float victimDistance;
     for (int i=0; i<3; i++) {
         for (int j=0; j<3; j++) {
             for (int k=0; k<MAX_ENTS_PER_TILE; k++) {
-                curTile = main_world->tileFromPos(p + vec2f{0,RSIZE/2}*(float)(i) + vec2f{RSIZE/2,0}*(float)(j));
+                curTile = main_world->tileFromPos(p + vec2f{0,RSIZE}*(float)(i) + vec2f{RSIZE,0}*(float)(j));
                 if (curTile) {
                     ent_basics* victim = get_ent(curTile->ents[k]);
-                    if (victim && victim->type == zombie_type) {
-                        //printf("Hit a %s!\n", get_type_name(victim->type));
+                    if (victim && victim->type == zombie_type && victim->health > 0) {
+                        victimDistance = pos.dist(victim->pos);
+                        if (victimDistance > RSIZE*0.8) {
+                            continue;
+                        }
                         victim->health -= 1;
                         lifetime = 0;
                     }
@@ -112,6 +117,7 @@ void ent_projectile::think() {
     curTile = main_world->tileFromPos(pos + HW);
     if (lifetime <= 0 && !isExploding) {
         isExploding = 1;
+        playSound(explosion01);
         sprites[0].anim = grenade01Explode;
         sprites[0].frame = 0;
         sprites[0].flags &= ~LOOPING;
@@ -120,6 +126,7 @@ void ent_projectile::think() {
     }
     if (curTile != 0 && curTile->wall_height > 0 && !isExploding) {
         isExploding = 1;
+        playSound(explosion01);
         //playSound(chow);
         sprites[0].anim = grenade01Explode;
         sprites[0].frame = 3;
@@ -133,7 +140,6 @@ void ent_projectile::think() {
         return;
     }
     if (lifetime <= 0 || sprites[0].frame >= anim_data[grenade01Explode].len-1) {
-        playSound(explosion01);
         despawn_ent((ent_basics*)this);
     }
 }
@@ -225,7 +231,7 @@ void ent_gib::init() {
     num_sprites = 1;
     sprites[0].anim = zombieGibs;
     sprites[0].flags |= PAUSED;
-    lifetime = 100000;
+    lifetime = 10000 * randf();
 }
 void ent_gib::think() {
     lifetime--;
