@@ -167,6 +167,7 @@ int main() {
     ent_player* p = (struct ent_player*)spawn_ent(player_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
     p->pos = vec2f{RSIZE,RSIZE};
     playerClient.player = (struct ent_player*)p;
+    ((struct ent_player*)p)->cl = &playerClient;
     ent_scenery* s = (ent_scenery*)spawn_ent(scenery_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
     s->pos = vec2f{(float)(RSIZE*1.5), RSIZE*CHUNK_WIDTH/2};
     s->fren = p->h;

@@ -68,6 +68,7 @@ struct ent_player {
     struct sprite sprites[NUM_PLAYER_SPRITES];
     uint8_t movetype;   // Selected speed.
     uint8_t movetypes[NUM_MOVE_TYPES];    // Available speeds.
+    struct client* cl;
 
     void init();
     void think();

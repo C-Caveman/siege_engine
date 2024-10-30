@@ -41,6 +41,7 @@ struct client {
     //
     // Current input state:
     //
+    bool keyboardAiming;
     bool attacking;
     bool building;
     bool sprinting; // Desired movement speed.

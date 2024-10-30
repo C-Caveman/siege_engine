@@ -107,7 +107,8 @@ void client_input(client* client) {
                     break;
                 
                 case enum_inputSpawnZombie:
-                    spawn(zombie_type, client->camera_center);
+                    //spawn(zombie_type, client->camera_center);
+                    spawn(zombie_type, client->camera_center + client->aim_pixel_pos.to_float());
                     break;
                     
                 default:
@@ -209,7 +210,11 @@ void client_input(client* client) {
     client->aim_pixel_pos.x = (client->aim_pixel_pos.x*(RSIZE/tileWidth) - window_x/2*(RSIZE/tileWidth));
     client->aim_pixel_pos.y = (client->aim_pixel_pos.y*(RSIZE/tileWidth) - window_y/2*(RSIZE/tileWidth));
     if (mouse_moved == true) {
+        client->keyboardAiming = false;
         client->aim_dir = atan2(client->aim_pixel_pos.y, client->aim_pixel_pos.x) * 180 / M_PI;
+    }
+    else if (client->aim_dir_rotation != 0) {
+        client->keyboardAiming = true;
     }
     if (client->aim_dir < 0)
             client->aim_dir += 360;

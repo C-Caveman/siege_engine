@@ -64,9 +64,14 @@ void ent_player::init() {
     movetype = MOVE_SPRINT;
 }
 void ent_player::think() {                              // PLAYER
-    float theta = sprites[PLAYER_GUN].rotation;
-    vec2f crosshairDir = vec2f{cos(theta/180*(float)M_PI), sin(theta/180*(float)M_PI)};
-    sprites[PLAYER_CROSSHAIR].pos = crosshairDir*RSIZE*4;
+    if (cl && !cl->keyboardAiming) {
+        sprites[PLAYER_CROSSHAIR].pos = cl->aim_pixel_pos.to_float();
+    }
+    else {
+        float theta = sprites[PLAYER_GUN].rotation;
+        vec2f crosshairDir = vec2f{cos(theta/180*(float)M_PI), sin(theta/180*(float)M_PI)};
+        sprites[PLAYER_CROSSHAIR].pos = crosshairDir*RSIZE*4;
+    }
 }
 
 void ent_scenery::init() {                              // SCENERY
