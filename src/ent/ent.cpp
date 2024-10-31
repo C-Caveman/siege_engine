@@ -49,7 +49,7 @@ struct ent_basics*  get_ent(handle i) { //------------ Get an entity by its hand
         { return handles[i].ent; }
     else
         { handles[i].copies--; return nullptr; }
-}//===============================================================================// ENTITY FUNCTIONS. //
+}//===============================================================================// ENTITY FUNCTIONS. //;;
 void ent_player::init() {
     if (DEBUG_ENTS) { printf("Player entity initializing!\n"); }
     health = 1;
@@ -58,7 +58,7 @@ void ent_player::init() {
     num_sprites = NUM_PLAYER_SPRITES;
     sprites[PLAYER_BODY].anim = rocket_tank;
     sprites[PLAYER_GUN].anim = gun_grenade;
-    sprites[PLAYER_GUN].flags |= LOOPING;
+    sprites[PLAYER_GUN].flags |= PAUSED;
     sprites[PLAYER_CROSSHAIR].anim = crosshair01;
     // Sprint by default:
     movetype = MOVE_SPRINT;
@@ -131,7 +131,7 @@ void ent_projectile::think() {
     }
     if (curTile != 0 && curTile->wall_height > 0 && !isExploding) {
         isExploding = 1;
-        playSound(explosion01);
+        playSoundChannel(explosion01, CHAN_EXPLOSION);
         //playSound(chow);
         sprites[0].anim = grenade01Explode;
         sprites[0].frame = 3;

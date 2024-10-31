@@ -52,6 +52,7 @@ void loadMusic() {
 }
 
 void init_audio() {
+    Mix_AllocateChannels(NUM_CHANNELS);
     if (Mix_Init(MIX_INIT_OGG) < 1) {
         printf("*** init_audio failed: %s", SDL_GetError());
         exit(-1);

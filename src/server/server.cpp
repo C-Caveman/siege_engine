@@ -198,10 +198,6 @@ int main() {
                                                                                 //==================// Client inputs and movement. //
         client_input(&playerClient);
         playerClient.update_player_entity();                                   //- Client_Inputs -> Player_Entity.
-        //collide_wall((struct ent_basics*)p);                                    //- Collision.
-        //collide_wall((struct ent_basics*)s);
-        //collide_wall((struct ent_basics*)bunny);
-        //collide_wall((struct ent_basics*)zombieGuy);
                                                                                 //=================// Update the player's camera position. //
         playerClient.camera_pos =
             vec2f {p->pos.x - window_x/2*(RSIZE/tileWidth) + RSIZE/2, p->pos.y - window_y/2*(RSIZE/tileWidth) + RSIZE/2};
@@ -210,13 +206,17 @@ int main() {
                                                                                 //================// Building/Destroying tiles. //
         if (playerClient.attacking && (cur_frame_start - playerClient.lastAttackTime) > 200) {
             playerClient.lastAttackTime = cur_frame_start;
-            playSound(placeholderSound);
+            playerClient.player->sprites[PLAYER_GUN].frame = 0;;
+            playerClient.player->sprites[PLAYER_GUN].flags &= ~PAUSED;
+            //playSound(bam02);
+            playSoundChannel(bam02, CHAN_WEAPON);
             void* e = spawn_ent(projectile_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
             vec2f aimDir = vec2f{cos(playerClient.aim_dir/180*(float)M_PI), sin(playerClient.aim_dir/180*(float)M_PI)};
             ((struct ent_basics*)e)->pos = playerClient.player->pos + aimDir*100;
             ((struct ent_basics*)e)->tile = (playerClient.player->pos + aimDir*100).to_int() / RSIZE;
             ((struct ent_basics*)e)->vel = aimDir * 800;
         }
+        /*
         if (playerClient.attacking && (cur_frame_start - playerClient.lastAttackTime) > 200) {
             //destroy_wall(playerClient.camera_center, playerClient.aim_pixel_pos, chunk_0);
             playerClient.lastAttackTime = cur_frame_start;
@@ -226,6 +226,7 @@ int main() {
                                                    getTileAtCursor(&playerClient));
             if (timmy != nullptr && timmy->wall_height != 0) { timmy->wall_height = 0; playSound(thud); }
         }
+        */
         if (playerClient.building && (cur_frame_start - playerClient.lastBuildTime) > 50) {
             //build_wall(playerClient.camera_center, playerClient.aim_pixel_pos, chunk_0);
             //

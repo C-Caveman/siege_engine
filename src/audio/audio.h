@@ -3,12 +3,19 @@
 
 #include "sfx.h"
 #include "music.h"
+#define NUM_UNUSED_SOUND_CHANNELS 16
 
 enum soundChannels {
     TYPER,
     TYPER2,
     TYPER3,
     TYPER4,
+    CHAN_EXPLOSION,
+    CHAN_WEAPON,
+    
+    CHAN_UNUSED_RANGE_START,
+    CHAN_UNUSED_RANGE_END=CHAN_UNUSED_RANGE_START+NUM_UNUSED_SOUND_CHANNELS,
+    NUM_CHANNELS
 };
 
 void init_audio();

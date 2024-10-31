@@ -6,16 +6,20 @@
     f(placeholderSound) \
     f(aa_1_purple_lake2) \
     f(arcLamp1) \
+    f(bam01) \
+    f(bam02) \
     f(chow) \
     f(chuh01) \
     f(chuh02) \
     f(explosion01) \
     f(fump) \
+    f(fuseLight) \
     f(fwaf) \
     f(metalFadeIn) \
     f(metalPing) \
     f(metalThunder) \
     f(phbowav) \
+    f(tack) \
     f(thud) \
     f(tikLowerBackup) \
     f(tikLower) \
