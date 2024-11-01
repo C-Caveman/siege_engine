@@ -211,7 +211,7 @@ int main() {
             //playSound(bam02);
             playSoundChannel(bam02, CHAN_WEAPON);
             void* e = spawn_ent(projectile_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-            vec2f aimDir = vec2f{cos(playerClient.aim_dir/180*(float)M_PI), sin(playerClient.aim_dir/180*(float)M_PI)};
+            vec2f aimDir = angleToVector(playerClient.aim_dir);
             ((struct ent_basics*)e)->pos = playerClient.player->pos + aimDir*100;
             ((struct ent_basics*)e)->tile = (playerClient.player->pos + aimDir*100).to_int() / RSIZE;
             ((struct ent_basics*)e)->vel = aimDir * 800;

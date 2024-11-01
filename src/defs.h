@@ -159,5 +159,6 @@ extern struct client playerClient; //-------------------------- Player client.
 // Utility functions:
 float randf(); // Random float in range: [0,1]
 float randfn(); // Random float in range: [-1,1]
+vec2f angleToVector(float angle); // Convert an angle to a normalized vector.
 
 #endif

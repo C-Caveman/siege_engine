@@ -44,6 +44,7 @@ struct client {
     bool keyboardAiming;
     bool attacking;
     bool building;
+    bool interacting;
     bool sprinting; // Desired movement speed.
     bool quitting; // Quit button.
     vec2f accel_dir; // Desired move direction.

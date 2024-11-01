@@ -39,7 +39,12 @@
     f(voiceGraw) \
     f(voiceImpactLight) \
     f(voiceLady) \
-    f(voiceLamb) \
+    f(voiceLamb01) \
+    f(voiceLamb02) \
+    f(voiceLamb03) \
+    f(voiceLamb04) \
+    f(voiceLamb05) \
+    f(voiceLamb06) \
     f(voiceMetalA) \
     f(voiceMetalB1) \
     f(voiceMetalB2) \
@@ -60,6 +65,9 @@
     f(voiceThudA1) \
     f(voiceThudA2) \
     f(voiceThudA3) \
+    f(wAutoCannon) \
+    f(wHeavyCannon01) \
+    f(wShotgun01) \
     f(zombieDie01) \
 
 enum SFX_ENUM {

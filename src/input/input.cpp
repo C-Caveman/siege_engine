@@ -110,6 +110,9 @@ void client_input(client* client) {
                     //spawn(zombie_type, client->camera_center);
                     spawn(zombie_type, client->camera_center + client->aim_pixel_pos.to_float());
                     break;
+                case enum_inputInteract:
+                    client->interacting = true;
+                    break;
                     
                 default:
                     break;
@@ -146,6 +149,9 @@ void client_input(client* client) {
                     break;
                 case enum_inputAimSpeed:
                     client->aimSpeed = aimSpeedA;
+                    break;
+                case enum_inputInteract:
+                    client->interacting = false;
                     break;
             }
         }

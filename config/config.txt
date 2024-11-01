@@ -34,3 +34,4 @@ inputAimLeft LEFT
 inputAimRight RIGHT
 
 inputSpawnZombie z
+inputInteract e

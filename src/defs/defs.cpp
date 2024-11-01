@@ -197,3 +197,9 @@ float randf() {
 float randfn() {
     return (float)((float)rand() / RAND_MAX) - 0.5;
 }
+vec2f angleToVector(float angle) {
+    return vec2f{
+        cos(angle/180*(float)M_PI),
+        sin(angle/180*(float)M_PI)
+    };
+}

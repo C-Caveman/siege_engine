@@ -68,9 +68,25 @@ void ent_player::think() {                              // PLAYER
         sprites[PLAYER_CROSSHAIR].pos = cl->aim_pixel_pos.to_float();
     }
     else {
-        float theta = sprites[PLAYER_GUN].rotation;
-        vec2f crosshairDir = vec2f{cos(theta/180*(float)M_PI), sin(theta/180*(float)M_PI)};
+        vec2f crosshairDir = angleToVector(sprites[PLAYER_GUN].rotation);
         sprites[PLAYER_CROSSHAIR].pos = crosshairDir*RSIZE*4;
+    }
+    vec2f p = pos + HW;
+    if (cl && cl->interacting) {
+        for (int i=0; i<3; i++) {
+            for (int j=0; j<3; j++) {
+                for (int k=0; k<MAX_ENTS_PER_TILE; k++) {
+                    struct tile* curTile = main_world->tileFromPos(p + vec2f{0,RSIZE}*(float)(i) + vec2f{RSIZE,0}*(float)(j));
+                    if (curTile) {
+                        ent_basics* useTarget = get_ent(curTile->ents[k]);
+                        if (useTarget && useTarget->type == scenery_type) {
+                            printf("Used a scenery ent!\n");
+                            cl->interacting = false;
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -101,7 +117,7 @@ void ent_projectile::think() {
     vec2f p = pos + HW;
     p = p - vec2f{RSIZE,RSIZE};
     float victimDistance;
-    for (int i=0; i<3; i++) {
+    for (int i=0; i<3; i++) { //TODO make a function for this!!!! TODO
         for (int j=0; j<3; j++) {
             for (int k=0; k<MAX_ENTS_PER_TILE; k++) {
                 curTile = main_world->tileFromPos(p + vec2f{0,RSIZE}*(float)(i) + vec2f{RSIZE,0}*(float)(j));
