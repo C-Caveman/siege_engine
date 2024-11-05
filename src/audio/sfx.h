@@ -12,6 +12,10 @@
     f(chuh01) \
     f(chuh02) \
     f(explosion01) \
+    f(explosion02) \
+    f(explosion03) \
+    f(explosion04) \
+    f(fsHeavy01) \
     f(fump) \
     f(fuseLight) \
     f(fwaf) \

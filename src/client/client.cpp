@@ -186,3 +186,17 @@ void client::showDialog() { // Draw an animated dialog string onto the screen.
     updateDialogue();
     drawDialogBox(this);
 }
+
+void client::loadDialog(char* fName) {
+    FILE* fp = fopen(fName, "r");
+    if (!fp) {
+        printf("Couldn't open %s\n", fName);
+        exit(1);
+    }
+    for (int i=0; i < MAX_DIALOG_LEN; i++) {
+        char c = fgetc(fp);
+        if (feof(fp))
+            break;
+        loadedDialog[i] = c;
+    } 
+}

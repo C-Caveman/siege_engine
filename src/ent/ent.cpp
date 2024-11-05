@@ -63,6 +63,7 @@ void ent_player::init() {
     // Sprint by default:
     movetype = MOVE_SPRINT;
 }
+char bogus[] =  "<apig>Hello world!";
 void ent_player::think() {                              // PLAYER
     if (cl && !cl->keyboardAiming) {
         sprites[PLAYER_CROSSHAIR].pos = cl->aim_pixel_pos.to_float();
@@ -82,6 +83,9 @@ void ent_player::think() {                              // PLAYER
                         if (useTarget && useTarget->type == scenery_type) {
                             printf("Used a scenery ent!\n");
                             cl->interacting = false;
+                            //playerClient.loadDialog((char*)"assets/worlds/testWorld/hello.txt");
+                            strcpy(playerClient.loadedDialog, bogus);
+                            playerClient.startDialog(playerClient.loadedDialog);
                         }
                     }
                 }
@@ -147,7 +151,7 @@ void ent_projectile::think() {
     }
     if (curTile != 0 && curTile->wall_height > 0 && !isExploding) {
         isExploding = 1;
-        playSoundChannel(explosion01, CHAN_EXPLOSION);
+        playSoundChannel(explosion01, CHAN_EXPLOSION + (rand() % NUM_EXPLOSION_CHANNELS) );
         //playSound(chow);
         sprites[0].anim = grenade01Explode;
         sprites[0].frame = 3;
@@ -200,19 +204,6 @@ void ent_zombie::init() {                               // ZOMBIE
 }
 #define MSIZE 1024
 char message[MSIZE] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
-void loadMessage(char* fName, char* outString) {
-    FILE* fp = fopen(fName, "r");
-    if (!fp) {
-        printf("Couldn't open %s\n", fName);
-        exit(1);
-    }
-    for (int i=0; i<MSIZE; i++) {
-        char c = fgetc(fp);
-        if (feof(fp))
-            break;
-        outString[i] = c;
-    } 
-}
 void ent_zombie::think() {
     if (health <= 0) {
         playSound(zombieDie01);
@@ -231,8 +222,8 @@ void ent_zombie::think() {
     }
     struct ent_basics* e = get_ent(target);
     if (e != 0 && e->pos.dist(pos) < RSIZE/2 && playerClient.dialogVisible == 0) {
-        loadMessage((char*)"assets/worlds/testWorld/hello.txt", message);
-        playerClient.startDialog(message);
+        playerClient.loadDialog((char*)"assets/worlds/testWorld/hello.txt");
+        playerClient.startDialog(playerClient.loadedDialog);
     }
     wanderWait -= 1;
     if (wanderWait <= 0 && e != 0) {

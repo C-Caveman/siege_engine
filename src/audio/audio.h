@@ -3,7 +3,8 @@
 
 #include "sfx.h"
 #include "music.h"
-#define NUM_UNUSED_SOUND_CHANNELS 16
+#define NUM_UNUSED_SOUND_CHANNELS 4
+#define NUM_EXPLOSION_CHANNELS 2
 
 enum soundChannels {
     TYPER,
@@ -11,6 +12,7 @@ enum soundChannels {
     TYPER3,
     TYPER4,
     CHAN_EXPLOSION,
+    CHAN_EXPLOSION_END=CHAN_EXPLOSION+NUM_EXPLOSION_CHANNELS,
     CHAN_WEAPON,
     
     CHAN_UNUSED_RANGE_START,

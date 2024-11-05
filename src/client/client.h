@@ -36,11 +36,13 @@ struct client {
     void updateDialogue();
     void showDialog();
     void changeActor();
+    void loadDialog(char* fName);
     // Player entity:
     struct ent_player* player;
     //
     // Current input state:
     //
+    bool paused;
     bool keyboardAiming;
     bool attacking;
     bool building;
@@ -65,6 +67,7 @@ struct client {
     int  dialogStringPos;
     int  dialogAnnotationLen;
     int  dialogAnnotationType;
+    char loadedDialog[MAX_DIALOG_LEN];      // Dialog loaded by loadDialog().
     char dialogString[MAX_DIALOG_LEN];      // Dialog with <annotations> included.
     char dialogPrintString[MAX_DIALOG_LEN]; // Printed text with <annotations> removed.
     char dialogAnnotation[MAX_ANNOTATION_LEN]; // Current <annotation> being read in from the dialogString.

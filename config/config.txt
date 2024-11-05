@@ -28,10 +28,13 @@ inputAttack SPACE
 
 aimSpeedA 1.5
 aimSpeedB 1.0
-inputAimSpeed UP
+#inputAimSpeed UP
 inputAimReverse DOWN
 inputAimLeft LEFT
 inputAimRight RIGHT
 
 inputSpawnZombie z
 inputInteract e
+inputSkipDialog c
+inputDash UP
+inputPause p

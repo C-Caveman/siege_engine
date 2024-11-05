@@ -197,6 +197,12 @@ int main() {
         track_fps();
                                                                                 //==================// Client inputs and movement. //
         client_input(&playerClient);
+        if (playerClient.paused) {
+            SDL_RenderClear(renderer);
+            renderText((char*)"Game paused!");
+            present_frame();
+            continue;
+        }
         playerClient.update_player_entity();                                   //- Client_Inputs -> Player_Entity.
                                                                                 //=================// Update the player's camera position. //
         playerClient.camera_pos =
