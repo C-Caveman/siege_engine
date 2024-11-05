@@ -28,6 +28,8 @@
     f(gun_plasma) \
     f(gun_railgun) \
     f(knight_1) \
+    f(menuItemBackground) \
+    f(menuSelector) \
     f(missing) \
     f(player_2) \
     f(player_old) \

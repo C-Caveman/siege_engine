@@ -277,7 +277,7 @@ void draw_all_ents(vec2f camera_pos, char* array, int array_len) { // ;;
 void present_frame() {
     //
     // finished rendering a frame, 
-    // now make sure we don't exceed 60 fps
+    // now make sure we don't exceed the fps cap
     //
     frame_time = SDL_GetTicks() - last_frame_end;
     if (frame_time < min_frame_time) {
@@ -614,63 +614,49 @@ void drawDialogBox(struct client* cl) {
     int portraitAnimationLen = anim_data[actors[cl->dialogActorIndex].anim[cl->dialogActorFaceIndex]].len;
     SDL_RenderCopy(renderer, textures[portraitTextureID+ ((cl->dialogActorFrame/2) % portraitAnimationLen)], NULL, &portraitBox);
 }
-void drawMenu(struct client* cl) {
-    char* text = cl->dialogPrintString;
-    int numCharsToPrint = cl->dialogCharsPrinted;
+void renderMenu(struct client* cl) {
+    //if (pauseMenuItems == 0) {
+    //    printf("*** pauseMenuItems is null!!!!\n");
+    //    exit(-1);
+    //}
     SDL_Color White = {255, 255, 255};
     int charWidth = window_x / 64;
     int charHeight = charWidth * 2;
-    int numChars = strlen(text);
-    #define MAX_LINE_BUFFER_SIZE 256
-    char lineBuffer[MAX_LINE_BUFFER_SIZE] = {0};
-    int portraitSize = window_y / 5;
-    int portraitPaddingX = window_x / 20;
-    int portraitPaddingY = window_y / 20;
-    int maxLineChars = (window_x - portraitSize) / charWidth - 1;
-    if (maxLineChars > MAX_LINE_BUFFER_SIZE)
-        maxLineChars = MAX_LINE_BUFFER_SIZE;
-    int wrapThreshold = maxLineChars * 0.8;
-    int lineNumber = 0;
-    int curLineChars = 0;
-    // Print the text:
-    for (int i=0; i<numChars; i++) {
-        if (i > numCharsToPrint)
+    #define LETTER_BUFFER_SIZE 2
+    char letterBuffer[LETTER_BUFFER_SIZE] = {0};
+    int numMenuLines = NUM_PAUSE_MENU_ITEMS;
+    //for (; numMenuLines<NUM_PAUSE_MENU_ITEMS && cl->menuText[numMenuLines][0] != 0; numMenuLines++) {
+    //}
+    int leftPad = (window_x - 16*charWidth)/2;
+    int topPad = (window_y - numMenuLines*charHeight)/2;
+    // Print the line:
+    for (int line=0; line<numMenuLines; line++) {
+        if (pauseMenuItems[line][0] == 0)
             break;
-        if (lineNumber > 3) {
-            cl->dialogCharsPrinted = numCharsToPrint = 0;
-            memset(cl->dialogPrintString, 0, sizeof(cl->dialogPrintString)-1); //TODO handle this in client::dialogUpdate()
-            break;
+        int itemLen = strnlen(pauseMenuItems[line], MAX_MENU_ITEM_LEN);
+        // Print the chars:
+        for (int i=0; i<itemLen; i++) {
+            letterBuffer[0] = pauseMenuItems[line][i];
+            SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, letterBuffer, White);
+            SDL_Texture* charTexture = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+            SDL_Rect charBox = SDL_Rect {
+                charWidth*(i+1) + leftPad, 
+                charHeight*line + topPad, 
+                charWidth, charHeight
+            };
+            if (i == 0 && line == cl->menuSelection) {
+                //printf("Selection: %d\n", cl->menuSelection);
+                charBox.x -= charWidth;
+                SDL_RenderCopy(renderer, textures[anim_data[menuSelector].texture_index], NULL, &charBox);
+                charBox.x += charWidth;
+            }
+            SDL_RenderCopy(renderer, textures[anim_data[menuItemBackground].texture_index], NULL, &charBox);
+            SDL_RenderCopy(renderer, charTexture, NULL, &charBox);
+            SDL_FreeSurface(surfaceMessage);
+            SDL_DestroyTexture(charTexture);
         }
-        if ( (curLineChars >= wrapThreshold && text[i] == ' ') || (curLineChars >= maxLineChars) ) {
-            lineNumber++;
-            curLineChars = 0;
-            //Skip leading whitespace.
-            while (isspace(text[i]) && i < numChars)
-                i++;
-        }
-        if (text[i] == '\n' && curLineChars > 1) {
-            lineNumber++;
-            curLineChars = 0;
-            continue;
-        }
-        else if (text[i] == '\n') { // Don't try to draw the newline as a symbol.
-            curLineChars = 0;
-            continue;
-        }
-        curLineChars++;
-        lineBuffer[0] = text[i];
-        SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, lineBuffer, White);
-        SDL_Texture* charTexture = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
-        SDL_Rect charBox = SDL_Rect {
-            charWidth*(curLineChars+1) + portraitSize + portraitPaddingX, 
-            charHeight*lineNumber + window_y - portraitSize - portraitPaddingY, 
-            charWidth, charHeight
-        };
-        SDL_RenderCopy(renderer, textures[anim_data[black].texture_index], NULL, &charBox);
-        SDL_RenderCopy(renderer, charTexture, NULL, &charBox);
-        SDL_FreeSurface(surfaceMessage);
-        SDL_DestroyTexture(charTexture);
     }
+    /*
     // Draw the portrait:
     SDL_Rect portraitBox = SDL_Rect {
         portraitPaddingX,
@@ -681,6 +667,7 @@ void drawMenu(struct client* cl) {
     int portraitTextureID = anim_data[actors[cl->dialogActorIndex].anim[cl->dialogActorFaceIndex]].texture_index;
     int portraitAnimationLen = anim_data[actors[cl->dialogActorIndex].anim[cl->dialogActorFaceIndex]].len;
     SDL_RenderCopy(renderer, textures[portraitTextureID+ ((cl->dialogActorFrame/2) % portraitAnimationLen)], NULL, &portraitBox);
+    */
 }
 void cleanup_graphics() {
     SDL_DestroyRenderer(renderer);

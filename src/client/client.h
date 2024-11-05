@@ -30,6 +30,19 @@ struct dialogActor { // Set by annotations in the dialog strings.
 };
 extern struct dialogActor actors[];
 
+//////////////////////////////////////////////////// Menus ;;
+#define PAUSE_MENU_LIST(f) \
+    f(Resume) \
+    f(Settings) \
+    f(Quit)
+#define TO_MENU_PREFIXED_ENUM(name) menu##name, 
+enum pauseMenuEnum {
+    PAUSE_MENU_LIST(TO_MENU_PREFIXED_ENUM)
+    NUM_PAUSE_MENU_ITEMS
+};
+#define MAX_MENU_ITEM_LEN 256
+extern char pauseMenuItems[NUM_PAUSE_MENU_ITEMS][MAX_MENU_ITEM_LEN];
+
 struct client {
     void update_player_entity();
     void startDialog(char* message);
@@ -81,9 +94,8 @@ struct client {
     //
     // Current menu state:
     //
-    #define MAX_MENU_LINES 256
-    #define MAX_MENU_ITEM_LEN 256
-    char menuText[MAX_MENU_LINES][MAX_MENU_ITEM_LEN];
+    //char menuText[][MAX_MENU_ITEM_LEN];
+    int menuSelection;
 };
 
 // TODO use these for packets TODO

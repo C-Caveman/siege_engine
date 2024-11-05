@@ -24,6 +24,10 @@ char* nameOfAnnotationType(int t) {
         return (char*)&dialogAnnotationTypeNames[invalidAnnotation];
 }
 
+char pauseMenuItems[NUM_PAUSE_MENU_ITEMS][MAX_MENU_ITEM_LEN] = {
+    PAUSE_MENU_LIST(TO_STRING)
+};
+
 float PLAYER_ACCELERATION = 4000;
 void client::update_player_entity() {
     // Player movement:

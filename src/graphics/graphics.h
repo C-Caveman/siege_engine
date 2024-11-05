@@ -47,6 +47,7 @@ void drawFps(float fps);
 void drawDebugRectangle(int x, int y, int w, int h);
 void drawTextBox(char* text, int numCharsToPrint);
 void drawDialogBox(struct client* cl);
+void renderMenu(struct client* cl);
 void present_frame();
 void cleanup_graphics();
 

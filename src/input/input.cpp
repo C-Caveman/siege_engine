@@ -54,6 +54,68 @@ void client_input(client* client) {
             //printf("Key pressed: %s, (%d)\n", inputNames[inputIndex], event.key.keysym.sym);
             // used to detect bogus inputs
             just_keyed_down = true;
+            
+            if (client->paused) {
+                switch (inputIndex) {
+                    case enum_inputKeyUnbound:
+                        break;
+                    case enum_inputMoveUp:
+                        client->menuSelection--;
+                        break;
+                    case enum_inputMoveDown:
+                        client->menuSelection++;
+                        break;
+                    case enum_inputMoveLeft:
+                        //client->accel_dir.x -= 1;
+                        break;
+                    case enum_inputMoveRight:
+                        //client->accel_dir.x += 1;
+                        break;
+                        
+                    case enum_inputAttack:
+                        //client->attacking = true;
+                        break;
+                    
+                    case enum_inputFullscreen:
+                        if (fullscreen)
+                            goWindowed();
+                        else
+                            goFullscreen();
+                        break;
+                    
+                    case enum_inputInteract:
+                        printf("Selected: %s\n", pauseMenuItems[client->menuSelection]);
+                        switch(client->menuSelection) {
+                            case menuResume:
+                                client->paused = !client->paused;
+                                break;
+                            case menuSettings:
+                                //TODO add a settings menu! TODO!!!
+                                break;
+                            case menuQuit:
+                                client->quitting = true;
+                                running = false;
+                                break;
+                        }
+                        break;
+                    case enum_inputPause:
+                        client->paused = !client->paused;
+                        break;
+                    case enum_inputQuit:
+                        running = false;
+                        client->quitting = true;
+                        break;
+                        
+                    default:
+                        break;
+                }
+                if (client->menuSelection < 0)
+                    client->menuSelection = 0;
+                if (client->menuSelection >= NUM_PAUSE_MENU_ITEMS)
+                    client->menuSelection = NUM_PAUSE_MENU_ITEMS-1;
+                continue;
+            }
+            
             // Input just activated:
             switch (inputIndex) {
                 case enum_inputKeyUnbound:
@@ -233,4 +295,11 @@ void client_input(client* client) {
     }
     if (client->aim_dir < 0)
             client->aim_dir += 360;
+    if (client->menuSelection < 0)
+        client->menuSelection = 0;
+    if (client->menuSelection >= NUM_PAUSE_MENU_ITEMS)
+        client->menuSelection = NUM_PAUSE_MENU_ITEMS-1;
 }
+
+
+
