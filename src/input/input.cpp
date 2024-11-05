@@ -54,66 +54,95 @@ void client_input(client* client) {
             //printf("Key pressed: %s, (%d)\n", inputNames[inputIndex], event.key.keysym.sym);
             // used to detect bogus inputs
             just_keyed_down = true;
-            
             if (client->paused) {
-                switch (inputIndex) {
-                    case enum_inputKeyUnbound:
+                int isSelecting = false;
+                int isUsingPredefinedKeys = true;
+                switch(event.key.keysym.sym) { // Arrow/enter keys override keybindings in the menu!
+                    case 1073741903: // RIGHT
+                        isSelecting = true;
                         break;
-                    case enum_inputMoveUp:
-                        client->menuSelection--;
+                    case 1073741904: // LEFT
+                        client->paused = false;
                         break;
-                    case enum_inputMoveDown:
+                    case 1073741905: // DOWN
                         client->menuSelection++;
                         break;
-                    case enum_inputMoveLeft:
-                        //client->accel_dir.x -= 1;
+                    case 1073741906: // UP
+                        client->menuSelection--;
                         break;
-                    case enum_inputMoveRight:
-                        //client->accel_dir.x += 1;
+                    case 13: // RETURN
+                    case 1073741912: // KP_ENTER
+                        isSelecting = true;
                         break;
-                        
-                    case enum_inputAttack:
-                        //client->attacking = true;
+                    case 27: // ESCAPE
+                        //inputIndex = enum_inputQuit;
                         break;
-                    
-                    case enum_inputFullscreen:
-                        if (fullscreen)
-                            goWindowed();
-                        else
-                            goFullscreen();
+                    case 32: // SPACE
+                        isSelecting = true;
                         break;
-                    
-                    case enum_inputInteract:
-                        printf("Selected: %s\n", pauseMenuItems[client->menuSelection]);
-                        switch(client->menuSelection) {
-                            case menuResume:
-                                client->paused = !client->paused;
-                                break;
-                            case menuSettings:
-                                //TODO add a settings menu! TODO!!!
-                                break;
-                            case menuQuit:
-                                client->quitting = true;
-                                running = false;
-                                break;
-                        }
-                        break;
-                    case enum_inputPause:
-                        client->paused = !client->paused;
-                        break;
-                    case enum_inputQuit:
-                        running = false;
-                        client->quitting = true;
-                        break;
-                        
                     default:
+                        isUsingPredefinedKeys = false;
                         break;
+                }
+                if (!isUsingPredefinedKeys) {
+                    switch (inputIndex) {
+                        case enum_inputKeyUnbound:
+                            break;
+                        case enum_inputMoveUp:
+                            client->menuSelection--;
+                            break;
+                        case enum_inputMoveDown:
+                            client->menuSelection++;
+                            break;
+                        case enum_inputMoveLeft:
+                            //client->accel_dir.x -= 1;
+                            break;
+                        case enum_inputMoveRight:
+                            //client->accel_dir.x += 1;
+                            break;
+                            
+                        case enum_inputAttack:
+                            //client->attacking = true;
+                            break;
+                        
+                        case enum_inputFullscreen:
+                            if (fullscreen)
+                                goWindowed();
+                            else
+                                goFullscreen();
+                            break;
+                        
+                        case enum_inputInteract:
+                            isSelecting = true;
+                            break;
+                        case enum_inputQuit:
+                            running = false;
+                            client->quitting = true;
+                            break;
+                            
+                        default:
+                            break;
+                    }
                 }
                 if (client->menuSelection < 0)
                     client->menuSelection = 0;
                 if (client->menuSelection >= NUM_PAUSE_MENU_ITEMS)
                     client->menuSelection = NUM_PAUSE_MENU_ITEMS-1;
-                continue;
+                if (isSelecting) {
+                    printf("Selected: %s\n", pauseMenuItems[client->menuSelection]);
+                    switch(client->menuSelection) {
+                        case menuResume:
+                            client->paused = false;
+                            break;
+                        case menuSettings:
+                            //TODO add a settings menu! TODO!!!
+                            break;
+                        case menuQuit:
+                            client->quitting = true;
+                            running = false;
+                            break;
+                    }
+                }
             }
             
             // Input just activated:
@@ -193,6 +222,7 @@ void client_input(client* client) {
             // ignore auto repeat
             if (event.key.repeat == 1 || just_keyed_down)
                 continue;
+            
             // Input just deactivated:
             switch (inputIndex) {
                 case enum_inputMoveLeft:

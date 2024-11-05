@@ -37,4 +37,4 @@ inputSpawnZombie z
 inputInteract e
 inputSkipDialog c
 inputDash UP
-inputPause p
+inputPause ESCAPE
