@@ -198,8 +198,14 @@ int main() {
                                                                                 //==================// Client inputs and movement. //
         client_input(&playerClient);
         if (playerClient.paused) {
+            char pauseMenuText[MAX_MENU_LINES][MAX_MENU_ITEM_LEN] = {
+                "Resume",
+                "Settings",
+                "Quit",
+            };
+            memcpy(playerClient.menuText, pauseMenuText, sizeof(playerClient.menuText));
             SDL_RenderClear(renderer);
-            renderText((char*)"Game paused!");
+            renderText(playerClient.menuText[0]);
             present_frame();
             continue;
         }

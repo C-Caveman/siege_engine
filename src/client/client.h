@@ -60,6 +60,9 @@ struct client {
     vec2f camera_center; // Center of the camera.
     int lastAttackTime; // Last time the player attacked.
     int lastBuildTime; // Last time the player built.
+    //
+    // Current dialog state:
+    //
     int  dialogWaitTimer; // Pause time set by the <wait> annotation.
     int  dialogTick;
     int  dialogVisible;
@@ -75,6 +78,12 @@ struct client {
     int  dialogActorFaceIndex;  // Actor's current face animation.
     int  dialogActorVoiceIndex; // Actor's current talk sound.
     int  dialogActorFrame;      // Frame offset for the face animation.
+    //
+    // Current menu state:
+    //
+    #define MAX_MENU_LINES 256
+    #define MAX_MENU_ITEM_LEN 256
+    char menuText[MAX_MENU_LINES][MAX_MENU_ITEM_LEN];
 };
 
 // TODO use these for packets TODO
