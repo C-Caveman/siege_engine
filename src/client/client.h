@@ -61,6 +61,7 @@ struct client {
     bool building;
     bool interacting;
     bool sprinting; // Desired movement speed.
+    bool dashing;
     bool quitting; // Quit button.
     vec2f accel_dir; // Desired move direction.
     float jerk; // Rate of acceleration.

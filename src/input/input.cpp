@@ -208,7 +208,7 @@ void client_input(client* client) {
                     client->dialogVisible = 0;
                     break;
                 case enum_inputDash:
-                    client->player->vel = client->player->vel + angleToVector(client->aim_dir)*2000;
+                    client->dashing = true;
                     break;
                 case enum_inputPause:
                     client->paused = !client->paused;
@@ -253,6 +253,9 @@ void client_input(client* client) {
                     break;
                 case enum_inputInteract:
                     client->interacting = false;
+                    break;
+                case enum_inputDash:
+                    client->dashing = false;
                     break;
             }
         }
