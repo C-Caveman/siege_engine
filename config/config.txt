@@ -29,7 +29,7 @@ inputAttack SPACE
 aimSpeedA 1.5
 aimSpeedB 1.0
 #inputAimSpeed UP
-inputAimReverse DOWN
+inputAimReverse UP
 inputAimLeft LEFT
 inputAimRight RIGHT
 

@@ -4,13 +4,15 @@
 
 #define SFX_LIST(f) \
     f(placeholderSound) \
-    f(aa_1_purple_lake2) \
     f(arcLamp1) \
     f(bam01) \
     f(bam02) \
+    f(boop01) \
     f(chow) \
     f(chuh01) \
     f(chuh02) \
+    f(click01) \
+    f(click02) \
     f(explosion01) \
     f(explosion02) \
     f(explosion03) \
@@ -22,9 +24,10 @@
     f(metalFadeIn) \
     f(metalPing) \
     f(metalThunder) \
-    f(phbowav) \
+    f(shlick) \
     f(tack) \
     f(thud) \
+    f(thump01) \
     f(tikLowerBackup) \
     f(tikLower) \
     f(tikLowerWhisper01) \

@@ -51,6 +51,7 @@
     f(tileGold01) \
     f(tilegrate01) \
     f(tileMetal01) \
+    f(tileTest01) \
     f(wall_steel) \
     f(wall_steel_side) \
     f(zombie) \

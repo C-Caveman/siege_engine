@@ -57,6 +57,7 @@ void client_input(client* client) {
             if (client->paused) {
                 int isSelecting = false;
                 int isUsingPredefinedKeys = true;
+                int oldSelection = client->menuSelection;
                 switch(event.key.keysym.sym) { // Arrow/enter keys override keybindings in the menu!
                     case 1073741903: // RIGHT
                         isSelecting = true;
@@ -102,10 +103,6 @@ void client_input(client* client) {
                         case enum_inputInteract:
                             isSelecting = true;
                             break;
-                        case enum_inputQuit:
-                            running = false;
-                            client->quitting = true;
-                            break;
                             
                         default:
                             break;
@@ -115,8 +112,11 @@ void client_input(client* client) {
                     client->menuSelection = 0;
                 if (client->menuSelection >= NUM_PAUSE_MENU_ITEMS)
                     client->menuSelection = NUM_PAUSE_MENU_ITEMS-1;
+                if (client->menuSelection != oldSelection)
+                    playSound(click01);
                 if (isSelecting) {
                     printf("Selected: %s\n", pauseMenuItems[client->menuSelection]);
+                    playSound(click02);
                     switch(client->menuSelection) {
                         case menuResume:
                             client->paused = false;
@@ -185,7 +185,6 @@ void client_input(client* client) {
                     break;
                 
                 case enum_inputSpawnZombie:
-                    //spawn(zombie_type, client->camera_center);
                     spawn(zombie_type, client->camera_center + client->aim_pixel_pos.to_float());
                     break;
                 case enum_inputInteract:
