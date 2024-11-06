@@ -95,23 +95,10 @@ void client_input(client* client) {
                             client->menuSelection++;
                             break;
                         case enum_inputMoveLeft:
-                            //client->accel_dir.x -= 1;
+                            client->paused = false;
                             break;
                         case enum_inputMoveRight:
-                            //client->accel_dir.x += 1;
-                            break;
-                            
                         case enum_inputAttack:
-                            //client->attacking = true;
-                            break;
-                        
-                        case enum_inputFullscreen:
-                            if (fullscreen)
-                                goWindowed();
-                            else
-                                goFullscreen();
-                            break;
-                        
                         case enum_inputInteract:
                             isSelecting = true;
                             break;

@@ -21,7 +21,7 @@ inputMoveUp w
 inputMoveDown s
 inputMoveLeft a
 inputMoveRight d
-inputSprint LSHIFT
+inputSprint b
 inputSneak LCTRL
 inputBuild ????????
 inputAttack SPACE
@@ -36,5 +36,6 @@ inputAimRight RIGHT
 inputSpawnZombie z
 inputInteract e
 inputSkipDialog c
-inputDash UP
+#inputDash UP
+inputDash LSHIFT
 inputPause ESCAPE
