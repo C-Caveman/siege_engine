@@ -55,15 +55,17 @@ void client_input(client* client) {
             // used to detect bogus inputs
             just_keyed_down = true;
             if (client->paused) {
+                int isBackingOut = false;
                 int isSelecting = false;
                 int isUsingPredefinedKeys = true;
                 int oldSelection = client->menuSelection;
-                switch(event.key.keysym.sym) { // Arrow/enter keys override keybindings in the menu!
+                switch(event.key.keysym.sym) { // Arrow/enter keys override keybindings in the menu! ;;
                     case 1073741903: // RIGHT
                         isSelecting = true;
                         break;
                     case 1073741904: // LEFT
-                        client->paused = false;
+                        //client->paused = false;
+                        isBackingOut = true;
                         break;
                     case 1073741905: // DOWN
                         client->menuSelection++;
@@ -96,7 +98,8 @@ void client_input(client* client) {
                             client->menuSelection++;
                             break;
                         case enum_inputMoveLeft:
-                            client->paused = false;
+                            //client->paused = false;
+                            isBackingOut = true;
                             break;
                         case enum_inputMoveRight:
                         case enum_inputAttack:
@@ -110,25 +113,22 @@ void client_input(client* client) {
                 }
                 if (client->menuSelection < 0)
                     client->menuSelection = 0;
-                if (client->menuSelection >= NUM_PAUSE_MENU_ITEMS)
-                    client->menuSelection = NUM_PAUSE_MENU_ITEMS-1;
+                if (client->menuSelection >= menuSizes[client->menuPage])
+                    client->menuSelection = menuSizes[client->menuPage]-1;
                 if (client->menuSelection != oldSelection)
                     playSound(click01);
                 if (isSelecting) {
-                    printf("Selected: %s\n", pauseMenuItems[client->menuSelection]);
+                    printf("Page '%s' item '%s'\n", menuPageNames[client->menuPage], menuPages[client->menuPage][0][client->menuSelection]);
                     playSound(click02);
-                    switch(client->menuSelection) {
-                        case menuResume:
-                            client->paused = false;
-                            break;
-                        case menuSettings:
-                            //TODO add a settings menu! TODO!!!
-                            break;
-                        case menuQuit:
-                            client->quitting = true;
-                            running = false;
-                            break;
-                    }
+                    client->selectMenuItem();
+                }
+                if (isBackingOut && client->menuPage != PAUSE_MENU) {
+                    client->menuPage = PAUSE_MENU;
+                    client->menuSelection = 0;
+                    playSound(click02);
+                }
+                else if (isBackingOut) {
+                    client->paused = false;
                 }
             }
             
@@ -198,6 +198,8 @@ void client_input(client* client) {
                     break;
                 case enum_inputPause:
                     client->paused = !client->paused;
+                    if (client->paused)
+                        client->menuPage = PAUSE_MENU;
                     break;
                     
                 default:
@@ -314,10 +316,6 @@ void client_input(client* client) {
     }
     if (client->aim_dir < 0)
             client->aim_dir += 360;
-    if (client->menuSelection < 0)
-        client->menuSelection = 0;
-    if (client->menuSelection >= NUM_PAUSE_MENU_ITEMS)
-        client->menuSelection = NUM_PAUSE_MENU_ITEMS-1;
 }
 
 

@@ -35,13 +35,36 @@ extern struct dialogActor actors[];
     f(Resume) \
     f(Settings) \
     f(Quit)
+#define SETTINGS_MENU_LIST(f) \
+    f(MusicVolume) \
+    f(SfxVolume) \
+    f(voiceVolume) \
+    f(Fullscreen)
+#define MENU_PAGES_LIST(f) \
+    f(PAUSE_MENU) \
+    f(SETTINGS_MENU)
+    
 #define TO_MENU_PREFIXED_ENUM(name) menu##name, 
 enum pauseMenuEnum {
     PAUSE_MENU_LIST(TO_MENU_PREFIXED_ENUM)
     NUM_PAUSE_MENU_ITEMS
 };
+enum settingsMenuEnum {
+    SETTINGS_MENU_LIST(TO_MENU_PREFIXED_ENUM)
+    NUM_SETTINGS_MENU_ITEMS
+};
+enum menuPagesEnum {
+    MENU_PAGES_LIST(TO_ENUM)
+    NUM_MENU_PAGES
+};
+#define TO_MENU_SIZE_INTS(name) NUM_##name##_ITEMS, 
 #define MAX_MENU_ITEM_LEN 256
-extern char pauseMenuItems[NUM_PAUSE_MENU_ITEMS][MAX_MENU_ITEM_LEN];
+#define MAX_MENU_ITEMS 64
+extern int menuSizes[NUM_MENU_PAGES];
+extern char (*menuPages[NUM_MENU_PAGES])[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN];
+extern char menuPageNames[NUM_MENU_PAGES][MAX_MENU_ITEM_LEN];
+extern char PAUSE_MENU_ITEMS[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN];
+extern char SETTINGS_MENU_ITEMS[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN];
 
 struct client {
     void update_player_entity();
@@ -50,6 +73,7 @@ struct client {
     void showDialog();
     void changeActor();
     void loadDialog(char* fName);
+    void selectMenuItem();
     // Player entity:
     struct ent_player* player;
     //
@@ -95,7 +119,8 @@ struct client {
     //
     // Current menu state:
     //
-    //char menuText[][MAX_MENU_ITEM_LEN];
+    char (*menuText)[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN];
+    int menuPage;
     int menuSelection;
 };
 

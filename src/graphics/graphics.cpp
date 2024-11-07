@@ -550,7 +550,7 @@ void drawDialogBox(struct client* cl) {
     char* text = cl->dialogPrintString;
     int numCharsToPrint = cl->dialogCharsPrinted;
     SDL_Color White = {255, 255, 255};
-    int charWidth = window_x / 64;
+    int charWidth = window_y / 64;
     int charHeight = charWidth * 2;
     int numChars = strlen(text);
     #define MAX_LINE_BUFFER_SIZE 256
@@ -615,28 +615,21 @@ void drawDialogBox(struct client* cl) {
     SDL_RenderCopy(renderer, textures[portraitTextureID+ ((cl->dialogActorFrame/2) % portraitAnimationLen)], NULL, &portraitBox);
 }
 void renderMenu(struct client* cl) {
-    //if (pauseMenuItems == 0) {
-    //    printf("*** pauseMenuItems is null!!!!\n");
-    //    exit(-1);
-    //}
     SDL_Color White = {255, 255, 255};
-    int charWidth = window_x / 64;
+    int charWidth = window_y / 64;
     int charHeight = charWidth * 2;
     #define LETTER_BUFFER_SIZE 2
     char letterBuffer[LETTER_BUFFER_SIZE] = {0};
-    int numMenuLines = NUM_PAUSE_MENU_ITEMS;
-    //for (; numMenuLines<NUM_PAUSE_MENU_ITEMS && cl->menuText[numMenuLines][0] != 0; numMenuLines++) {
-    //}
+    int numMenuLines = menuSizes[cl->menuPage];
+    char (*curMenuItems)[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN] = menuPages[cl->menuPage];
     int leftPad = (window_x - 16*charWidth)/2;
     int topPad = (window_y - numMenuLines*charHeight)/2;
     // Print the line:
     for (int line=0; line<numMenuLines; line++) {
-        if (pauseMenuItems[line][0] == 0)
-            break;
-        int itemLen = strnlen(pauseMenuItems[line], MAX_MENU_ITEM_LEN);
+        int itemLen = strnlen(curMenuItems[0][line], MAX_MENU_ITEM_LEN);
         // Print the chars:
         for (int i=0; i<itemLen; i++) {
-            letterBuffer[0] = pauseMenuItems[line][i];
+            letterBuffer[0] = curMenuItems[0][line][i];
             SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, letterBuffer, White);
             SDL_Texture* charTexture = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
             SDL_Rect charBox = SDL_Rect {
@@ -645,7 +638,6 @@ void renderMenu(struct client* cl) {
                 charWidth, charHeight
             };
             if (i == 0 && line == cl->menuSelection) {
-                //printf("Selection: %d\n", cl->menuSelection);
                 charBox.x -= charWidth;
                 SDL_RenderCopy(renderer, textures[anim_data[menuSelector].texture_index], NULL, &charBox);
                 charBox.x += charWidth;

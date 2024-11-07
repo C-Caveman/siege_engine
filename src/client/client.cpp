@@ -24,8 +24,22 @@ char* nameOfAnnotationType(int t) {
         return (char*)&dialogAnnotationTypeNames[invalidAnnotation];
 }
 
-char pauseMenuItems[NUM_PAUSE_MENU_ITEMS][MAX_MENU_ITEM_LEN] = {
+///////////////////////////////////////////////////////////////////////////////////////////// Menus ;;
+int menuSizes[NUM_MENU_PAGES] = {
+    MENU_PAGES_LIST(TO_MENU_SIZE_INTS)
+};
+char menuPageNames[NUM_MENU_PAGES][MAX_MENU_ITEM_LEN] = {
+    MENU_PAGES_LIST(TO_STRING)
+};
+char PAUSE_MENU_ITEMS[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN] = {
     PAUSE_MENU_LIST(TO_STRING)
+};
+char SETTINGS_MENU_ITEMS[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN] = {
+    SETTINGS_MENU_LIST(TO_STRING)
+};
+#define TO_MENU_LISTING_ADDRESS(name) &(name##_ITEMS), 
+char (*menuPages[NUM_MENU_PAGES])[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN] = {
+    MENU_PAGES_LIST(TO_MENU_LISTING_ADDRESS)
 };
 
 float PLAYER_ACCELERATION = 4000;
@@ -207,4 +221,45 @@ void client::loadDialog(char* fName) {
             break;
         loadedDialog[i] = c;
     } 
+}
+
+void client::selectMenuItem() {
+    for (int i=0; i<NUM_MENU_PAGES; i++) {
+        //printf("Menu '%s' size: %d\n", menuPageNames[i], menuSizes[i]);
+    }
+    printf("Menu '%s' size %d\n", menuPageNames[menuPage], menuSizes[menuPage]);
+    switch(menuPage) {
+        case PAUSE_MENU:
+            switch(menuSelection) {
+                case menuResume:
+                    paused = false;
+                    break;
+                case menuSettings:
+                    menuPage = SETTINGS_MENU;
+                    menuSelection = 0;
+                    break;
+                case menuQuit:
+                    quitting = true;
+                    running = false;
+                    break;
+            }
+            break;
+        
+        case SETTINGS_MENU:
+            switch(menuSelection) {
+                case menuMusicVolume:
+                    break;
+                case menuSfxVolume:
+                    break;
+                case menuvoiceVolume:
+                    break;
+                case menuFullscreen:
+                    if (fullscreen)
+                        goWindowed();
+                    else
+                        goFullscreen();
+                    break;
+            }
+            break;
+    }
 }
