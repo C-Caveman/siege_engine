@@ -74,6 +74,8 @@ struct client {
     void changeActor();
     void loadDialog(char* fName);
     void selectMenuItem();
+    void menuMoveUp();
+    void menuMoveDown();
     // Player entity:
     struct ent_player* player;
     //
@@ -121,7 +123,7 @@ struct client {
     //
     char (*menuText)[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN];
     int menuPage;
-    int menuSelection;
+    int menuSelection[NUM_MENU_PAGES]; // Current selected menu item for each menu page.
 };
 
 // TODO use these for packets TODO

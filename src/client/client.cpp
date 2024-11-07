@@ -223,20 +223,33 @@ void client::loadDialog(char* fName) {
     } 
 }
 
+void client::menuMoveUp() {
+    menuSelection[menuPage]--;
+    playSound(click01);
+    if (menuSelection[menuPage] < 0)
+        menuSelection[menuPage] = 0;
+    if (menuSelection[menuPage] >= menuSizes[menuPage])
+        menuSelection[menuPage] = menuSizes[menuPage]-1;
+}
+void client::menuMoveDown() {
+    menuSelection[menuPage]++;
+    playSound(click01);
+    if (menuSelection[menuPage] < 0)
+        menuSelection[menuPage] = 0;
+    if (menuSelection[menuPage] >= menuSizes[menuPage])
+        menuSelection[menuPage] = menuSizes[menuPage]-1;
+}
 void client::selectMenuItem() {
-    for (int i=0; i<NUM_MENU_PAGES; i++) {
-        //printf("Menu '%s' size: %d\n", menuPageNames[i], menuSizes[i]);
-    }
+    int selection = menuSelection[menuPage];
     printf("Menu '%s' size %d\n", menuPageNames[menuPage], menuSizes[menuPage]);
     switch(menuPage) {
         case PAUSE_MENU:
-            switch(menuSelection) {
+            switch(selection) {
                 case menuResume:
                     paused = false;
                     break;
                 case menuSettings:
                     menuPage = SETTINGS_MENU;
-                    menuSelection = 0;
                     break;
                 case menuQuit:
                     quitting = true;
@@ -246,7 +259,7 @@ void client::selectMenuItem() {
             break;
         
         case SETTINGS_MENU:
-            switch(menuSelection) {
+            switch(selection) {
                 case menuMusicVolume:
                     break;
                 case menuSfxVolume:

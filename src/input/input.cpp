@@ -58,7 +58,6 @@ void client_input(client* client) {
                 int isBackingOut = false;
                 int isSelecting = false;
                 int isUsingPredefinedKeys = true;
-                int oldSelection = client->menuSelection;
                 switch(event.key.keysym.sym) { // Arrow/enter keys override keybindings in the menu! ;;
                     case 1073741903: // RIGHT
                         isSelecting = true;
@@ -68,10 +67,10 @@ void client_input(client* client) {
                         isBackingOut = true;
                         break;
                     case 1073741905: // DOWN
-                        client->menuSelection++;
+                        client->menuMoveDown();
                         break;
                     case 1073741906: // UP
-                        client->menuSelection--;
+                        client->menuMoveUp();
                         break;
                     case 13: // RETURN
                     case 1073741912: // KP_ENTER
@@ -92,10 +91,10 @@ void client_input(client* client) {
                         case enum_inputKeyUnbound:
                             break;
                         case enum_inputMoveUp:
-                            client->menuSelection--;
+                            client->menuMoveUp();
                             break;
                         case enum_inputMoveDown:
-                            client->menuSelection++;
+                            client->menuMoveDown();
                             break;
                         case enum_inputMoveLeft:
                             //client->paused = false;
@@ -111,20 +110,13 @@ void client_input(client* client) {
                             break;
                     }
                 }
-                if (client->menuSelection < 0)
-                    client->menuSelection = 0;
-                if (client->menuSelection >= menuSizes[client->menuPage])
-                    client->menuSelection = menuSizes[client->menuPage]-1;
-                if (client->menuSelection != oldSelection)
-                    playSound(click01);
                 if (isSelecting) {
-                    printf("Page '%s' item '%s'\n", menuPageNames[client->menuPage], menuPages[client->menuPage][0][client->menuSelection]);
+                    printf("Page '%s' item '%s'\n", menuPageNames[client->menuPage], menuPages[client->menuPage][0][client->menuSelection[client->menuPage]]);
                     playSound(click02);
                     client->selectMenuItem();
                 }
                 if (isBackingOut && client->menuPage != PAUSE_MENU) {
                     client->menuPage = PAUSE_MENU;
-                    client->menuSelection = 0;
                     playSound(click02);
                 }
                 else if (isBackingOut) {

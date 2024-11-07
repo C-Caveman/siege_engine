@@ -637,7 +637,7 @@ void renderMenu(struct client* cl) {
                 charHeight*line + topPad, 
                 charWidth, charHeight
             };
-            if (i == 0 && line == cl->menuSelection) {
+            if (i == 0 && line == cl->menuSelection[cl->menuPage]) {
                 charBox.x -= charWidth;
                 SDL_RenderCopy(renderer, textures[anim_data[menuSelector].texture_index], NULL, &charBox);
                 charBox.x += charWidth;
