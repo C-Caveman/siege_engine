@@ -53,6 +53,7 @@ struct ent_basics*  get_ent(handle i) { //------------ Get an entity by its hand
 void ent_player::init() {
     if (DEBUG_ENTS) { printf("Player entity initializing!\n"); }
     health = 1;
+    heat.interval = 8;
     pos = vec2f{0,0};
     // Init the sprites:
     num_sprites = NUM_PLAYER_SPRITES;
@@ -64,7 +65,16 @@ void ent_player::init() {
     movetype = MOVE_SPRINT;
 }
 char bogus[] =  "<apig>Hello world!";
+#define HEAT_MAX 200
 void ent_player::think() {                              // PLAYER
+    if (cl && cl->dashing && heat.count < HEAT_MAX)
+        counterInc(&heat);
+    else if (heat.count > 0 && cl && !cl->dashing)
+        counterDec(&heat);
+    if (heat.count == 100 && cl && !cl->dashing) {
+        playSound(rocketSteam);
+        heat.count = 0;
+    }
     if (cl && !cl->keyboardAiming) {
         sprites[PLAYER_CROSSHAIR].pos = cl->aim_pixel_pos.to_float();
     }

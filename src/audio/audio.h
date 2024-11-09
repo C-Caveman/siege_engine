@@ -29,5 +29,7 @@ void playMusicLoop(int index);
 void pauseMusic();
 void resumeMusic();
 int isMusicPaused();
+void setMusicVolume(float v);
+void setSfxVolume(float v);
 
 #endif

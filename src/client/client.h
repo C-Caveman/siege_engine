@@ -36,7 +36,8 @@ extern struct dialogActor actors[];
     f(Settings) \
     f(Quit)
 #define SETTINGS_MENU_LIST(f) \
-    f(MusicVolume) \
+    f(MusicVolumeUp) \
+    f(MusicVolumeDown) \
     f(SfxVolume) \
     f(voiceVolume) \
     f(Fullscreen)

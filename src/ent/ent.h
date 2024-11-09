@@ -69,6 +69,7 @@ struct ent_player {
     uint8_t movetype;   // Selected speed.
     uint8_t movetypes[NUM_MOVE_TYPES];    // Available speeds.
     struct client* cl;
+    struct counter heat;
 
     void init();
     void think();

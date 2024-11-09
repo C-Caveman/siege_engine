@@ -1,4 +1,5 @@
 #include "audio.h" 
+#include "../config/vars.h"
 #include "SDL2/SDL_mixer.h"
 
 #define MAX_FILENAME_LEN 256
@@ -60,9 +61,8 @@ void init_audio() {
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024) != 0) {
         printf("*** init_audio failed: %s\n", Mix_GetError());
     }
-    // set initial volume TODO make configurable TODO
-    Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
-    Mix_Volume(-1, MIX_MAX_VOLUME / 3);
+    setMusicVolume(musicVolume);
+    setSfxVolume(sfxVolume);
     loadSFX();
     loadMusic();
 }
@@ -111,4 +111,10 @@ void resumeMusic() {
 }
 int isMusicPaused() {
     return Mix_PausedMusic();
+}
+void setMusicVolume(float v) {
+    Mix_VolumeMusic(MIX_MAX_VOLUME * fclamp(v, 0, 1));
+}
+void setSfxVolume(float v) {
+    Mix_Volume(-1, MIX_MAX_VOLUME * fclamp(v, 0, 1));
 }

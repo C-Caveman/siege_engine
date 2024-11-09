@@ -27,7 +27,8 @@ void print_vars();
 #define FLOAT_VARS_LIST(f) \
     f(aimSpeedA) \
     f(aimSpeedB) \
-    f(floaty_flops)
+    f(musicVolume) \
+    f(sfxVolume)
 
 #define STRING_VARS_LIST(f) \
     f(welcomeMessage) \

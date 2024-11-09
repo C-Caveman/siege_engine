@@ -75,6 +75,15 @@ struct anim_info {
     uint8_t  keyframe_1;     // Frame where an event occurs.
     uint8_t  keyframe_2;     // Frame where an event occurs.
 };
+//===================================================== Counter that ticks up after 'interval' milliseconds:
+struct counter {
+    uint8_t prevTick;
+    uint8_t interval;
+    uint8_t flags;
+    uint8_t count;
+};
+void counterInc(struct counter* c);
+void counterDec(struct counter* c);
 //=======================================================================// Entities //
 #define RSIZE 80    //--------------- Diameter of entities and tiles.
 #define HW vec2f{RSIZE/2,RSIZE/2} //- Half the width of a tile/entity.
@@ -160,5 +169,8 @@ extern struct client playerClient; //-------------------------- Player client.
 float randf(); // Random float in range: [0,1]
 float randfn(); // Random float in range: [-1,1]
 vec2f angleToVector(float angle); // Convert an angle to a normalized vector.
+float vectorToAngle(vec2f v); // Convert a vector to an angle.
+float fclamp(float n, float min, float max);
+int   iclamp(int n, int min, int max);
 
 #endif

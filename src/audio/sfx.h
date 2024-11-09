@@ -24,6 +24,7 @@
     f(metalFadeIn) \
     f(metalPing) \
     f(metalThunder) \
+    f(rocketSteam) \
     f(shlick) \
     f(tack) \
     f(thud) \

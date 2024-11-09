@@ -43,10 +43,16 @@ char (*menuPages[NUM_MENU_PAGES])[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN] = {
 };
 
 float PLAYER_ACCELERATION = 4000;
+float DASH_ACCELERATION = PLAYER_ACCELERATION*3;
 void client::update_player_entity() {
     // Player movement:
+    if (dashing && accel_dir.vlen() > 0.1) {
+        aim_dir = vectorToAngle(accel_dir);
+        keyboardAiming = true;
+    }
+    
     if (dashing)
-        player->vel = player->vel + angleToVector(aim_dir)*(PLAYER_ACCELERATION/32);
+        player->vel = player->vel + angleToVector(aim_dir)*(DASH_ACCELERATION*dt);
     else
         player->vel = player->vel + (accel_dir.normalized() * (PLAYER_ACCELERATION + sprinting*PLAYER_ACCELERATION*1.25)*dt);
     
@@ -241,7 +247,7 @@ void client::menuMoveDown() {
 }
 void client::selectMenuItem() {
     int selection = menuSelection[menuPage];
-    printf("Menu '%s' size %d\n", menuPageNames[menuPage], menuSizes[menuPage]);
+    //printf("Menu '%s' size %d\n", menuPageNames[menuPage], menuSizes[menuPage]);
     switch(menuPage) {
         case PAUSE_MENU:
             switch(selection) {
@@ -260,9 +266,17 @@ void client::selectMenuItem() {
         
         case SETTINGS_MENU:
             switch(selection) {
-                case menuMusicVolume:
+                case menuMusicVolumeUp:
+                    musicVolume = fclamp(musicVolume+0.1, 0, 1);
+                    setMusicVolume(musicVolume);
+                    break;
+                case menuMusicVolumeDown:
+                    musicVolume = fclamp(musicVolume-0.1, 0, 1);
+                    setMusicVolume(musicVolume);
                     break;
                 case menuSfxVolume:
+                    sfxVolume = 0;
+                    setSfxVolume(sfxVolume);
                     break;
                 case menuvoiceVolume:
                     break;

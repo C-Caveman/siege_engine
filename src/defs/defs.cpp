@@ -188,7 +188,21 @@ vec2i vec2i::operator * (const float& scale){
 vec2i vec2i::operator / (const int& scale){
     return vec2i{x / scale, y / scale};
 }
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void counterInc(struct counter* c) {
+    int ms_since_last_count = anim_tick - c->prevTick + (anim_tick < c->prevTick)*256;
+    if (!(c->flags & (uint16_t)PAUSED) && (ms_since_last_count > c->interval)) {
+        c->prevTick = anim_tick;
+        c->count += 1;
+    }
+}
+void counterDec(struct counter* c) {
+    int ms_since_last_count = anim_tick - c->prevTick + (anim_tick < c->prevTick)*256;
+    if (!(c->flags & (uint16_t)PAUSED) && (ms_since_last_count > c->interval)) {
+        c->prevTick = anim_tick;
+        c->count -= 1;
+    }
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Utility functions:
 float randf() {
@@ -202,4 +216,21 @@ vec2f angleToVector(float angle) {
         cos(angle/180*(float)M_PI),
         sin(angle/180*(float)M_PI)
     };
+}
+float vectorToAngle(vec2f v) {
+    return (float)atan2(v.y, v.x)*180/(float)M_PI;
+}
+float fclamp(float n, float min, float max) {
+    if (n < min)
+        n = min;
+    if (n > max)
+        n = max;
+    return n;
+}
+int   iclamp(int n, int min, int max) {
+    if (n < min)
+        n = min;
+    if (n > max)
+        n = max;
+    return n;
 }
