@@ -213,7 +213,7 @@ int main() {
             vec2f {p->pos.x, p->pos.y};
                                                                                 //================// Building/Destroying tiles. //
         if (playerClient.attacking && (cur_frame_start - playerClient.lastAttackTime) > 300 && playerClient.player->heat.count < 100) {
-            playerClient.player->heat.count = (uint8_t)iclamp(20+(int)playerClient.player->heat.count, 0, 200);
+            //playerClient.player->heat.count = (uint8_t)iclamp(20+(int)playerClient.player->heat.count, 0, 200);
             playerClient.lastAttackTime = cur_frame_start;
             playerClient.player->sprites[PLAYER_GUN].frame = 0;;
             playerClient.player->sprites[PLAYER_GUN].flags &= ~PAUSED;

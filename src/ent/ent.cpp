@@ -72,7 +72,7 @@ void ent_player::think() {                              // PLAYER
     else if (heat.count > 0 && cl && !cl->dashing)
         counterDec(&heat);
     if (heat.count == 100 && cl && !cl->dashing) {
-        playSound(rocketSteam);
+        playSoundChannel(rocketSteamRelease, CHAN_ENGINE);
         heat.count = 0;
     }
     if (cl && !cl->keyboardAiming) {

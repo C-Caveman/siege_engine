@@ -24,7 +24,10 @@
     f(metalFadeIn) \
     f(metalPing) \
     f(metalThunder) \
-    f(rocketSteam) \
+    f(rocketEngineLoopSingle) \
+    f(rocketEngineLoop) \
+    f(rocketSteamHiss) \
+    f(rocketSteamRelease) \
     f(shlick) \
     f(tack) \
     f(thud) \
