@@ -220,6 +220,8 @@ void draw_ent_sprites(vec2f camera_pos, struct ent_basics* e) {
     for (int i=0; i<num_sprites; i++) {
         // Get sprite data: (stored after the basic_ent segments)
         s = &sprites[i];
+        if (s->flags & INVISIBLE) // Skip invisible sprites:
+            continue;
         anim = s->anim;
         p =    s->pos + e->pos;
         tick = s->anim_tick;

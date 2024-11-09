@@ -58,6 +58,8 @@ void ent_player::init() {
     // Init the sprites:
     num_sprites = NUM_PLAYER_SPRITES;
     sprites[PLAYER_BODY].anim = rocket_tank;
+    sprites[PLAYER_FLAMES].anim = vRocketFire01;
+    sprites[PLAYER_FLAMES].flags |= INVISIBLE | LOOPING;
     sprites[PLAYER_GUN].anim = gun_grenade;
     sprites[PLAYER_GUN].flags |= PAUSED;
     sprites[PLAYER_CROSSHAIR].anim = crosshair01;
@@ -67,6 +69,10 @@ void ent_player::init() {
 char bogus[] =  "<apig>Hello world!";
 #define HEAT_MAX 200
 void ent_player::think() {                              // PLAYER
+    if (cl && cl->dashing)
+        sprites[PLAYER_FLAMES].flags &= ~INVISIBLE;
+    else
+        sprites[PLAYER_FLAMES].flags |= INVISIBLE;
     if (cl && cl->dashing && heat.count < HEAT_MAX)
         counterInc(&heat);
     else if (heat.count > 0 && cl && !cl->dashing)
@@ -82,6 +88,8 @@ void ent_player::think() {                              // PLAYER
         vec2f crosshairDir = angleToVector(sprites[PLAYER_GUN].rotation);
         sprites[PLAYER_CROSSHAIR].pos = crosshairDir*RSIZE*4;
     }
+    sprites[PLAYER_FLAMES].rotation = sprites[PLAYER_GUN].rotation;
+    sprites[PLAYER_FLAMES].pos = angleToVector(sprites[PLAYER_GUN].rotation) * (-RSIZE*3/4);
     vec2f p = pos + HW;
     if (cl && cl->interacting) {
         for (int i=0; i<3; i++) {

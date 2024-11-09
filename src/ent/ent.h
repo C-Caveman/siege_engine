@@ -61,7 +61,7 @@ struct ent_example {
     void think(); //------------------------------------------- !!! REQUIRED !!!
     //--------------------------------------------------------- <your functions here>
 };
-enum player_sprites {PLAYER_BODY, PLAYER_GUN, PLAYER_CROSSHAIR, NUM_PLAYER_SPRITES};              // PLAYER
+enum player_sprites {PLAYER_BODY, PLAYER_FLAMES, PLAYER_GUN, PLAYER_CROSSHAIR, NUM_PLAYER_SPRITES};              // PLAYER
 enum move_types {MOVE_SNEAK, MOVE_WALK, MOVE_SPRINT, MOVE_DASH, NUM_MOVE_TYPES};
 struct ent_player {
     ENT_BASICS

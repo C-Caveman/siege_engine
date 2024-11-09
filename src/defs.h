@@ -113,8 +113,9 @@ enum ent_flags {
 };
 //============================================================================// SPRITES //
 enum sprite_flags {
-    LOOPING = 1<<0,
-    PAUSED  = 1<<1,
+    LOOPING =   1<<0,
+    PAUSED  =   1<<1,
+    INVISIBLE = 1<<2,
 };
 #define HEADER_BYTE 'H'
 struct sprite {
