@@ -212,7 +212,7 @@ int main() {
         playerClient.camera_center =
             vec2f {p->pos.x, p->pos.y};
                                                                                 //================// Building/Destroying tiles. //
-        if (playerClient.attacking && (cur_frame_start - playerClient.lastAttackTime) > 300 && playerClient.player->heat.count < 100) {
+        if (playerClient.attacking && (cur_frame_start - playerClient.lastAttackTime) > 300 && playerClient.player->heat.count < 1) {
             //playerClient.player->heat.count = (uint8_t)iclamp(20+(int)playerClient.player->heat.count, 0, 200);
             playerClient.lastAttackTime = cur_frame_start;
             playerClient.player->sprites[PLAYER_GUN].frame = 0;;
@@ -221,8 +221,8 @@ int main() {
             playSoundChannel(bam02, CHAN_WEAPON);
             void* e = spawn_ent(projectile_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
             vec2f aimDir = angleToVector(playerClient.aim_dir);
-            ((struct ent_basics*)e)->pos = playerClient.player->pos + aimDir*100;
-            ((struct ent_basics*)e)->tile = (playerClient.player->pos + aimDir*100).to_int() / RSIZE;
+            ((struct ent_basics*)e)->pos = playerClient.player->pos + aimDir*(RSIZE/2);
+            ((struct ent_basics*)e)->tile = (((struct ent_basics*)e)->pos).to_int() / RSIZE;
             ((struct ent_basics*)e)->vel = aimDir * 800;
         }
         /*

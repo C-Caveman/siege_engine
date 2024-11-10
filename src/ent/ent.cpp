@@ -53,22 +53,21 @@ struct ent_basics*  get_ent(handle i) { //------------ Get an entity by its hand
 void ent_player::init() {
     if (DEBUG_ENTS) { printf("Player entity initializing!\n"); }
     health = 1;
-    heat.interval = 8;
+    heat.interval = 4;
     pos = vec2f{0,0};
     // Init the sprites:
     num_sprites = NUM_PLAYER_SPRITES;
     sprites[PLAYER_BODY].anim = rocket_tank;
     sprites[PLAYER_FLAMES].anim = vRocketFire01;
     sprites[PLAYER_FLAMES].flags |= INVISIBLE | LOOPING;
-    sprites[PLAYER_GUN].anim = gun_grenade;
-    sprites[PLAYER_GUN].frame = anim_data[gun_grenade].len-1;
+    sprites[PLAYER_GUN].anim = gunGrenadeRetract;
+    sprites[PLAYER_GUN].frame = anim_data[gunGrenadeRetract].len-1;
     sprites[PLAYER_GUN].flags |= PAUSED;
     sprites[PLAYER_CROSSHAIR].anim = crosshair01;
     // Sprint by default:
     movetype = MOVE_SPRINT;
 }
 char bogus[] =  "<apig>Hello world!";
-#define HEAT_MAX 200
 void ent_player::think() {                              // PLAYER
     if (cl && cl->dashing)
         sprites[PLAYER_FLAMES].flags &= ~INVISIBLE;
@@ -78,19 +77,33 @@ void ent_player::think() {                              // PLAYER
         counterInc(&heat);
     else if (heat.count > 0 && cl && !cl->dashing)
         counterDec(&heat);
-    if (heat.count == 100 && cl && !cl->dashing) {
+    /*
+    if (heat.count == OVERHEAT_TEMP && cl && !cl->dashing) {
         playSoundChannel(rocketClick01, CHAN_WEAPON_ALT);
-        playSoundChannel(rocketSteamRelease, CHAN_STEAM);
+        //playSoundChannel(rocketSteamRelease, CHAN_STEAM);
         heat.count = 0;
-        sprites[PLAYER_GUN].anim = gun_grenade;
-        sprites[PLAYER_GUN].frame = anim_data[gun_grenade].len-1;
+        sprites[PLAYER_GUN].anim = gunGrenadeRetract;
+        sprites[PLAYER_GUN].frame = anim_data[gunGrenadeRetract].len-1;
         sprites[PLAYER_GUN].flags |= PAUSED;
     }
-    else if (heat.count == 100 && cl && cl->dashing) {
+    else if (heat.count == OVERHEAT_TEMP && cl && cl->dashing) {
         playSoundChannel(rocketClick03, CHAN_WEAPON_ALT);
-        sprites[PLAYER_GUN].anim = gunGrenadeRetract;
+        sprites[PLAYER_GUN].anim = gunGrenadeBoost;
         sprites[PLAYER_GUN].frame = 0;
-        sprites[PLAYER_GUN].flags &= ~PAUSED;
+        sprites[PLAYER_GUN].flags |= PAUSED;
+        //sprites[PLAYER_GUN].flags &= ~PAUSED;
+    }
+    */
+    if (heat.count > 0) {
+        if (heat.count == HEAT_MAX && sprites[PLAYER_GUN].frame < anim_data[gunGrenadeBoost].len-1)
+            playSoundChannel(rocketClick03, CHAN_WEAPON_ALT);
+        sprites[PLAYER_GUN].anim = gunGrenadeBoost;
+        sprites[PLAYER_GUN].flags |= PAUSED;
+        sprites[PLAYER_GUN].frame = (int)((float)heat.count/(float)(HEAT_MAX)*(float)(anim_data[gunGrenadeBoost].len-1));
+    }
+    else if (cl && !cl->dashing && sprites[PLAYER_GUN].anim == gunGrenadeBoost && heat.count <= 0) {
+        sprites[PLAYER_GUN].anim = gunGrenadeRetract;
+        sprites[PLAYER_GUN].frame = anim_data[gunGrenadeRetract].len-1;
     }
     if (cl && !cl->keyboardAiming) {
         sprites[PLAYER_CROSSHAIR].pos = cl->aim_pixel_pos.to_float();

@@ -241,7 +241,7 @@ void client_input(client* client) {
                     client->dashing = false;
                     playMusicLoop(loopSilence);
                     playSoundChannel(rocketEngineShutdown, CHAN_ENGINE);
-                    if (client->player->heat.count >= 100)
+                    if (client->player->heat.count >= HEAT_MAX)
                         playSoundChannel(rocketSteamHiss, CHAN_STEAM);
                     break;
             }

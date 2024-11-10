@@ -63,6 +63,8 @@ struct ent_example {
 };
 enum player_sprites {PLAYER_BODY, PLAYER_FLAMES, PLAYER_GUN, PLAYER_CROSSHAIR, NUM_PLAYER_SPRITES};              // PLAYER
 enum move_types {MOVE_SNEAK, MOVE_WALK, MOVE_SPRINT, MOVE_DASH, NUM_MOVE_TYPES};
+#define HEAT_MAX 100
+#define OVERHEAT_TEMP 50
 struct ent_player {
     ENT_BASICS
     struct sprite sprites[NUM_PLAYER_SPRITES];

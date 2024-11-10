@@ -25,6 +25,9 @@
     f(gun_chaingun) \
     f(gun_grenade) \
     f(gun_grenade_backup) \
+    f(gunGrenadeBoost) \
+    f(gunGrenadeBoost02) \
+    f(gunGrenadeBoost03) \
     f(gunGrenadeRetract) \
     f(gun_plasma) \
     f(gun_railgun) \
