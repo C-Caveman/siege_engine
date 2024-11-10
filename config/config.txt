@@ -31,8 +31,8 @@ inputSneak LCTRL
 inputBuild ????????
 inputAttack SPACE
 
-aimSpeedA 120.0
-aimSpeedB 120.0
+aimSpeedA 200.0
+aimSpeedB 200.0
 #inputAimSpeed UP
 inputAimReverse UP
 inputAimLeft LEFT

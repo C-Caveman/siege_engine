@@ -159,6 +159,7 @@ void client_input(client* client) {
                     break;
                 case enum_inputAimReverse:
                     client->aim_dir += 180;
+                    playSoundChannel(rocketReverse, CHAN_WEAPON_ALT);
                     break;
                 case enum_inputAimSpeed:
                     client->aimSpeed = aimSpeedB;
@@ -239,10 +240,9 @@ void client_input(client* client) {
                 case enum_inputDash:
                     client->dashing = false;
                     playMusicLoop(loopSilence);
+                    playSoundChannel(rocketEngineShutdown, CHAN_ENGINE);
                     if (client->player->heat.count >= 100)
-                        playSoundChannel(rocketSteamHiss, CHAN_ENGINE);
-                    else
-                        playSoundChannel(rocketSteamRelease, CHAN_ENGINE);
+                        playSoundChannel(rocketSteamHiss, CHAN_STEAM);
                     break;
             }
         }

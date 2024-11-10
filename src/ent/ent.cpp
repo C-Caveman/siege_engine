@@ -61,6 +61,7 @@ void ent_player::init() {
     sprites[PLAYER_FLAMES].anim = vRocketFire01;
     sprites[PLAYER_FLAMES].flags |= INVISIBLE | LOOPING;
     sprites[PLAYER_GUN].anim = gun_grenade;
+    sprites[PLAYER_GUN].frame = anim_data[gun_grenade].len-1;
     sprites[PLAYER_GUN].flags |= PAUSED;
     sprites[PLAYER_CROSSHAIR].anim = crosshair01;
     // Sprint by default:
@@ -78,8 +79,18 @@ void ent_player::think() {                              // PLAYER
     else if (heat.count > 0 && cl && !cl->dashing)
         counterDec(&heat);
     if (heat.count == 100 && cl && !cl->dashing) {
-        playSoundChannel(rocketSteamRelease, CHAN_ENGINE);
+        playSoundChannel(rocketClick01, CHAN_WEAPON_ALT);
+        playSoundChannel(rocketSteamRelease, CHAN_STEAM);
         heat.count = 0;
+        sprites[PLAYER_GUN].anim = gun_grenade;
+        sprites[PLAYER_GUN].frame = anim_data[gun_grenade].len-1;
+        sprites[PLAYER_GUN].flags |= PAUSED;
+    }
+    else if (heat.count == 100 && cl && cl->dashing) {
+        playSoundChannel(rocketClick03, CHAN_WEAPON_ALT);
+        sprites[PLAYER_GUN].anim = gunGrenadeRetract;
+        sprites[PLAYER_GUN].frame = 0;
+        sprites[PLAYER_GUN].flags &= ~PAUSED;
     }
     if (cl && !cl->keyboardAiming) {
         sprites[PLAYER_CROSSHAIR].pos = cl->aim_pixel_pos.to_float();
@@ -169,7 +180,7 @@ void ent_projectile::think() {
     }
     if (curTile != 0 && curTile->wall_height > 0 && !isExploding) {
         isExploding = 1;
-        playSoundChannel(explosion01, CHAN_EXPLOSION + (rand() % NUM_EXPLOSION_CHANNELS) );
+        playSoundChannel(explosion01, CHAN_EXPLOSION);
         //playSound(chow);
         sprites[0].anim = grenade01Explode;
         sprites[0].frame = 3;

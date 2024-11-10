@@ -24,8 +24,13 @@
     f(metalFadeIn) \
     f(metalPing) \
     f(metalThunder) \
+    f(rocketClick01) \
+    f(rocketClick02) \
+    f(rocketClick03) \
     f(rocketEngineLoopSingle) \
     f(rocketEngineLoop) \
+    f(rocketEngineShutdown) \
+    f(rocketReverse) \
     f(rocketSteamHiss) \
     f(rocketSteamRelease) \
     f(shlick) \

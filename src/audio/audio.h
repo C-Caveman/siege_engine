@@ -4,12 +4,11 @@
 #include "sfx.h"
 #include "music.h"
 #define NUM_UNUSED_SOUND_CHANNELS 2
-#define NUM_EXPLOSION_CHANNELS 2
 
 enum soundChannels {
     CHAN_EXPLOSION,
-    CHAN_EXPLOSION_END=CHAN_EXPLOSION+NUM_EXPLOSION_CHANNELS,
     CHAN_WEAPON,
+    CHAN_WEAPON_ALT,
     CHAN_ENGINE,
     CHAN_STEAM,
     

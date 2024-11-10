@@ -25,6 +25,7 @@
     f(gun_chaingun) \
     f(gun_grenade) \
     f(gun_grenade_backup) \
+    f(gunGrenadeRetract) \
     f(gun_plasma) \
     f(gun_railgun) \
     f(knight_1) \
