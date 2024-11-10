@@ -95,8 +95,10 @@ void ent_player::think() {                              // PLAYER
     }
     */
     if (heat.count > 0) {
-        if (heat.count == HEAT_MAX && sprites[PLAYER_GUN].frame < anim_data[gunGrenadeBoost].len-1)
+        if (heat.count == HEAT_MAX && sprites[PLAYER_GUN].frame < anim_data[gunGrenadeBoost].len-1) {
             playSoundChannel(rocketClick03, CHAN_WEAPON_ALT);
+            playMusicLoop(rocketEngineLoopMusicFast);
+        }
         sprites[PLAYER_GUN].anim = gunGrenadeBoost;
         sprites[PLAYER_GUN].flags |= PAUSED;
         sprites[PLAYER_GUN].frame = (int)((float)heat.count/(float)(HEAT_MAX)*(float)(anim_data[gunGrenadeBoost].len-1));

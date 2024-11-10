@@ -44,6 +44,7 @@ char (*menuPages[NUM_MENU_PAGES])[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN] = {
 
 float PLAYER_ACCELERATION = 4000;
 float DASH_ACCELERATION = PLAYER_ACCELERATION*3;
+float BONUS_DASH_ACCELERATION = PLAYER_ACCELERATION*2;
 void client::update_player_entity() {
     // Player movement:
     if (dashing && accel_dir.vlen() > 0.1) {
@@ -52,7 +53,7 @@ void client::update_player_entity() {
     }
     
     if (dashing)
-        player->vel = player->vel + angleToVector(aim_dir)*(DASH_ACCELERATION*dt);
+        player->vel = player->vel + angleToVector(aim_dir)*((DASH_ACCELERATION+BONUS_DASH_ACCELERATION*(player->heat.count == HEAT_MAX))*dt);
     else
         player->vel = player->vel + (accel_dir.normalized() * (PLAYER_ACCELERATION + sprinting*PLAYER_ACCELERATION*1.25)*dt);
     
