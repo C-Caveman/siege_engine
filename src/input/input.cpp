@@ -299,9 +299,9 @@ void client_input(client* client) {
         client->aimSpeed = aimSpeedA;
     // send the rotation to the gun
     if (client->aim_dir_rotation < 0)
-        client->aim_dir -= client->aimSpeed * dt * ((client->dashing) ? 2 : 1);
+        client->aim_dir -= client->aimSpeed * dt * ((client->dashing) ? 1.5f : 1.f);
     if (client->aim_dir_rotation > 0)
-        client->aim_dir += client->aimSpeed * dt * ((client->dashing) ? 2 : 1);
+        client->aim_dir += client->aimSpeed * dt * ((client->dashing) ? 1.5f : 1.f);
     // only override keyboard aim if mouse is moving
     SDL_GetMouseState(&client->aim_pixel_pos.x, &client->aim_pixel_pos.y);
     client->aim_pixel_pos.x = (client->aim_pixel_pos.x*(RSIZE/tileWidth) - window_x/2*(RSIZE/tileWidth));

@@ -238,22 +238,19 @@ int main() {
         */
         if (playerClient.building && (cur_frame_start - playerClient.lastBuildTime) > 50) {
             //build_wall(playerClient.camera_center, playerClient.aim_pixel_pos, chunk_0);
-            //
-            int isClear = isPathToTileClear(p->pos,
-                                            vec2f{cos(playerClient.aim_dir/180*(float)M_PI),
-                                            sin(playerClient.aim_dir/180*(float)M_PI)},
-                                            getTileAtCursor(&playerClient));
-            tile* timmy = raycast_upto_selected_tile(p->pos,
-                                                   vec2f{cos(playerClient.aim_dir/180*(float)M_PI),
-                                                         sin(playerClient.aim_dir/180*(float)M_PI)},
-                                                   getTileAtCursor(&playerClient));
+            
+            //int isClear = isPathToTileClear(p->pos,
+            //                                vec2f{cos(playerClient.aim_dir/180*(float)M_PI),
+            //                                sin(playerClient.aim_dir/180*(float)M_PI)},
+            //                                getTileAtCursor(&playerClient));
+            tile* timmy = main_world->get_tile(getTileAtCursor(&playerClient));
             for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
                 if (timmy == nullptr)
                     break;
                 if (timmy->ents[i] != 0)
                     timmy = nullptr;
             }
-            if (isClear && timmy != nullptr) {
+            if (timmy != nullptr && timmy->wall_height <= 0) {
                 playerClient.lastBuildTime = cur_frame_start;
                 timmy->wall_height = 8;
                 timmy->floor_anim = grass1Floor;
