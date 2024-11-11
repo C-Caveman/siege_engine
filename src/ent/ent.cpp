@@ -132,7 +132,7 @@ void ent_player::think() {                              // PLAYER
         counterDec(&heat);
     if (heat.count > 0) {
         if (heat.count == HEAT_MAX && sprites[PLAYER_GUN].frame < anim_data[gunGrenadeBoost].len-1) {
-            playSoundChannel(rocketClick03, CHAN_WEAPON_ALT);
+            playSoundChannel(rocketBoostEngage, CHAN_WEAPON_ALT);
             playMusicLoop(rocketEngineLoopMusicFast);
             sprites[PLAYER_FLAMES_EXTRA].flags &= ~INVISIBLE;
         }
@@ -140,10 +140,13 @@ void ent_player::think() {                              // PLAYER
         sprites[PLAYER_GUN].flags |= PAUSED;
         sprites[PLAYER_GUN].frame = (int)((float)heat.count/(float)(HEAT_MAX)*(float)(anim_data[gunGrenadeBoost].len-1));
         sprites[PLAYER_BODY].frame = (int)((float)heat.count/(float)(HEAT_MAX)*(float)(anim_data[vTankBody03].len-1));
+        sprites[PLAYER_CROSSHAIR].frame = (int)((float)heat.count/(float)(HEAT_MAX)*(float)(anim_data[crosshair01].len-1));
     }
     else if (cl && !cl->dashing && sprites[PLAYER_GUN].anim == gunGrenadeBoost && heat.count <= 0) {
         sprites[PLAYER_GUN].anim = gunGrenadeRetract;
         sprites[PLAYER_GUN].frame = anim_data[gunGrenadeRetract].len-1;
+        playSoundChannel(rocketBoostEnd, CHAN_WEAPON_ALT);
+        sprites[PLAYER_CROSSHAIR].frame = 0;
     }
     if (cl && !cl->keyboardAiming) {
         sprites[PLAYER_CROSSHAIR].pos = cl->aim_pixel_pos.to_float();

@@ -28,6 +28,7 @@
     f(gunGrenadeBoost) \
     f(gunGrenadeBoost02) \
     f(gunGrenadeBoost03) \
+    f(gunGrenadeBoost04) \
     f(gunGrenadeRetract) \
     f(gun_plasma) \
     f(gun_railgun) \

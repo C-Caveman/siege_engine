@@ -25,6 +25,10 @@
     f(metalFadeIn) \
     f(metalPing) \
     f(metalThunder) \
+    f(rocketBoostEnd) \
+    f(rocketBoostEngage02) \
+    f(rocketBoostEngageNoiseless02) \
+    f(rocketBoostEngage) \
     f(rocketClick01) \
     f(rocketClick02) \
     f(rocketClick03) \

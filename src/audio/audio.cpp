@@ -45,7 +45,7 @@ void loadMusic() {
     }
     for (int i=0; i<NUM_MUSIC; i++) {
         snprintf(fileName, sizeof(fileName), "assets/audio/music/%.*s.ogg", (int)strnlen(musicNames[i], MAX_MUSIC_NAME_LEN), musicNames[i]);
-        printf("Loading music: '%s'\n", fileName);
+        //printf("Loading music: '%s'\n", fileName);
         musics[i] = Mix_LoadMUS(fileName);
         if (!musics[i])
             musics[i] = placeholderMusicPtr;

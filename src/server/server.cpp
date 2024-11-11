@@ -171,7 +171,7 @@ int main() {
     ent_scenery* s = (ent_scenery*)spawn_ent(scenery_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
     s->pos = vec2f{(float)(RSIZE*1.5), RSIZE*CHUNK_WIDTH/2};
     s->fren = p->h;
-    printf("*Type name: '%s'\n", get_type_name(s->type));
+    //printf("*Type name: '%s'\n", get_type_name(s->type));
     struct ent_basics* bunny = (struct ent_basics*)spawn_ent(rabbit_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
     bunny->pos = vec2f{RSIZE*2, RSIZE*2};
     struct ent_basics* zombieGuy = (struct ent_basics*)spawn_ent(zombie_type, main_world->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
