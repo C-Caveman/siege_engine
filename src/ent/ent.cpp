@@ -113,6 +113,10 @@ void playerInteract(struct ent_basics* player, struct ent_basics* useTarget) {
         strcpy(playerClient.loadedDialog, bogus);
         playerClient.startDialog(playerClient.loadedDialog);
     }
+    else if (useTarget && useTarget->type == rabbit_type) {
+        user->cl->interacting = false;
+        playSound(meow);
+    }
 }
 void ent_player::think() {                              // PLAYER
     if (cl && cl->dashing) {

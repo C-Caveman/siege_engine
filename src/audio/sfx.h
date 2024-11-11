@@ -21,6 +21,7 @@
     f(fump) \
     f(fuseLight) \
     f(fwaf) \
+    f(meow) \
     f(metalFadeIn) \
     f(metalPing) \
     f(metalThunder) \
