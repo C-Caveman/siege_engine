@@ -57,9 +57,12 @@ void ent_player::init() {
     pos = vec2f{0,0};
     // Init the sprites:
     num_sprites = NUM_PLAYER_SPRITES;
-    sprites[PLAYER_BODY].anim = rocket_tank;
+    sprites[PLAYER_BODY].anim = vTankBody03;
+    sprites[PLAYER_BODY].flags |= PAUSED;
     sprites[PLAYER_FLAMES].anim = vRocketFire01;
     sprites[PLAYER_FLAMES].flags |= INVISIBLE | LOOPING;
+    sprites[PLAYER_FLAMES_EXTRA].anim = vRocketFire02;
+    sprites[PLAYER_FLAMES_EXTRA].flags |= INVISIBLE | LOOPING;
     sprites[PLAYER_GUN].anim = gunGrenadeRetract;
     sprites[PLAYER_GUN].frame = anim_data[gunGrenadeRetract].len-1;
     sprites[PLAYER_GUN].flags |= PAUSED;
@@ -69,39 +72,27 @@ void ent_player::init() {
 }
 char bogus[] =  "<apig>Hello world!";
 void ent_player::think() {                              // PLAYER
-    if (cl && cl->dashing)
+    if (cl && cl->dashing) {
         sprites[PLAYER_FLAMES].flags &= ~INVISIBLE;
-    else
+    }
+    else {
         sprites[PLAYER_FLAMES].flags |= INVISIBLE;
+        sprites[PLAYER_FLAMES_EXTRA].flags |= INVISIBLE;
+    }
     if (cl && cl->dashing && heat.count < HEAT_MAX)
         counterInc(&heat);
     else if (heat.count > 0 && cl && !cl->dashing)
         counterDec(&heat);
-    /*
-    if (heat.count == OVERHEAT_TEMP && cl && !cl->dashing) {
-        playSoundChannel(rocketClick01, CHAN_WEAPON_ALT);
-        //playSoundChannel(rocketSteamRelease, CHAN_STEAM);
-        heat.count = 0;
-        sprites[PLAYER_GUN].anim = gunGrenadeRetract;
-        sprites[PLAYER_GUN].frame = anim_data[gunGrenadeRetract].len-1;
-        sprites[PLAYER_GUN].flags |= PAUSED;
-    }
-    else if (heat.count == OVERHEAT_TEMP && cl && cl->dashing) {
-        playSoundChannel(rocketClick03, CHAN_WEAPON_ALT);
-        sprites[PLAYER_GUN].anim = gunGrenadeBoost;
-        sprites[PLAYER_GUN].frame = 0;
-        sprites[PLAYER_GUN].flags |= PAUSED;
-        //sprites[PLAYER_GUN].flags &= ~PAUSED;
-    }
-    */
     if (heat.count > 0) {
         if (heat.count == HEAT_MAX && sprites[PLAYER_GUN].frame < anim_data[gunGrenadeBoost].len-1) {
             playSoundChannel(rocketClick03, CHAN_WEAPON_ALT);
             playMusicLoop(rocketEngineLoopMusicFast);
+            sprites[PLAYER_FLAMES_EXTRA].flags &= ~INVISIBLE;
         }
         sprites[PLAYER_GUN].anim = gunGrenadeBoost;
         sprites[PLAYER_GUN].flags |= PAUSED;
         sprites[PLAYER_GUN].frame = (int)((float)heat.count/(float)(HEAT_MAX)*(float)(anim_data[gunGrenadeBoost].len-1));
+        sprites[PLAYER_BODY].frame = (int)((float)heat.count/(float)(HEAT_MAX)*(float)(anim_data[vTankBody03].len-1));
     }
     else if (cl && !cl->dashing && sprites[PLAYER_GUN].anim == gunGrenadeBoost && heat.count <= 0) {
         sprites[PLAYER_GUN].anim = gunGrenadeRetract;
@@ -116,6 +107,8 @@ void ent_player::think() {                              // PLAYER
     }
     sprites[PLAYER_FLAMES].rotation = sprites[PLAYER_GUN].rotation;
     sprites[PLAYER_FLAMES].pos = angleToVector(sprites[PLAYER_GUN].rotation) * (-RSIZE*3/4);
+    sprites[PLAYER_FLAMES_EXTRA].rotation = sprites[PLAYER_FLAMES].rotation;
+    sprites[PLAYER_FLAMES_EXTRA].pos = sprites[PLAYER_FLAMES].pos * 1.8;
     vec2f p = pos + HW;
     if (cl && cl->interacting) {
         for (int i=0; i<3; i++) {

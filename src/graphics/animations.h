@@ -53,10 +53,15 @@
     f(tiledark_backup) \
     f(tileDirt01) \
     f(tileGold01) \
-    f(tilegrate01) \
+    f(tileGrate01) \
     f(tileMetal01) \
+    f(tileMetal03) \
     f(tileTest01) \
     f(vRocketFire01) \
+    f(vRocketFire02) \
+    f(vTankBody01) \
+    f(vTankBody02) \
+    f(vTankBody03) \
     f(wall_steel) \
     f(wall_steel_side) \
     f(zombie) \

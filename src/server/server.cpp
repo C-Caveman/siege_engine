@@ -154,7 +154,7 @@ int main() {
     chunk_0->set_floors(tileGold01);
     for (int y=0; y<WORLD_WIDTH; y++) {
         for (int x=0; x<WORLD_WIDTH; x++)
-            test_world.chunks[y][x].set_floors(tileGold01);
+            test_world.chunks[y][x].set_floors(tileMetal03);
     }
     for (int y=0; y<CHUNK_WIDTH; y++) {
         chunk_0->set_wall(0,y, wall_steel,wall_steel_side,16);
