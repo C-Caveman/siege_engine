@@ -50,6 +50,38 @@ struct ent_basics*  get_ent(handle i) { //------------ Get an entity by its hand
     else
         { handles[i].copies--; return nullptr; }
 }//===============================================================================// ENTITY FUNCTIONS. //;;
+void nearbyEntInteraction(vec2f position, void (*fn)(struct ent_basics*)) {
+    vec2f p = position + HW - vec2f{RSIZE,RSIZE}; // Top left corner of the 3x3.
+    for (int i=0; i<3; i++) {
+        for (int j=0; j<3; j++) {
+            for (int k=0; k<MAX_ENTS_PER_TILE; k++) {
+                struct tile* curTile = main_world->tileFromPos(p + vec2f{0,RSIZE}*(float)(i) + vec2f{RSIZE,0}*(float)(j));
+                if (curTile) {
+                    ent_basics* useTarget = get_ent(curTile->ents[k]);
+                    if (useTarget) {
+                        fn(useTarget);
+                    }
+                }
+            }
+        }
+    }
+}
+void nearbyEntInteractionBidirectional(struct ent_basics* user, void (*fn)(struct ent_basics*, struct ent_basics*)) {
+    vec2f p = user->pos + HW - vec2f{RSIZE,RSIZE}; // Top left corner of the 3x3.
+    for (int i=0; i<3; i++) {
+        for (int j=0; j<3; j++) {
+            for (int k=0; k<MAX_ENTS_PER_TILE; k++) {
+                struct tile* curTile = main_world->tileFromPos(p + vec2f{0,RSIZE}*(float)(i) + vec2f{RSIZE,0}*(float)(j));
+                if (curTile) {
+                    ent_basics* useTarget = get_ent(curTile->ents[k]);
+                    if (useTarget) {
+                        fn(user, useTarget);
+                    }
+                }
+            }
+        }
+    }
+}
 void ent_player::init() {
     if (DEBUG_ENTS) { printf("Player entity initializing!\n"); }
     health = 1;
@@ -70,7 +102,18 @@ void ent_player::init() {
     // Sprint by default:
     movetype = MOVE_SPRINT;
 }
-char bogus[] =  "<apig>Hello world!";
+char bogus[] =  "<apig>Hello world!\n";
+void playerInteract(struct ent_basics* player, struct ent_basics* useTarget) {
+    struct ent_player* user = (struct ent_player*)player;
+    if (useTarget && useTarget->type == scenery_type && user->cl && user->cl->interacting) {
+        printf("Used a scenery ent!\n");
+        user->cl->interacting = false;
+        //cl->interacting = false;
+        //playerClient.loadDialog((char*)"assets/worlds/testWorld/hello.txt");
+        strcpy(playerClient.loadedDialog, bogus);
+        playerClient.startDialog(playerClient.loadedDialog);
+    }
+}
 void ent_player::think() {                              // PLAYER
     if (cl && cl->dashing) {
         sprites[PLAYER_FLAMES].flags &= ~INVISIBLE;
@@ -109,25 +152,9 @@ void ent_player::think() {                              // PLAYER
     sprites[PLAYER_FLAMES].pos = angleToVector(sprites[PLAYER_GUN].rotation) * (-RSIZE*3/4);
     sprites[PLAYER_FLAMES_EXTRA].rotation = sprites[PLAYER_FLAMES].rotation;
     sprites[PLAYER_FLAMES_EXTRA].pos = sprites[PLAYER_FLAMES].pos * 1.8;
-    vec2f p = pos + HW;
+    //vec2f p = pos + HW;
     if (cl && cl->interacting) {
-        for (int i=0; i<3; i++) {
-            for (int j=0; j<3; j++) {
-                for (int k=0; k<MAX_ENTS_PER_TILE; k++) {
-                    struct tile* curTile = main_world->tileFromPos(p + vec2f{0,RSIZE}*(float)(i) + vec2f{RSIZE,0}*(float)(j));
-                    if (curTile) {
-                        ent_basics* useTarget = get_ent(curTile->ents[k]);
-                        if (useTarget && useTarget->type == scenery_type) {
-                            printf("Used a scenery ent!\n");
-                            cl->interacting = false;
-                            //playerClient.loadDialog((char*)"assets/worlds/testWorld/hello.txt");
-                            strcpy(playerClient.loadedDialog, bogus);
-                            playerClient.startDialog(playerClient.loadedDialog);
-                        }
-                    }
-                }
-            }
-        }
+        nearbyEntInteractionBidirectional((struct ent_basics*)this, playerInteract);
     }
 }
 
@@ -152,30 +179,23 @@ void ent_projectile::init() {                           // PROJECTILE
     lifetime = 100;
     isExploding = 0;
 }
+void projectileHitNearby(struct ent_basics* attacker, struct ent_basics* victim) {
+    if (victim && victim->type == zombie_type && victim->health > 0) {
+        float victimDistance = attacker->pos.dist(victim->pos);
+        if (victimDistance > RSIZE*0.8) {
+            return;
+        }
+        victim->health -= 1;
+        ((struct ent_projectile*)attacker)->lifetime = 0;
+    }
+}
+
 void ent_projectile::think() {
     lifetime -= 1;
     struct tile* curTile = 0;
     vec2f p = pos + HW;
     p = p - vec2f{RSIZE,RSIZE};
-    float victimDistance;
-    for (int i=0; i<3; i++) { //TODO make a function for this!!!! TODO
-        for (int j=0; j<3; j++) {
-            for (int k=0; k<MAX_ENTS_PER_TILE; k++) {
-                curTile = main_world->tileFromPos(p + vec2f{0,RSIZE}*(float)(i) + vec2f{RSIZE,0}*(float)(j));
-                if (curTile) {
-                    ent_basics* victim = get_ent(curTile->ents[k]);
-                    if (victim && victim->type == zombie_type && victim->health > 0) {
-                        victimDistance = pos.dist(victim->pos);
-                        if (victimDistance > RSIZE*0.8) {
-                            continue;
-                        }
-                        victim->health -= 1;
-                        lifetime = 0;
-                    }
-                }
-            }
-        }
-    }
+    nearbyEntInteractionBidirectional((struct ent_basics*)this, projectileHitNearby);
     curTile = main_world->tileFromPos(pos + HW);
     if (lifetime <= 0 && !isExploding) {
         isExploding = 1;
