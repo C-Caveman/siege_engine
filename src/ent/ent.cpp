@@ -102,7 +102,9 @@ void ent_player::init() {
     // Sprint by default:
     movetype = MOVE_SPRINT;
 }
-char bogus[] =  "<apig>Hello world!\n";
+int numRabbitPets = 0;
+#define INTERACT_DIALOG_LEN 256
+char rabbitPetDialog[INTERACT_DIALOG_LEN];
 void playerInteract(struct ent_basics* player, struct ent_basics* useTarget) {
     struct ent_player* user = (struct ent_player*)player;
     if (useTarget && useTarget->type == scenery_type && user->cl && user->cl->interacting) {
@@ -110,12 +112,25 @@ void playerInteract(struct ent_basics* player, struct ent_basics* useTarget) {
         user->cl->interacting = false;
         //cl->interacting = false;
         //playerClient.loadDialog((char*)"assets/worlds/testWorld/hello.txt");
-        strcpy(playerClient.loadedDialog, bogus);
+        strcpy(playerClient.loadedDialog, (char*)"<apig>Hello world!\n");
         playerClient.startDialog(playerClient.loadedDialog);
     }
     else if (useTarget && useTarget->type == rabbit_type) {
         user->cl->interacting = false;
         playSound(meow);
+        numRabbitPets++;
+        if (numRabbitPets == 1)
+            snprintf(playerClient.dialogPrintString, INTERACT_DIALOG_LEN, "You pet the rabbit 1 time.                      \n");
+        else
+            snprintf(playerClient.dialogPrintString, INTERACT_DIALOG_LEN, "You pet the rabbit %d times.                    \n", numRabbitPets);
+        if (!playerClient.dialogVisible) {
+            strcpy(playerClient.dialogAnnotation, (char*)"book");
+            playerClient.changeActor();
+            playerClient.startDialog(playerClient.dialogPrintString);
+        }
+        else if ((size_t)playerClient.dialogStringPos >= strnlen(playerClient.dialogPrintString, INTERACT_DIALOG_LEN)-20) {
+            playerClient.dialogWaitTimer = 5000;
+        }
     }
 }
 void ent_player::think() {                              // PLAYER

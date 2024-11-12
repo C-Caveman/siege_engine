@@ -54,11 +54,24 @@
     f(typewriterAPunct3) \
     f(typewriterARattle1) \
     f(typewriterARattle2) \
+    f(voiceAlert01) \
+    f(voiceAlert02) \
+    f(voiceAlert03) \
+    f(voiceAlert04) \
+    f(voiceComs01) \
+    f(voiceComs02) \
+    f(voiceComs03) \
     f(voiceDeadpan) \
     f(voiceDeep) \
     f(voiceEngine01) \
     f(voiceGraw) \
+    f(voiceHarsh01) \
+    f(voiceHarsh02) \
+    f(voiceHarsh03) \
+    f(voiceHarsh04) \
     f(voiceImpactLight) \
+    f(voiceJolly01) \
+    f(voiceJolly02) \
     f(voiceLady) \
     f(voiceLamb01) \
     f(voiceLamb02) \
@@ -74,6 +87,7 @@
     f(voiceRobot01a) \
     f(voiceRobot01b) \
     f(voiceRobot02a) \
+    f(voiceRobot02bb) \
     f(voiceRobot02b) \
     f(voiceRobot02c) \
     f(voiceRobot02d) \
@@ -86,6 +100,9 @@
     f(voiceThudA1) \
     f(voiceThudA2) \
     f(voiceThudA3) \
+    f(voiceTickerTape01) \
+    f(voiceTickerTape02) \
+    f(voiceTickerTape03) \
     f(wAutoCannon) \
     f(wHeavyCannon01) \
     f(wShotgun01) \

@@ -57,6 +57,7 @@
     f(tileGrate01) \
     f(tileMetal01) \
     f(tileMetal03) \
+    f(tileMetal04) \
     f(tileTest01) \
     f(vRocketFire01) \
     f(vRocketFire02) \
