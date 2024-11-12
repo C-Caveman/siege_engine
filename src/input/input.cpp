@@ -188,8 +188,8 @@ void client_input(client* client) {
                     break;
                 case enum_inputDash:
                     client->dashing = true;
-                    //playSoundChannel(rocketEngineLoop, CHAN_ENGINE);
-                    playMusicLoop(rocketEngineLoopMusic);
+                    playSoundChannel(rocketEngineLoop, CHAN_ENGINE);
+                    //playMusicLoop(rocketEngineLoopMusic);
                     break;
                 case enum_inputPause:
                     client->paused = !client->paused;
@@ -239,7 +239,6 @@ void client_input(client* client) {
                     break;
                 case enum_inputDash:
                     client->dashing = false;
-                    playMusicLoop(loopSilence);
                     playSoundChannel(rocketEngineShutdown, CHAN_ENGINE);
                     if (client->player->heat.count >= HEAT_MAX)
                         playSoundChannel(rocketSteamHiss, CHAN_STEAM);

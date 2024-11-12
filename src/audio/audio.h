@@ -29,5 +29,6 @@ void resumeMusic();
 int isMusicPaused();
 void setMusicVolume(float v);
 void setSfxVolume(float v);
+int isChannelPlaying(int channel);
 
 #endif

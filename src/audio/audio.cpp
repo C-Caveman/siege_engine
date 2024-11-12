@@ -118,3 +118,6 @@ void setMusicVolume(float v) {
 void setSfxVolume(float v) {
     Mix_Volume(-1, MIX_MAX_VOLUME * fclamp(v, 0, 1));
 }
+int isChannelPlaying(int channel) {
+    return Mix_Playing(channel);
+}

@@ -8,8 +8,6 @@
     f(campfire01) \
     f(dorian01) \
     f(loopSilence) \
-    f(rocketEngineLoopMusicFast) \
-    f(rocketEngineLoopMusic) \
     f(spookyWind1) \
     f(squaretoothX01) \
 

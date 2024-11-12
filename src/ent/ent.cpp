@@ -145,10 +145,16 @@ void ent_player::think() {                              // PLAYER
         counterInc(&heat);
     else if (heat.count > 0 && cl && !cl->dashing)
         counterDec(&heat);
+    if (cl && cl->dashing && heat.count < HEAT_MAX && !isChannelPlaying(CHAN_ENGINE)) {
+        playSoundChannel(rocketEngineLoop, CHAN_ENGINE);
+    }
+    else if (cl && cl->dashing && heat.count == HEAT_MAX && !isChannelPlaying(CHAN_ENGINE)) {
+        playSoundChannel(rocketEngineLoopFast, CHAN_ENGINE);
+    }
     if (heat.count > 0) {
         if (heat.count == HEAT_MAX && sprites[PLAYER_GUN].frame < anim_data[gunGrenadeBoost].len-1) {
             playSoundChannel(rocketBoostEngage, CHAN_WEAPON_ALT);
-            playMusicLoop(rocketEngineLoopMusicFast);
+            playSoundChannel(rocketEngineLoopFast, CHAN_ENGINE);
             sprites[PLAYER_FLAMES_EXTRA].flags &= ~INVISIBLE;
         }
         sprites[PLAYER_GUN].anim = gunGrenadeBoost;

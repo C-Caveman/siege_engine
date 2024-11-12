@@ -32,6 +32,8 @@
     f(rocketClick01) \
     f(rocketClick02) \
     f(rocketClick03) \
+    f(rocketEngineLoop02) \
+    f(rocketEngineLoopFast) \
     f(rocketEngineLoopSingle) \
     f(rocketEngineLoop) \
     f(rocketEngineShutdown) \
@@ -58,6 +60,7 @@
     f(voiceAlert02) \
     f(voiceAlert03) \
     f(voiceAlert04) \
+    f(voiceAlert05) \
     f(voiceComs01) \
     f(voiceComs02) \
     f(voiceComs03) \
@@ -69,9 +72,15 @@
     f(voiceHarsh02) \
     f(voiceHarsh03) \
     f(voiceHarsh04) \
+    f(voiceHum01) \
+    f(voiceHum02) \
+    f(voiceHum03) \
+    f(voiceHum04) \
     f(voiceImpactLight) \
     f(voiceJolly01) \
     f(voiceJolly02) \
+    f(voiceJolly03) \
+    f(voiceJolly04) \
     f(voiceLady) \
     f(voiceLamb01) \
     f(voiceLamb02) \
@@ -103,6 +112,7 @@
     f(voiceTickerTape01) \
     f(voiceTickerTape02) \
     f(voiceTickerTape03) \
+    f(voiceTickerTape04) \
     f(wAutoCannon) \
     f(wHeavyCannon01) \
     f(wShotgun01) \
