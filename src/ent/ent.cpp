@@ -286,6 +286,17 @@ void ent_zombie::init() {                               // ZOMBIE
     sprites[0].anim = zombie;
     target = 1; // first entity handle should be the player TODO add a player-finding function for reliability! TODO
     targetPos = {0,0};
+    walkDelay.interval = 5;
+}
+void pushNearbyEnts(struct ent_basics* me, struct ent_basics* them) {
+    if (them->type != zombie_type)
+        return;
+    vec2f posDelta = me->pos - them->pos;
+    float d = (posDelta).vlen();
+    if (d < RSIZE) {
+        me->vel = me->vel + posDelta*500*dt;
+        them->vel = them->vel - posDelta*500*dt;
+    }
 }
 #define MSIZE 1024
 char message[MSIZE] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
@@ -304,22 +315,26 @@ void ent_zombie::think() {
             }
         }
         despawn_ent((ent_basics*)this);
+        return;
     }
+    nearbyEntInteractionBidirectional((struct ent_basics*)this, pushNearbyEnts);
     struct ent_basics* e = get_ent(target);
     if (e != 0 && e->pos.dist(pos) < RSIZE/2 && playerClient.dialogVisible == 0) {
         playerClient.loadDialog((char*)"assets/worlds/testWorld/hello.txt");
         playerClient.startDialog(playerClient.loadedDialog);
     }
     wanderWait -= 1;
-    if (wanderWait <= 0 && e != 0) {
-        wanderWait = 60;
+    counterInc(&walkDelay);
+    if (walkDelay.count > 0) { //wanderWait <= 0 && e != 0) {
+        walkDelay.count = 0;
+        wanderWait = 10;
         //playSound(tik);
         //wanderDir = vec2f{ (float)(rand()) / (float)(RAND_MAX) - 0.5f, (float)(rand()) / (float)RAND_MAX - 0.5f };
         wanderDir = targetPos - this->pos;
-        vel = wanderDir.normalized() * 2000.f;
+        vel = wanderDir.normalized() * 400.f;
         
         
-        sprites[0].rotation = atan2(wanderDir.y, wanderDir.x) * 180. / M_PI + 270.0;
+        sprites[0].rotation = vectorToAngle(wanderDir) + 270;//atan2(wanderDir.y, wanderDir.x) * 180. / M_PI + 270.0;
         sprites[0].rotation = (float)((int)sprites[0].rotation % 360);
         targetPos = e->pos;
     }

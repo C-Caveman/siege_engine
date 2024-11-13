@@ -114,6 +114,7 @@ struct ent_zombie {
     vec2f targetPos;
     vec2f wanderDir;
     int wanderWait;
+    struct counter walkDelay;
 
     void init();
     void think();
