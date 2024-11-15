@@ -24,7 +24,7 @@ void loadSFX() {
         exit(-1);
     }
     for (int i=placeholderSound+1; i<NUM_SFX; i++) {
-        snprintf(fileName, sizeof(fileName), "assets/audio/sfx/%.*s.wav", (int)strnlen(sfxNames[i], MAX_SFX_NAME_LEN), sfxNames[i]);
+        snprintf(fileName, sizeof(fileName), "assets/audio/sfx/%.*s.wav", (int)strlen(sfxNames[i]), sfxNames[i]);
         sfx[i] =  Mix_LoadWAV(fileName);
         if (!sfx[i]) {
             sfx[i] = placeholderSoundPtr;
@@ -44,7 +44,7 @@ void loadMusic() {
         exit(-1);
     }
     for (int i=0; i<NUM_MUSIC; i++) {
-        snprintf(fileName, sizeof(fileName), "assets/audio/music/%.*s.ogg", (int)strnlen(musicNames[i], MAX_MUSIC_NAME_LEN), musicNames[i]);
+        snprintf(fileName, sizeof(fileName), "assets/audio/music/%.*s.ogg", (int)strlen(musicNames[i]), musicNames[i]);
         //printf("Loading music: '%s'\n", fileName);
         musics[i] = Mix_LoadMUS(fileName);
         if (!musics[i])

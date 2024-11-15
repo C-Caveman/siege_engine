@@ -1,7 +1,7 @@
-#include <cstring>
-#include <stdio.h>
+#include "string.h"
+#include "stdio.h"
 #include "keyEnum.h"
-struct namedKeyCode namedKeys[] {
+struct namedKeyCode namedKeys[] = {
     {"UNKNOWN", 0},
     {"BACKSPACE", 8},
     {"TAB", 9},

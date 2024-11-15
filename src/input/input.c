@@ -2,9 +2,7 @@
 #include "../graphics/graphics.h"
 #include "../audio/audio.h"
 
-struct inputKeybindings inputs[NUM_INPUTS] = {
-    {}, {SDLK_q},{SDLK_f},{SDLK_w},{SDLK_s},{SDLK_a},{SDLK_d}, {1073742049}
-};
+struct inputKeybindings inputs[NUM_INPUTS] = {0};
 // Get the index of the input associated with a given key.
 int inputFromKey(int scancode) {
     for (int i=0; i<NUM_INPUTS; i++) {
@@ -32,7 +30,7 @@ bool just_clicked = false;
 bool mouse_moved = false;
 
 
-void client_input(client* client) {
+void client_input(struct client* client) {
     SDL_Event event;
     
     //
@@ -67,10 +65,10 @@ void client_input(client* client) {
                         isBackingOut = true;
                         break;
                     case 1073741905: // DOWN
-                        client->menuMoveDown();
+                        clientMenuMoveDown();
                         break;
                     case 1073741906: // UP
-                        client->menuMoveUp();
+                        clientMenuMoveUp();
                         break;
                     case 13: // RETURN
                     case 1073741912: // KP_ENTER
@@ -91,10 +89,10 @@ void client_input(client* client) {
                         case enum_inputKeyUnbound:
                             break;
                         case enum_inputMoveUp:
-                            client->menuMoveUp();
+                            clientMenuMoveUp();
                             break;
                         case enum_inputMoveDown:
-                            client->menuMoveDown();
+                            clientMenuMoveDown();
                             break;
                         case enum_inputMoveLeft:
                             //client->paused = false;
@@ -113,7 +111,7 @@ void client_input(client* client) {
                 if (isSelecting) {
                     printf("Page '%s' item '%s'\n", menuPageNames[client->menuPage], menuPages[client->menuPage][0][client->menuSelection[client->menuPage]]);
                     playSound(click02);
-                    client->selectMenuItem();
+                    clientSelectMenuItem();
                 }
                 if (isBackingOut && client->menuPage != PAUSE_MENU) {
                     client->menuPage = PAUSE_MENU;
@@ -178,7 +176,7 @@ void client_input(client* client) {
                     break;
                 
                 case enum_inputSpawnZombie:
-                    spawn(zombie_type, client->camera_center + client->aim_pixel_pos.to_float());
+                    spawn(zombie_type, v2fAdd(client->camera_center, v2iToF(client->aim_pixel_pos)));
                     break;
                 case enum_inputInteract:
                     client->interacting = true;
@@ -307,7 +305,7 @@ void client_input(client* client) {
     client->aim_pixel_pos.y = (client->aim_pixel_pos.y*(RSIZE/tileWidth) - window_y/2*(RSIZE/tileWidth));
     if (mouse_moved == true) {
         client->keyboardAiming = false;
-        client->aim_dir = atan2(client->aim_pixel_pos.y, client->aim_pixel_pos.x) * 180 / M_PI;
+        client->aim_dir = atan2(client->aim_pixel_pos.y, client->aim_pixel_pos.x) * 180 / F_PI;
     }
     else if (client->aim_dir_rotation != 0) {
         client->keyboardAiming = true;

@@ -68,15 +68,6 @@ extern char PAUSE_MENU_ITEMS[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN];
 extern char SETTINGS_MENU_ITEMS[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN];
 
 struct client {
-    void update_player_entity();
-    void startDialog(char* message);
-    void updateDialogue();
-    void showDialog();
-    void changeActor();
-    void loadDialog(char* fName);
-    void selectMenuItem();
-    void menuMoveUp();
-    void menuMoveDown();
     // Player entity:
     struct ent_player* player;
     //
@@ -126,22 +117,14 @@ struct client {
     int menuPage;
     int menuSelection[NUM_MENU_PAGES]; // Current selected menu item for each menu page.
 };
-
-// TODO use these for packets TODO
-enum command_types {
-    MOVE,
-    SHOOT
-};
-struct command {
-    uint32_t type;
-    uint32_t sequence_number;
-    union {
-        vec2f vec2f_data;
-        vec2i vec2i_data;
-        uint32_t int_data;
-        float float_data;
-    };
-};
-
+void clientUpdatePlayerEntity();
+void clientStartDialog(char* message);
+void clientUpdateDialogue();
+void clientShowDialog();
+void clientChangeActor();
+void clientLoadDialog(char* fName);
+void clientSelectMenuItem();
+void clientMenuMoveUp();
+void clientMenuMoveDown();
 
 #endif

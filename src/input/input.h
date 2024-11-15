@@ -5,7 +5,6 @@
 #include "../client/client.h"
 #include "../config/vars.h"
 #include <SDL2/SDL.h> 
-#include <iostream>
 
 extern int mouse_x;
 extern int mouse_y;
@@ -18,7 +17,7 @@ extern struct inputKeybindings inputs[NUM_INPUTS];
 void setBinding(int inputIndex, int keyCode);
 int  getBinding(int inputIndex);
 
-void client_input(client* client);
+void client_input(struct client* client);
 
 
 // TODO replace old ent system TODO

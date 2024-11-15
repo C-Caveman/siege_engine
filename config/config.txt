@@ -21,6 +21,7 @@ sfxVolume 0.3
 
 #########################
 # Controls:
+inputQuit q
 inputFullscreen f
 inputMoveUp w
 inputMoveDown s
