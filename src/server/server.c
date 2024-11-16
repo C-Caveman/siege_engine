@@ -48,11 +48,23 @@ void move_all_ents(char* array, int array_len) {
         struct tile* old_tile_ptr = &mainWorld->chunks[old_chunk.y][old_chunk.x].tiles[old_tile.y][old_tile.x];
         struct tile* new_tile_ptr = &mainWorld->chunks[e->chunk.y][e->chunk.x].tiles[e->tile.y][e->tile.x];
         if (changed_tile) {
+            if (old_chunk_was_valid)
             for (int i=0; i<MAX_ENTS_PER_TILE; i++) {                               //- Remove handle from old tile.
-                if (old_chunk_was_valid && old_tile_ptr->ents[i] == e->h) { old_tile_ptr->ents[i] = 0; /* old_tile_ptr->floor_anim = stonedk; */ }
+                if (old_tile_ptr->ents[i] == e->h)
+                    old_tile_ptr->ents[i] = 0; /* old_tile_ptr->floor_anim = stonedk; */
             }
+            if (new_chunk_was_valid)
             for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------------------------------------ Store handle in new tile.
-                if (new_chunk_was_valid && new_tile_ptr->ents[i] == 0) { new_tile_ptr->ents[i] = e->h; break; }
+                ent_basics* tileEnt = 0;
+                if (new_chunk_was_valid)
+                    tileEnt = get_ent(new_tile_ptr->ents[i]);
+                if (tileEnt && tileEnt->type == gib_type && ((struct ent_gib*)tileEnt)->lifetime < GIB_LIFETIME*9/10) {
+                    despawn_ent(tileEnt);
+                }
+                if (new_chunk_was_valid && tileEnt == 0) {
+                    new_tile_ptr->ents[i] = e->h;
+                    break;
+                }
             } //----- NOTE: copy_handle() isn't used on e->h here. Use it for sharing e->h with other ents.
         }
     }

@@ -362,7 +362,7 @@ void divertNearbyZombies(ent_basics* me, ent_basics* them) {
 char message[MSIZE] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
 void zombieThink(struct ent_zombie* e) {
     if (e->health <= 0) {
-        playSound(zombieDie01);
+        playSoundChannel(zombieDie01, CHAN_MONSTER);
         int numGibs = anim_data[zombieGibs].len;
         for (int i=0; i<numGibs; i++) {
             ent_basics* newGib = (ent_basics*)spawn(gib_type, e->pos);
@@ -403,7 +403,7 @@ void gibInit(struct ent_gib* e) {
     e->num_sprites = 1;
     e->sprites[0].anim = zombieGibs;
     e->sprites[0].flags |= PAUSED;
-    e->lifetime = 10000 * randf();
+    e->lifetime = GIB_LIFETIME * randf();
 }
 void gibThink(struct ent_gib* e) {
     e->lifetime--;
@@ -633,8 +633,9 @@ void defragEntArray() {
     for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
         if (mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/2)
             return;
+        // Delete older gibs.
         ent_basics* e = ((ent_basics*)&array[i]);
-        if (e->type == gib_type)
+        if (i < ENTITY_BYTES_ARRAY_LEN/2 && e->type == gib_type && ((struct ent_gib*)e)->lifetime < GIB_LIFETIME*9/10)
             despawn_ent(e);
     }
 }
