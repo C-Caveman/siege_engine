@@ -178,6 +178,8 @@ void playerInteract(ent_basics* player, ent_basics* useTarget) {
     }
 }
 void playerThink(struct ent_player* e) {                              // PLAYER
+    if (playerClient.zombieSpawning)
+        spawn(zombie_type, v2fAdd(playerClient.camera_center, v2iToF(playerClient.aim_pixel_pos)));
     if (playerClient.dashing) {
         e->sprites[PLAYER_FLAMES].flags &= ~INVISIBLE;
     }
@@ -330,16 +332,30 @@ void zombieInit(struct ent_zombie* e) {                               // ZOMBIE
     e->sprites[0].anim = zombie;
     e->target = 1; // first entity handle should be the player TODO add a player-finding function for reliability! TODO
     e->targetPos = (vec2f) {0,0};
-    e->walkDelay.interval = 5;
+    e->walkDelay.interval = 20;
 }
+#define PUSH_FORCE 50
 void pushNearbyEnts(ent_basics* me, ent_basics* them) {
     if (them->type != zombie_type)
         return;
     vec2f posDelta = v2fSub(me->pos, them->pos);
     float d = v2fLen(posDelta);
     if (d < RSIZE) {
-        me->vel = v2fAdd(me->vel, v2fScale(posDelta, 500*dt));
-        them->vel = v2fSub(them->vel, v2fScale(posDelta, 500*dt));
+        me->vel = v2fAdd(me->vel, v2fScale(posDelta, PUSH_FORCE*dt));
+        them->vel = v2fSub(them->vel, v2fScale(posDelta, PUSH_FORCE*dt));
+    }
+}
+#define DIVERSION_STRENGTH 64
+void divertNearbyZombies(ent_basics* me, ent_basics* them) {
+    if (them->type != zombie_type)
+        return;
+    struct ent_zombie* thisZombie = (struct ent_zombie*)me;
+    struct ent_zombie* thatZombie = (struct ent_zombie*)them;
+    vec2f posDelta = v2fSub(thisZombie->pos, thatZombie->pos);
+    float d = v2fLen(posDelta)*2;
+    if (d < RSIZE*2.5) {
+        thisZombie->wanderDir = v2fAdd(thisZombie->wanderDir, v2fScale(posDelta, (DIVERSION_STRENGTH/(d+1))*DIVERSION_STRENGTH*dt));
+        thatZombie->wanderDir = v2fSub(thatZombie->wanderDir, v2fScale(posDelta, (DIVERSION_STRENGTH/(d+1))*DIVERSION_STRENGTH*dt));
     }
 }
 #define MSIZE 1024
@@ -349,9 +365,8 @@ void zombieThink(struct ent_zombie* e) {
         playSound(zombieDie01);
         int numGibs = anim_data[zombieGibs].len;
         for (int i=0; i<numGibs; i++) {
-            ent_basics* newGib = (ent_basics*)spawn_ent(gib_type, mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+            ent_basics* newGib = (ent_basics*)spawn(gib_type, e->pos);
             if (newGib) {
-                ((struct ent_gib*)newGib)->pos = e->pos;
                 ((struct ent_gib*)newGib)->sprites[0].rotation = e->sprites[0].rotation;
                 ((struct ent_gib*)newGib)->sprites[0].anim = zombieGibs;
                 ((struct ent_gib*)newGib)->sprites[0].frame = i;
@@ -361,7 +376,6 @@ void zombieThink(struct ent_zombie* e) {
         despawn_ent((ent_basics*)e);
         return;
     }
-    nearbyEntInteractionBidirectional((ent_basics*)e, pushNearbyEnts);
     ent_basics* t = get_ent(e->target);
     if (t != 0 && v2fDist(t->pos, e->pos) < RSIZE/2 && playerClient.dialogVisible == 0) {
         clientLoadDialog((char*)"assets/worlds/testWorld/hello.txt");
@@ -374,11 +388,13 @@ void zombieThink(struct ent_zombie* e) {
         e->wanderWait = 10;
         //playSound(tik);
         //wanderDir = (vec2f){ (float)(rand()) / (float)(RAND_MAX) - 0.5f, (float)(rand()) / (float)RAND_MAX - 0.5f };
-        e->wanderDir = v2fSub(e->targetPos, e->pos);
-        e->vel = v2fScale(v2fNormalized(e->wanderDir), 400.f);
+        vec2f targetVector = v2fNormalized(v2fSub(v2fAdd(e->targetPos, v2fScale(t->vel, 0.15f)), e->pos));
+        e->wanderDir = targetVector;
+        nearbyEntInteractionBidirectional((ent_basics*)e, divertNearbyZombies);
+        e->vel = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), 130.f));
         //EVENT(EntMove, .pos=pos, .vel=wanderDir.normalized() * 400.f); ;;
         
-        e->sprites[0].rotation = vectorToAngle(e->wanderDir) + 270;//atan2(wanderDir.y, wanderDir.x) * 180. / F_PI + 270.0;
+        e->sprites[0].rotation = vectorToAngle(targetVector) + 270;//atan2(wanderDir.y, wanderDir.x) * 180. / F_PI + 270.0;
         e->sprites[0].rotation = (float)((int)e->sprites[0].rotation % 360);
         e->targetPos = t->pos;
     }
@@ -444,52 +460,6 @@ int get_first_ent(char* array, int array_len) {
         i = -1;
     return i;
 }
-// Make a new entity in the given segment array. Return its index.
-void* spawn_ent(int type, char* array, int array_len) {
-    int required_space = get_ent_size(type);
-    int empty_space_len = 0;
-    int i = 0;
-    while (i<array_len) {
-        // Empty slot?
-        if (array[i] != HEADER_BYTE) {
-            if (DEBUG_ENT_SPAWNING) { printf("Found an open slot at %d.\n", i); }
-            empty_space_len += 1;
-            i += 1;
-        }
-        // Slot occupied.
-        else {
-            int skip_bytes = ((ent_basics*)&array[i])->size;
-            if (DEBUG_ENT_SPAWNING) { printf("Slots [%d, %d] already taken.\n", i, i+skip_bytes-1); }
-            empty_space_len = 0;
-            i += skip_bytes;
-        }
-        // Got enough space to store the ent.
-        if (empty_space_len == required_space) {
-            if (DEBUG_ENT_SPAWNING) { printf("Found enough space for ent in [%d, %d]\n", i-required_space, i-1); }
-            i = i-required_space;
-            break;
-        }
-    }
-    if (i >= array_len-1) {
-        printf("***\n*** No space left in the entity array!!!\n***\n");
-        exit(-1);
-    }
-    // Initialize the entity's header info:
-    ent_basics* new_entity = (ent_basics*)&array[i];
-    new_entity->header_byte = HEADER_BYTE;
-    new_entity->type = type;
-    new_entity->size = required_space;
-    new_entity->h = claim_handle((ent_basics*)&array[i]);
-    // Initialize the entity.
-    switch (type) {
-        #define ENT_INIT_CASES(name) case name##_type:  name##Init((struct ent_##name *)(&array[i])); break; //--- Init the entity.
-        ENTITY_TYPES_LIST(ENT_INIT_CASES)
-        default:
-            printf("*** spawn_ent() error: invalid entity type: %d", type);
-            exit(-1);
-    }
-    return &array[i];
-}
 void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
     char* array = mainWorld->entity_bytes_array;
     int array_len = ENTITY_BYTES_ARRAY_LEN;
@@ -514,6 +484,7 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
         if (empty_space_len == required_space) {
             if (DEBUG_ENT_SPAWNING) { printf("Found enough space for ent in [%d, %d]\n", i-required_space, i-1); }
             i = i-required_space;
+            mainWorld->entArraySpace += required_space;
             break;
         }
     }
@@ -548,6 +519,7 @@ void despawn_ent(ent_basics* e) {
     }
     unclaim_handle(e->h);
     int size = e->size;
+    mainWorld->entArraySpace -= size;
     if (DEBUG_ENTS) { printf("Despawning ent of size %d\n", size); }
     memset((void*)e, 0, size*sizeof(char));
 }
@@ -653,5 +625,16 @@ void wallCollision(char* array, int array_len) {
         ent_basics* e = ((ent_basics*)&array[i]);
         if ((e->flags & NOCOLLISION) != NOCOLLISION)
             collide_wall(e);
+    }
+}
+void defragEntArray() {
+    char* array = mainWorld->entity_bytes_array;
+    int array_len = ENTITY_BYTES_ARRAY_LEN;
+    for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
+        if (mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/2)
+            return;
+        ent_basics* e = ((ent_basics*)&array[i]);
+        if (e->type == gib_type)
+            despawn_ent(e);
     }
 }

@@ -176,7 +176,7 @@ void client_input(struct client* client) {
                     break;
                 
                 case enum_inputSpawnZombie:
-                    spawn(zombie_type, v2fAdd(client->camera_center, v2iToF(client->aim_pixel_pos)));
+                    client->zombieSpawning = true;
                     break;
                 case enum_inputInteract:
                     client->interacting = true;
@@ -240,6 +240,9 @@ void client_input(struct client* client) {
                     playSoundChannel(rocketEngineShutdown, CHAN_ENGINE);
                     if (client->player->heat.count >= HEAT_MAX)
                         playSoundChannel(rocketSteamHiss, CHAN_STEAM);
+                    break;
+                case enum_inputSpawnZombie:
+                    client->zombieSpawning = false;
                     break;
             }
         }

@@ -208,8 +208,13 @@ int main() {
             for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
                 if (timmy == 0)
                     break;
-                if (timmy->ents[i] != 0)
-                    timmy = 0;
+                if (timmy->ents[i] != 0) {
+                    ent_basics* e = get_ent(timmy->ents[i]);
+                    if (e->type == gib_type)
+                        despawn_ent(e);
+                    else
+                        timmy = 0;
+                }
             }
             if (timmy != 0 && timmy->wall_height <= 0) {
                 playerClient.lastBuildTime = cur_frame_start;
@@ -266,6 +271,7 @@ int main() {
         think_all_ents(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); //==========// Update/draw the entities. //
         move_all_ents(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         wallCollision(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+        defragEntArray();
         //draw_all_ents(playerClient.camera_pos, mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         present_frame(); // Put the frame on the screen:
     }

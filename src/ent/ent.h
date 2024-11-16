@@ -123,5 +123,6 @@ void move_ent(ent_basics* ent);
 char* get_type_name(int type);
 void collide_wall(ent_basics* e);
 void wallCollision(char* array, int array_len);
+void defragEntArray();
 
 #endif

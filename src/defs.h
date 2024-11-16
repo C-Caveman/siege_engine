@@ -156,6 +156,7 @@ struct world { //---------------------------------------------- Collection of ch
     char name[MAX_WORLD_NAME_LEN];
     struct chunk chunks[WORLD_WIDTH][WORLD_WIDTH]; //----------------- Tiles.
     char entity_bytes_array[ENTITY_BYTES_ARRAY_LEN]; //-------- Entities.
+    int entArraySpace;
 };
 void initMainWorld();
 struct tile* worldGetTile(vec2i tile_i);

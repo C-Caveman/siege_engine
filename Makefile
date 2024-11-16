@@ -12,6 +12,7 @@
 # |
 # +--> input ---------------> ent --> defs
 
+
 CC = gcc
 CFLAGS = -g -Wall -Werror -Wpedantic -std=c99
 INCLUDES=-Io/includes

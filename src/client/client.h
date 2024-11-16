@@ -81,6 +81,7 @@ struct client {
     bool sprinting; // Desired movement speed.
     bool dashing;
     bool quitting; // Quit button.
+    bool zombieSpawning;
     vec2f accel_dir; // Desired move direction.
     float jerk; // Rate of acceleration.
     float aim_dir_rotation; // Desired auto rotation for aim.
