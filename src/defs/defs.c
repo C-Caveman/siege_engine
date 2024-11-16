@@ -174,16 +174,17 @@ bool v2iInBounds(vec2i v, int min, int max) {
     return (v.x >= min && v.x < max && v.y >= min && v.y < max);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define MAX_COUNTER_VALUE 255
 void counterInc(struct counter* c) {
     int ms_since_last_count = anim_tick - c->prevTick + (anim_tick < c->prevTick)*256;
-    if (!(c->flags & (uint16_t)PAUSED) && (ms_since_last_count > c->interval)) {
+    if (!(c->flags & (uint16_t)PAUSED) && (ms_since_last_count > c->interval) && c->count < MAX_COUNTER_VALUE) {
         c->prevTick = anim_tick;
         c->count += 1;
     }
 }
 void counterDec(struct counter* c) {
     int ms_since_last_count = anim_tick - c->prevTick + (anim_tick < c->prevTick)*256;
-    if (!(c->flags & (uint16_t)PAUSED) && (ms_since_last_count > c->interval)) {
+    if (!(c->flags & (uint16_t)PAUSED) && (ms_since_last_count > c->interval) && c->count > 0) {
         c->prevTick = anim_tick;
         c->count -= 1;
     }

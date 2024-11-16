@@ -403,12 +403,17 @@ void gibInit(struct ent_gib* e) {
     e->num_sprites = 1;
     e->sprites[0].anim = zombieGibs;
     e->sprites[0].flags |= PAUSED;
-    e->lifetime = GIB_LIFETIME * randf();
+    e->spinRate.interval = 5;
+    e->spinRate.count = GIB_SPIN_SPEED * randf()*randf();
 }
 void gibThink(struct ent_gib* e) {
+    counterDec(&e->spinRate);
+    e->sprites[0].rotation += (float)(e->spinRate.count*2)*dt;
+    /*
     e->lifetime--;
     if (e->lifetime < 0)
         despawn_ent((ent_basics*)e);
+    */
 }
 //======================================================================================================================//
 //=====================================================// Entity management functions. (spawn, despawn, get_next, ect.) //
