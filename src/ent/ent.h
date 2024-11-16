@@ -96,7 +96,7 @@ struct ent_zombie {
     handle target;
     vec2f targetPos;
     vec2f wanderDir;
-    int wanderWait;
+    float speed;
     struct counter walkDelay;
 };
 enum gib_sprites {GIB_SPRITE_1, NUM_GIB_SPRITES};                            // GIB

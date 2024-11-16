@@ -326,7 +326,7 @@ void rabbitThink(struct ent_rabbit* e) {
 void zombieInit(struct ent_zombie* e) {                               // ZOMBIE
     e->health = 1;
     e->wanderDir = (vec2f){1,0};
-    e->wanderWait = 100;
+    e->speed = 50.f + 100.f*randf();
     e->num_sprites = 1;
     e->sprites[0].flags |= LOOPING;
     e->sprites[0].anim = zombie;
@@ -381,17 +381,15 @@ void zombieThink(struct ent_zombie* e) {
         clientLoadDialog((char*)"assets/worlds/testWorld/hello.txt");
         clientStartDialog(playerClient.loadedDialog);
     }
-    e->wanderWait -= 1;
     counterInc(&e->walkDelay);
-    if (e->walkDelay.count > 0) { //wanderWait <= 0 && e != 0) {
+    if (e->walkDelay.count > 0) {
         e->walkDelay.count = 0;
-        e->wanderWait = 10;
         //playSound(tik);
         //wanderDir = (vec2f){ (float)(rand()) / (float)(RAND_MAX) - 0.5f, (float)(rand()) / (float)RAND_MAX - 0.5f };
         vec2f targetVector = v2fNormalized(v2fSub(v2fAdd(e->targetPos, v2fScale(t->vel, 0.15f)), e->pos));
         e->wanderDir = targetVector;
         nearbyEntInteractionBidirectional((ent_basics*)e, divertNearbyZombies);
-        e->vel = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), 130.f));
+        e->vel = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), e->speed));
         //EVENT(EntMove, .pos=pos, .vel=wanderDir.normalized() * 400.f); ;;
         
         e->sprites[0].rotation = vectorToAngle(targetVector) + 270;//atan2(wanderDir.y, wanderDir.x) * 180. / F_PI + 270.0;
