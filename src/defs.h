@@ -104,7 +104,7 @@ void counterDec(struct counter* c);
     vec2i tile;          \
     vec2i chunk;         \
     int health;
-typedef int16_t handle; //-------------------- Entity handle.
+typedef uint16_t handle; //-------------------- Entity handle.
 typedef struct { ENT_BASICS } ent_basics; //----------------------------------- Generic entity.
 enum ent_flags {
     NODRAW =      1,
@@ -130,7 +130,7 @@ struct sprite {
     float rotation;
 };
 //================================================================// Tiles, Chunks, and Worlds //
-#define MAX_ENTS_PER_TILE 8
+#define MAX_ENTS_PER_TILE 16
 #define CHUNK_WIDTH 16
 #define CHUNK_DIAMETER (RSIZE * CHUNK_WIDTH)
 struct tile { //-------------------------------------- Square tile containing a wall/floor.

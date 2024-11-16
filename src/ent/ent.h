@@ -100,7 +100,7 @@ struct ent_zombie {
     struct counter walkDelay;
 };
 enum gib_sprites {GIB_SPRITE_1, NUM_GIB_SPRITES};                            // GIB
-#define GIB_SPIN_SPEED 250
+#define GIB_SPIN_SPEED 100
 struct ent_gib {
     ENT_BASICS
     struct sprite sprites[NUM_GIB_SPRITES];

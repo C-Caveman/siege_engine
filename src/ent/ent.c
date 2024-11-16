@@ -370,7 +370,7 @@ void zombieThink(struct ent_zombie* e) {
                 ((struct ent_gib*)newGib)->sprites[0].rotation = e->sprites[0].rotation;
                 ((struct ent_gib*)newGib)->sprites[0].anim = zombieGibs;
                 ((struct ent_gib*)newGib)->sprites[0].frame = i;
-                ((struct ent_gib*)newGib)->vel = (vec2f){randfn()*randfn()*15000,randfn()*randfn()*15000};
+                ((struct ent_gib*)newGib)->vel = (vec2f){randfn()*randfn()*16000,randfn()*randfn()*16000};
             }
         }
         despawn_ent((ent_basics*)e);
@@ -401,14 +401,18 @@ void zombieThink(struct ent_zombie* e) {
 }
 void gibInit(struct ent_gib* e) {
     e->num_sprites = 1;
+    if (e->h % 8 == 0)
+        e->flags |= NOFRICTION;
     e->sprites[0].anim = zombieGibs;
     e->sprites[0].flags |= PAUSED;
-    e->spinRate.interval = 5;
+    e->spinRate.interval = 8;
     e->spinRate.count = GIB_SPIN_SPEED * randf()*randf();
 }
 void gibThink(struct ent_gib* e) {
     counterDec(&e->spinRate);
-    e->sprites[0].rotation += (float)(e->spinRate.count*2)*dt;
+    e->sprites[0].rotation += (float)(e->spinRate.count*8*dt * (1-2*((e->h & 1) == 0)));
+    if (e->spinRate.count < GIB_SPIN_SPEED*3/8)
+        e->flags &= ~NOFRICTION;
     /*
     e->lifetime--;
     if (e->lifetime < 0)
@@ -645,7 +649,7 @@ void defragEntArray() {
     int array_len = ENTITY_BYTES_ARRAY_LEN;
     for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
         ent_basics* e = ((ent_basics*)&array[i]);
-        if (e && e->type == gib_type && rand() < RAND_MAX/16){ // Delete random gibs (not just the newest ones).
+        if (e && e->type == gib_type && rand() < RAND_MAX/32){ // Delete random gibs (not just the newest ones).
             despawn_ent(e);
         }
         if (mainWorld->numGibs < MAX_GIBS)
