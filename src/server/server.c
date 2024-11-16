@@ -53,19 +53,26 @@ void move_all_ents(char* array, int array_len) {
                 if (old_tile_ptr->ents[i] == e->h)
                     old_tile_ptr->ents[i] = 0; /* old_tile_ptr->floor_anim = stonedk; */
             }
+            int numGibsInTile = 0;
+            for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
+                ent_basics* tileEnt = get_ent(new_tile_ptr->ents[i]);
+                numGibsInTile += (tileEnt && tileEnt->type == gib_type);
+            }
+            bool tooManyGibs = (numGibsInTile > MAX_ENTS_PER_TILE/2);
+            if (new_chunk_was_valid) {
+                ent_basics* firstTileEnt = get_ent(new_tile_ptr->ents[0]);
+                if (e->type != gib_type && firstTileEnt && firstTileEnt->type == gib_type && numGibsInTile > 0) {
+                    new_tile_ptr->ents[0] = e->h;
+                }
+            }
             if (new_chunk_was_valid)
-            for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------------------------------------ Store handle in new tile.
-                ent_basics* tileEnt = 0;
-                if (new_chunk_was_valid)
-                    tileEnt = get_ent(new_tile_ptr->ents[i]);
-                if (tileEnt && tileEnt->type == gib_type && ((struct ent_gib*)tileEnt)->lifetime < GIB_LIFETIME*9/10) {
-                    despawn_ent(tileEnt);
-                }
-                if (new_chunk_was_valid && tileEnt == 0) {
-                    new_tile_ptr->ents[i] = e->h;
-                    break;
-                }
-            } //----- NOTE: copy_handle() isn't used on e->h here. Use it for sharing e->h with other ents.
+                for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------------------------------------ Store handle in new tile.
+                    ent_basics* tileEnt = get_ent(new_tile_ptr->ents[i]);
+                    if (tileEnt == 0 || (tileEnt && e->type != gib_type && tileEnt->type == gib_type && tooManyGibs)) {
+                        new_tile_ptr->ents[i] = e->h;
+                        break;
+                    }
+                } //----- NOTE: copy_handle() isn't used on e->h here. Use it for sharing e->h with other ents.
         }
     }
 }
@@ -258,7 +265,16 @@ int main() {
         for (int i=0; i<OFFSETS; i++) {
             vec2i next_chunk = v2iAdd(p->chunk, order[i]);
             if ( v2iInBounds(next_chunk, 0,WORLD_WIDTH-1) ) {                        //- Wall/entity pass.
-                draw_chunk_ents(
+                chunkDrawShortEnts(
+                    playerClient.camera_pos, playerClient.camera_center,
+                    &test_world.chunks[next_chunk.y][next_chunk.x],
+                    (vec2i){next_chunk.x, next_chunk.y});
+            }
+        }
+        for (int i=0; i<OFFSETS; i++) {
+            vec2i next_chunk = v2iAdd(p->chunk, order[i]);
+            if ( v2iInBounds(next_chunk, 0,WORLD_WIDTH-1) ) {                        //- Wall/entity pass.
+                chunkDrawTallEnts(
                     playerClient.camera_pos, playerClient.camera_center,
                     &test_world.chunks[next_chunk.y][next_chunk.x],
                     (vec2i){next_chunk.x, next_chunk.y});

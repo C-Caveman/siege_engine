@@ -393,7 +393,7 @@ void draw_chunk_floor(vec2f camera_pos, vec2f camera_center, struct chunk* chunk
         for (int x=0; x<CHUNK_WIDTH; x++) { draw_tile_floor(tiles, x, y, camera_pos); }
     }
 }
-void draw_chunk_ents(vec2f camera_pos, vec2f camera_center, struct chunk* chunk, vec2i chunk_index) {
+void chunkDrawTallEnts(vec2f camera_pos, vec2f camera_center, struct chunk* chunk, vec2i chunk_index) {
     vec2i chunk_pos = v2fToI( v2fAdd(v2fScalarDiv(camera_center,RSIZE), (vec2f){0.5,0.5}) );
     vec2f old_camera = camera_pos;
     camera_pos = v2fSub(camera_pos, v2fScale(v2iToF(chunk_index), RSIZE*CHUNK_WIDTH)); //------ Offset by chunk index.
@@ -413,13 +413,49 @@ void draw_chunk_ents(vec2f camera_pos, vec2f camera_center, struct chunk* chunk,
             if (v2iInBounds(left, 0, CHUNK_WIDTH)) {
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------- Draw left side entities.
                         ent_basics* e = get_ent(chunk->tiles[left.y][left.x].ents[i]);
-                        if (e != 0) { draw_ent_sprites(old_camera, e); }
+                        if (e != 0 && e->type != gib_type) { draw_ent_sprites(old_camera, e); }
                 }
             }
             if (v2iInBounds(right, 0, CHUNK_WIDTH)) {
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------- Draw right side entities.
                         ent_basics* e = get_ent(chunk->tiles[right.y][right.x].ents[i]);
-                        if (e != 0) { draw_ent_sprites(old_camera, e); }
+                        if (e != 0 && e->type != gib_type) { draw_ent_sprites(old_camera, e); }
+                }
+            }
+            if (row < middle_y) //----- Diverge before reaching the middle row.
+                spread++;
+            else
+                spread--; //----------- Converge after reaching the middle row.
+        }
+    }
+}
+void chunkDrawShortEnts(vec2f camera_pos, vec2f camera_center, struct chunk* chunk, vec2i chunk_index) {
+    vec2i chunk_pos = v2fToI( v2fAdd(v2fScalarDiv(camera_center,RSIZE), (vec2f){0.5,0.5}) );
+    vec2f old_camera = camera_pos;
+    camera_pos = v2fSub(camera_pos, v2fScale(v2iToF(chunk_index), RSIZE*CHUNK_WIDTH)); //------ Offset by chunk index.
+    camera_center = v2fSub(camera_center, v2fScale(v2iToF(chunk_index), RSIZE*CHUNK_WIDTH)); //------ Offset by chunk index.
+    //struct tile (*tiles)[CHUNK_WIDTH] = chunk->tiles;
+    SDL_Rect render_pos;
+    render_pos.x = 0;
+    render_pos.y = 0;
+    render_pos.w = render_pos.h = RSIZE;
+    int middle_x = chunk_pos.x - chunk_index.x*CHUNK_WIDTH;
+    int middle_y = chunk_pos.y - chunk_index.y*CHUNK_WIDTH;
+    for (int ring=MAX_DRAW_DISTANCE; ring>-1; ring--) { //--------------------- Draw a diamond loop of tiles.
+        int spread = 0; // Half the width of a given slice of the diamond.
+        for (int row=middle_y-ring; row<=middle_y+ring; row++) {
+            vec2i left =  {middle_x-spread, row};
+            vec2i right = {middle_x+spread, row};
+            if (v2iInBounds(left, 0, CHUNK_WIDTH)) {
+                for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------- Draw left side entities.
+                        ent_basics* e = get_ent(chunk->tiles[left.y][left.x].ents[i]);
+                        if (e != 0 && e->type == gib_type) { draw_ent_sprites(old_camera, e); }
+                }
+            }
+            if (v2iInBounds(right, 0, CHUNK_WIDTH)) {
+                for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------- Draw right side entities.
+                        ent_basics* e = get_ent(chunk->tiles[right.y][right.x].ents[i]);
+                        if (e != 0 && e->type == gib_type) { draw_ent_sprites(old_camera, e); }
                 }
             }
             if (row < middle_y) //----- Diverge before reaching the middle row.

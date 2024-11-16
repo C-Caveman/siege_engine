@@ -152,11 +152,13 @@ void chunkSetWall(struct chunk* c, int x, int y, int wall_top_anim, int wall_sid
 #define MAX_CLIENTS 1 // temp value
 #define ENTITY_BYTES_ARRAY_LEN 8192*16
 #define MAX_DRAW_DISTANCE 32
+#define MAX_GIBS 512
 struct world { //---------------------------------------------- Collection of chunks and entities.
     char name[MAX_WORLD_NAME_LEN];
     struct chunk chunks[WORLD_WIDTH][WORLD_WIDTH]; //----------------- Tiles.
     char entity_bytes_array[ENTITY_BYTES_ARRAY_LEN]; //-------- Entities.
     int entArraySpace;
+    int numGibs;
 };
 void initMainWorld();
 struct tile* worldGetTile(vec2i tile_i);

@@ -370,7 +370,7 @@ void zombieThink(struct ent_zombie* e) {
                 ((struct ent_gib*)newGib)->sprites[0].rotation = e->sprites[0].rotation;
                 ((struct ent_gib*)newGib)->sprites[0].anim = zombieGibs;
                 ((struct ent_gib*)newGib)->sprites[0].frame = i;
-                ((struct ent_gib*)newGib)->vel = (vec2f){randfn()*10000,randfn()*10000};
+                ((struct ent_gib*)newGib)->vel = (vec2f){randfn()*randfn()*15000,randfn()*randfn()*15000};
             }
         }
         despawn_ent((ent_basics*)e);
@@ -461,6 +461,8 @@ int get_first_ent(char* array, int array_len) {
     return i;
 }
 void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
+    if (mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/8)
+        printf("*** Warning! 7/8 of entity bytes array is full!\n");
     char* array = mainWorld->entity_bytes_array;
     int array_len = ENTITY_BYTES_ARRAY_LEN;
     int required_space = get_ent_size(type);
@@ -490,7 +492,7 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
     }
     if (i >= array_len-1) {
         printf("***\n*** No space left in the entity array!!!\n***\n");
-        exit(-1);
+        //exit(-1);
     }
     // Initialize the entity's header info:
     ent_basics* new_entity = (ent_basics*)&array[i];
@@ -508,6 +510,8 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
             exit(-1);
     }
     //printf("Spawning a '%s' at index %d.\n", get_type_name(type), i);
+    if (type == gib_type)
+        mainWorld->numGibs++;
     return &array[i];
 }
 // Remove an entity from an entity segment array. TODO ent-specific cleanup TODO
@@ -521,6 +525,8 @@ void despawn_ent(ent_basics* e) {
     int size = e->size;
     mainWorld->entArraySpace -= size;
     if (DEBUG_ENTS) { printf("Despawning ent of size %d\n", size); }
+    if (e->type == gib_type)
+        mainWorld->numGibs--;
     memset((void*)e, 0, size*sizeof(char));
 }
 // Run the think() function for each entitiy in a segment array.
@@ -628,14 +634,17 @@ void wallCollision(char* array, int array_len) {
     }
 }
 void defragEntArray() {
+    if (mainWorld->numGibs < MAX_GIBS) //(mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/2)
+            return;
     char* array = mainWorld->entity_bytes_array;
     int array_len = ENTITY_BYTES_ARRAY_LEN;
     for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
-        if (mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/2)
-            return;
-        // Delete older gibs.
         ent_basics* e = ((ent_basics*)&array[i]);
-        if (i < ENTITY_BYTES_ARRAY_LEN/2 && e->type == gib_type && ((struct ent_gib*)e)->lifetime < GIB_LIFETIME*9/10)
+        if (e && e->type == gib_type && rand() < RAND_MAX/16){ // Delete random gibs (not just the newest ones).
             despawn_ent(e);
+        }
+        if (mainWorld->numGibs < MAX_GIBS)
+            break;;
     }
+    //printf("Back to %d gibs.\n", mainWorld->numGibs);
 }

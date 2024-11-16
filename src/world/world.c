@@ -6,7 +6,8 @@ void initMainWorld() {
     strncpy(mainWorld->name, "Default World", MAX_WORLD_NAME_LEN);
     memset((void*)mainWorld->chunks, 0, WORLD_WIDTH*WORLD_WIDTH);
     memset((void*)mainWorld->entity_bytes_array, 0, ENTITY_BYTES_ARRAY_LEN);
-    mainWorld->entArraySpace = 0;
+    mainWorld->entArraySpace = ENTITY_BYTES_ARRAY_LEN;
+    mainWorld->numGibs = 0;
 }
 
 struct tile* worldGetTile(vec2i tile_i) {
