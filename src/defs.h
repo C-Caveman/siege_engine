@@ -97,13 +97,15 @@ void counterDec(struct counter* c);
     uint8_t num_sprites; \
     uint16_t size;       \
     handle h;            \
-    int flags;           \
+    uint16_t flags;      \
+    uint16_t health;     \
+    struct counter thinkTimer; \
     vec2f pos;           \
     vec2f vel;           \
     vec2f dir;           \
     vec2i tile;          \
     vec2i chunk;         \
-    int health;
+
 typedef uint16_t handle; //-------------------- Entity handle.
 typedef struct { ENT_BASICS } ent_basics; //----------------------------------- Generic entity.
 enum ent_flags {

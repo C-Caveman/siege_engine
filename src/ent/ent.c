@@ -128,6 +128,7 @@ void evEntMove(struct detailsEntMove* d) {
 }
 void playerInit(struct ent_player* e) {
     if (DEBUG_ENTS) { printf("Player entity initializing!\n"); }
+    e->thinkTimer.interval = 0;
     e->health = 1;
     e->heat.interval = 4;
     e->pos = (vec2f){0,0};
@@ -235,6 +236,7 @@ void playerThink(struct ent_player* e) {                              // PLAYER
 void sceneryInit(struct ent_scenery* e) {                              // SCENERY
     if (DEBUG_ENTS)
         printf("Scenery ent initializing!\n");
+    e->flags |= NOTHINK;
     e->num_sprites = NUM_SCENERY_SPRITES;
     e->sprites[SCENERY_SPRITE_1].anim = rocket_tank;
 }
@@ -245,8 +247,9 @@ void sceneryThink(struct ent_scenery* e) {
 }
 
 void projectileInit(struct ent_projectile* e) {                           // PROJECTILE
-    e->health = 1;
+    e->thinkTimer.interval = 0;
     e->num_sprites = 1;
+    e->health = 1;
     e->sprites[0].anim = grenade01Blink;
     e->sprites[0].flags |= LOOPING;
     e->flags = NOFRICTION | NOCOLLISION;
@@ -301,10 +304,11 @@ void projectileThink(struct ent_projectile* e) {
 }
 
 void rabbitInit(struct ent_rabbit* e) {                               // RABBIT
+    e->thinkTimer.interval = 100;
+    e->num_sprites = 1;
     e->health = 1;
     e->wanderDir = (vec2f){1,0};
     e->wanderWait = 100;
-    e->num_sprites = 1;
     //sprites[0].flags |= LOOPING;
     e->sprites[0].anim = rabbitHop01;
     e->sprites[0].flags |= PAUSED;
@@ -324,15 +328,16 @@ void rabbitThink(struct ent_rabbit* e) {
 }
 
 void zombieInit(struct ent_zombie* e) {                               // ZOMBIE
+    e->thinkTimer.interval = 40;
     e->health = 1;
     e->wanderDir = (vec2f){1,0};
-    e->speed = 50.f + 100.f*randf();
+    e->speed = 100.f + 180.f*randf();
     e->num_sprites = 1;
     e->sprites[0].flags |= LOOPING;
     e->sprites[0].anim = zombie;
     e->target = 1; // first entity handle should be the player TODO add a player-finding function for reliability! TODO
     e->targetPos = (vec2f) {0,0};
-    e->walkDelay.interval = 20;
+    e->walkDelay.interval = 40;
 }
 #define PUSH_FORCE 50
 void pushNearbyEnts(ent_basics* me, ent_basics* them) {
@@ -382,22 +387,25 @@ void zombieThink(struct ent_zombie* e) {
         clientStartDialog(playerClient.loadedDialog);
     }
     counterInc(&e->walkDelay);
+    vec2f targetVector = v2fNormalized(v2fSub(v2fAdd(e->targetPos, v2fScale(t->vel, 0.15f)), e->pos));
     if (e->walkDelay.count > 0) {
         e->walkDelay.count = 0;
         //playSound(tik);
         //wanderDir = (vec2f){ (float)(rand()) / (float)(RAND_MAX) - 0.5f, (float)(rand()) / (float)RAND_MAX - 0.5f };
-        vec2f targetVector = v2fNormalized(v2fSub(v2fAdd(e->targetPos, v2fScale(t->vel, 0.15f)), e->pos));
+        
         e->wanderDir = targetVector;
         nearbyEntInteractionBidirectional((ent_basics*)e, divertNearbyZombies);
         e->vel = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), e->speed));
         //EVENT(EntMove, .pos=pos, .vel=wanderDir.normalized() * 400.f); ;;
         
-        e->sprites[0].rotation = vectorToAngle(targetVector) + 270;//atan2(wanderDir.y, wanderDir.x) * 180. / F_PI + 270.0;
-        e->sprites[0].rotation = (float)((int)e->sprites[0].rotation % 360);
+        
         e->targetPos = t->pos;
     }
+    e->sprites[0].rotation = vectorToAngle(targetVector) + 270;
+    e->sprites[0].rotation = (float)((int)e->sprites[0].rotation % 360);
 }
 void gibInit(struct ent_gib* e) {
+    e->thinkTimer.interval = 4;
     e->num_sprites = 1;
     if (e->h % 8 == 0)
         e->flags |= NOFRICTION;
@@ -411,6 +419,8 @@ void gibThink(struct ent_gib* e) {
     e->sprites[0].rotation += (float)(e->spinRate.count*8*dt * (1-2*((e->h & 1) == 0)));
     if (e->spinRate.count < GIB_SPIN_SPEED*3/8)
         e->flags &= ~NOFRICTION;
+    if (v2fLen(e->vel) < 10.f)
+        e->flags |= NOTHINK;
     /*
     e->lifetime--;
     if (e->lifetime < 0)
@@ -538,21 +548,23 @@ void despawn_ent(ent_basics* e) {
 }
 // Run the think() function for each entitiy in a segment array.
 void think_all_ents(char* array, int array_len) {
-    int type;
     for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
         if (array[i] != HEADER_BYTE) {
             if (DEBUG_ENTS) { printf("*** Invalid index given by get_next_ent() in think_all_ents()\n"); }
             break;
         }
         // Run the correct think function for this entity:
-        type = ((ent_basics*)&array[i])->type;
+        ent_basics* e = (ent_basics*)&array[i];
+        counterInc(&e->thinkTimer);
+        if (e->thinkTimer.count < 1 || e->flags & NOTHINK) // If ent->thinkCounter hasn't reached 1, ent is sleeping.
+            continue;
         //printf("Thinking entity type: '%s' at index %d.\n", get_type_name(type), i);
-        switch (type) {
+        switch (e->type) {
             // X macro for ENTITY_TYPES_LIST:
             #define ENT_THINK_CASES(name) case name##_type:  name##Think((struct ent_##name *)(&array[i])); break; 
             ENTITY_TYPES_LIST(ENT_THINK_CASES)
             default:
-                printf("*** entity type '%d' at %d not recognized in think_all_ents().\n", type,  i);
+                printf("*** entity type '%d' at %d not recognized in think_all_ents().\n", e->type,  i);
                 exit(-1);
         }
     }
