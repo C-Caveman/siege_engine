@@ -187,12 +187,6 @@ int main() {
             continue;
         }
         clientUpdatePlayerEntity();                                   //- Client_Inputs -> Player_Entity.
-                                                                                //=================// Update the player's camera position. //
-        playerClient.camera_pos =
-            (vec2f) {p->pos.x - window_x/2*(RSIZE/tileWidth) + RSIZE/2, p->pos.y - window_y/2*(RSIZE/tileWidth) + RSIZE/2};
-        playerClient.camera_center =
-            (vec2f) {p->pos.x, p->pos.y};
-                                                                                //================// Building/Destroying tiles. //
         if (playerClient.attacking && (cur_frame_start - playerClient.lastAttackTime) > 300 && playerClient.player->heat.count < 1) {
             //playerClient.player->heat.count = (uint8_t)iclamp(20+(int)playerClient.player->heat.count, 0, 200);
             playerClient.lastAttackTime = cur_frame_start;
@@ -206,24 +200,7 @@ int main() {
             ((ent_basics*)e)->tile = v2iScalarDiv(v2fToI(((ent_basics*)e)->pos), RSIZE);
             ((ent_basics*)e)->vel = v2fScale(aimDir, 800);
         }
-        /*
-        if (playerClient.attacking && (cur_frame_start - playerClient.lastAttackTime) > 200) {
-            //destroy_wall(playerClient.camera_center, playerClient.aim_pixel_pos, chunk_0);
-            playerClient.lastAttackTime = cur_frame_start;
-            tile* timmy = raycast_into_selected_tile(p->pos,
-                                                   (vec2f){cos(playerClient.aim_dir/180*(float)F_PI),
-                                                         sin(playerClient.aim_dir/180*(float)F_PI)},
-                                                   getTileAtCursor(&playerClient));
-            if (timmy != 0 && timmy->wall_height != 0) { timmy->wall_height = 0; playSound(thud); }
-        }
-        */
         if (playerClient.building && (cur_frame_start - playerClient.lastBuildTime) > 50) {
-            //build_wall(playerClient.camera_center, playerClient.aim_pixel_pos, chunk_0);
-            
-            //int isClear = isPathToTileClear(p->pos,
-            //                                (vec2f){cos(playerClient.aim_dir/180*(float)F_PI),
-            //                                sin(playerClient.aim_dir/180*(float)F_PI)},
-            //                                getTileAtCursor(&playerClient));
             struct tile* timmy = worldGetTile(getTileAtCursor(&playerClient));
             for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
                 if (timmy == 0)
@@ -245,18 +222,25 @@ int main() {
                 playSound(thud);
             }
         }
-        SDL_RenderClear(renderer);                                              //===============// Draw the environment. //
-    #define OFFSETS 9
+        think_all_ents(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); //==========// Update the entities. //
+        move_all_ents(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+        wallCollision(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+        defragEntArray();
+        ////////////////////////////////////////////////////////////////////////
+        // Rendering:
+        ////////////////////////////////////////////////////////////////////////
+        SDL_RenderClear(renderer);
+        playerClient.camera_pos = v2fSub(v2fAdd(p->pos, HW), v2fScale((vec2f){window_x,window_y}, (RSIZE/tileWidth/2)));
+        playerClient.camera_center = p->pos;
+        #define OFFSETS 9
         vec2i order[OFFSETS] = {
-            {-1,1}, {1,1}, {-1,-1}, {1,-1}, //- Corners.
-            {-1,0}, {0,1}, {1,0}, {0,-1}, //--- Sides.
-            {0,0} //--------------------------- Middle.
+            {-1,1}, {1,1}, {-1,-1}, {1,-1}, //- Diagonally adjacent chunks.
+            {-1,0}, {0,1}, {1,0}, {0,-1}, //--- Directly adjacent chunks.
+            {0,0} //--------------------------- Current chunk.
         };
-        //printf("In chunk %s.\n", v2iToString(p->chunk));
         for (int i=0; i<OFFSETS; i++) {
             vec2i next_chunk = v2iAdd(p->chunk, order[i]);
             if ( v2iInBounds(next_chunk, 0, WORLD_WIDTH-1) ) {                        //- Floor pass.
-                //printf("Drawing floor of chunk %s.\n", v2iToString(next_chunk));
                 draw_chunk_floor(
                     playerClient.camera_pos, playerClient.camera_center,
                     &test_world.chunks[next_chunk.y][next_chunk.x],
@@ -265,7 +249,7 @@ int main() {
         }
         for (int i=0; i<OFFSETS; i++) {
             vec2i next_chunk = v2iAdd(p->chunk, order[i]);
-            if ( v2iInBounds(next_chunk, 0,WORLD_WIDTH-1) ) {                        //- Wall/entity pass.
+            if ( v2iInBounds(next_chunk, 0,WORLD_WIDTH-1) ) {                        //- Short entity pass.
                 chunkDrawShortEnts(
                     playerClient.camera_pos, playerClient.camera_center,
                     &test_world.chunks[next_chunk.y][next_chunk.x],
@@ -274,7 +258,7 @@ int main() {
         }
         for (int i=0; i<OFFSETS; i++) {
             vec2i next_chunk = v2iAdd(p->chunk, order[i]);
-            if ( v2iInBounds(next_chunk, 0,WORLD_WIDTH-1) ) {                        //- Wall/entity pass.
+            if ( v2iInBounds(next_chunk, 0,WORLD_WIDTH-1) ) {                        //- Tall entity pass.
                 chunkDrawTallEnts(
                     playerClient.camera_pos, playerClient.camera_center,
                     &test_world.chunks[next_chunk.y][next_chunk.x],
@@ -283,7 +267,7 @@ int main() {
         }
         for (int i=0; i<OFFSETS; i++) {
             vec2i next_chunk = v2iAdd(p->chunk, order[i]);
-            if ( v2iInBounds(next_chunk,0,WORLD_WIDTH-1) ) {                        //- Wall/entity pass.
+            if ( v2iInBounds(next_chunk,0,WORLD_WIDTH-1) ) {                        //- Wall pass.
                 draw_chunk_walls(
                     playerClient.camera_pos, playerClient.camera_center,
                     &test_world.chunks[next_chunk.y][next_chunk.x],
@@ -293,15 +277,7 @@ int main() {
         // DRAW A HUD!   
         drawFps(fps);
         drawHeat(playerClient.player->heat.count);
-        
-        //char message[] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
         clientShowDialog();
-        //draw_ent_sprites(playerClient.camera_pos, (ent_basics*)p);
-        think_all_ents(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); //==========// Update/draw the entities. //
-        move_all_ents(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-        wallCollision(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-        defragEntArray();
-        //draw_all_ents(playerClient.camera_pos, mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         present_frame(); // Put the frame on the screen:
     }
     printf("Server was running for %d seconds.\n", SDL_GetTicks() / 1000);
