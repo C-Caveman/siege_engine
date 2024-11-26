@@ -172,16 +172,20 @@ extern struct client playerClient; //-------------------------- Player client.
 /////////////////////////////////////////////////////////////////////////////////////////////////////////// ;;
 // Events: (defined in ent.cpp)
 #define EVENT_LIST(f) \
+    f(ZombieDie, handle h;) \
     f(PlayerMove, handle p; vec2f pos; vec2f vel;) \
     f(PlayerShoot, handle p; vec2f pos; vec2f aimDir;) \
-    f(EntMove, handle e; vec2f pos; vec2f vel;) \
+    f(EntMove, handle h; vec2f pos; vec2f vel;) \
+    f(EntSpawn, int type; vec2f pos;) \
+    f(TriggerDialog, handle h; char fileName[64];) \
+    f(SpriteRotate, handle h; int index; float angle;) \
 
 #define TO_EVENT_PREFIXED_ENUM(name, detailsUnused) event##name, 
 enum EVENT_ENUM {
     EVENT_LIST(TO_EVENT_PREFIXED_ENUM)
     NUM_EVENTS
 };
-#define TO_EVENT_STRUCT_DECLARATION(name, d) struct details##name { d }; 
+#define TO_EVENT_STRUCT_DECLARATION(name, members) struct details##name { members }; 
 EVENT_LIST(TO_EVENT_STRUCT_DECLARATION)
 #define TO_EVENT_FUNCTION_PROTOTYPE(name, detailsUnused) void ev##name(struct details##name* d);
 EVENT_LIST(TO_EVENT_FUNCTION_PROTOTYPE)
@@ -209,7 +213,7 @@ extern struct eventsBuffer events;
 void applyEvent(struct event* ev);
 void makeEvent(struct event e);
 void takeEvent();
-#define EVENT(eventName, ...) makeEvent((struct event) { event##eventName, .d##eventName = { __VA_ARGS__ }})
+#define EVENT(eventName, ...) makeEvent((struct event) { event##eventName, .details.d##eventName = { __VA_ARGS__ }})
 
 
 //////////////////////////////////////////////////////////////////////////////////// ;;

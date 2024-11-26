@@ -155,9 +155,8 @@ int main() {
     //printf("*Type name: '%s'\n", get_type_name(s->type));
     ent_basics* bunny = (ent_basics*)spawn(rabbit_type, (vec2f){0,0});
     bunny->pos = (vec2f){RSIZE*2, RSIZE*2};
-    ent_basics* zombieGuy = (ent_basics*)spawn(zombie_type, (vec2f){0,0});
-    zombieGuy->pos = (vec2f){RSIZE*2, RSIZE*4};
-    
+    EVENT(EntSpawn, .type=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/2), RSIZE*(CHUNK_WIDTH+1)});
+    EVENT(EntSpawn, .type=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH+1), RSIZE*(CHUNK_WIDTH/2)});
     
     //playSoundChannel(arcLamp1, 6);
     playMusicLoop(campfire01); //TODO todon't do this
@@ -167,16 +166,17 @@ int main() {
     //playerClient.startDialog(message);
     //print_vars();
     
-    
-    while (running) {                                                           //======================// GAME LOOP //
+    // GAME LOOP:
+    while (running) {
         cur_frame_start = SDL_GetTicks();
         dt = (cur_frame_start - last_frame_end) / 1000;
         if (dt > 0.1f) // Cap the delta time.
             dt = 0.05f;
-        anim_tick = SDL_GetTicks() % 256;                                       //- 8-bit timestamp for animations.
+        anim_tick = SDL_GetTicks() % 256; //- 8-bit timestamp for animations.
         last_frame_end = SDL_GetTicks();
         track_fps();
-                                                                                //==================// Client inputs and movement. //
+        
+        // Client input:
         client_input(&playerClient);
         if (playerClient.paused) {
             //memcpy(playerClient.menuText, pauseMenuText, sizeof(playerClient.menuText));
@@ -222,10 +222,17 @@ int main() {
                 playSound(thud);
             }
         }
-        think_all_ents(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); //==========// Update the entities. //
+        // Entity updates (server):
+        think_all_ents(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         move_all_ents(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         wallCollision(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         defragEntArray();
+        
+        // Update gamestate from the server's packets:
+        while (events.count > 0) {
+            takeEvent();
+        }
+        
         ////////////////////////////////////////////////////////////////////////
         // Rendering:
         ////////////////////////////////////////////////////////////////////////

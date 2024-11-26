@@ -120,11 +120,28 @@ void evPlayerShoot(struct detailsPlayerShoot* d) {
     printf("Player shoots!\n");
 }
 void evEntMove(struct detailsEntMove* d) {
-    ent_basics* e = get_ent(d->e);
+    ent_basics* e = get_ent(d->h);
     if (!e)
         return;
     e->pos = d->pos;
     e->vel = d->vel;
+}
+void evTriggerDialog(struct detailsTriggerDialog* d) {
+    struct ent_player* e = (struct ent_player*)get_ent(d->h);
+    if (!e)
+        return;
+    clientLoadDialog(d->fileName);
+    clientStartDialog(playerClient.loadedDialog);
+}
+void evSpriteRotate(struct detailsSpriteRotate* d) {
+    ent_basics* e = get_ent(d->h);
+    if (!e || e->num_sprites <= d->index || d->index < 0)
+        return;
+    struct sprite* sprites = (struct sprite*)( (char*)e+sizeof(ent_basics) );
+    sprites[d->index].rotation = d->angle;
+}
+void evEntSpawn(struct detailsEntSpawn* d) {
+    spawn(d->type, d->pos);
 }
 void playerInit(struct ent_player* e) {
     if (DEBUG_ENTS) { printf("Player entity initializing!\n"); }
@@ -365,44 +382,46 @@ void divertNearbyZombies(ent_basics* me, ent_basics* them) {
 }
 #define MSIZE 1024
 char message[MSIZE] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
+void evZombieDie(struct detailsZombieDie* d) {
+    struct ent_zombie* e = (struct ent_zombie*)get_ent(d->h);
+    if (!e)
+        return;
+    playSoundChannel(zombieDie01, CHAN_MONSTER);
+    int numGibs = anim_data[zombieGibs].len;
+    for (int i=0; i<numGibs; i++) {
+        ent_basics* newGib = (ent_basics*)spawn(gib_type, e->pos);
+        if (newGib) {
+            ((struct ent_gib*)newGib)->sprites[0].rotation = e->sprites[0].rotation;
+            ((struct ent_gib*)newGib)->sprites[0].anim = zombieGibs;
+            ((struct ent_gib*)newGib)->sprites[0].frame = i;
+            ((struct ent_gib*)newGib)->vel = (vec2f){randfn()*randfn()*16000,randfn()*randfn()*16000}; //TODO ensure handles are not desynced in client/server!
+        }
+    }
+    despawn_ent((ent_basics*)e);
+}
 void zombieThink(struct ent_zombie* e) {
     if (e->health <= 0) {
-        playSoundChannel(zombieDie01, CHAN_MONSTER);
-        int numGibs = anim_data[zombieGibs].len;
-        for (int i=0; i<numGibs; i++) {
-            ent_basics* newGib = (ent_basics*)spawn(gib_type, e->pos);
-            if (newGib) {
-                ((struct ent_gib*)newGib)->sprites[0].rotation = e->sprites[0].rotation;
-                ((struct ent_gib*)newGib)->sprites[0].anim = zombieGibs;
-                ((struct ent_gib*)newGib)->sprites[0].frame = i;
-                ((struct ent_gib*)newGib)->vel = (vec2f){randfn()*randfn()*16000,randfn()*randfn()*16000};
-            }
-        }
-        despawn_ent((ent_basics*)e);
+        EVENT(ZombieDie, .h=e->h);
         return;
     }
     ent_basics* t = get_ent(e->target);
     if (t != 0 && v2fDist(t->pos, e->pos) < RSIZE/2 && playerClient.dialogVisible == 0) {
-        clientLoadDialog((char*)"assets/worlds/testWorld/hello.txt");
-        clientStartDialog(playerClient.loadedDialog);
+        EVENT(TriggerDialog, .h=e->target, "assets/worlds/testWorld/hello.txt");
     }
     counterInc(&e->walkDelay);
     vec2f targetVector = v2fNormalized(v2fSub(v2fAdd(e->targetPos, v2fScale(t->vel, 0.15f)), e->pos));
     if (e->walkDelay.count > 0) {
         e->walkDelay.count = 0;
-        //playSound(tik);
-        //wanderDir = (vec2f){ (float)(rand()) / (float)(RAND_MAX) - 0.5f, (float)(rand()) / (float)RAND_MAX - 0.5f };
-        
         e->wanderDir = targetVector;
         nearbyEntInteractionBidirectional((ent_basics*)e, divertNearbyZombies);
-        e->vel = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), e->speed));
-        //EVENT(EntMove, .pos=pos, .vel=wanderDir.normalized() * 400.f); ;;
-        
-        
+        vec2f persuitVelocity = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), e->speed));
+        EVENT(EntMove, .h=e->h, .pos=e->pos, .vel=persuitVelocity); ;;
         e->targetPos = t->pos;
     }
-    e->sprites[0].rotation = vectorToAngle(targetVector) + 270;
-    e->sprites[0].rotation = (float)((int)e->sprites[0].rotation % 360);
+    float angleToPlayer = vectorToAngle(targetVector) + 270;
+    if (angleToPlayer > 360.f)
+        angleToPlayer -= 360.f;
+    EVENT(SpriteRotate, .h=e->h, .index=ZOMBIE_SPRITE_1, .angle=angleToPlayer);
 }
 void gibInit(struct ent_gib* e) {
     e->thinkTimer.interval = 4;
@@ -421,11 +440,6 @@ void gibThink(struct ent_gib* e) {
         e->flags &= ~NOFRICTION;
     if (v2fLen(e->vel) < 10.f)
         e->flags |= NOTHINK;
-    /*
-    e->lifetime--;
-    if (e->lifetime < 0)
-        despawn_ent((ent_basics*)e);
-    */
 }
 //======================================================================================================================//
 //=====================================================// Entity management functions. (spawn, despawn, get_next, ect.) //
@@ -479,7 +493,7 @@ int get_first_ent(char* array, int array_len) {
 }
 void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
     if (mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/8)
-        printf("*** Warning! 7/8 of entity bytes array is full!\n");
+        printf("*** Warning! 7/8 of entity bytes array are full!\n");
     char* array = mainWorld->entity_bytes_array;
     int array_len = ENTITY_BYTES_ARRAY_LEN;
     int required_space = get_ent_size(type);
