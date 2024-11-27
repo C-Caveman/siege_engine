@@ -178,6 +178,9 @@ void client_input(struct client* client) {
                 case enum_inputSpawnZombie:
                     client->zombieSpawning = true;
                     break;
+                case enum_inputExplodeEverything:
+                    client->explodingEverything = true;
+                    break;
                 case enum_inputInteract:
                     client->interacting = true;
                     break;

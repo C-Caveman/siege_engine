@@ -30,7 +30,7 @@ struct handle_info {
     int16_t copies;         // Num ents using this handle.
     bool claimed;           // Whether the entity is marked for deletion.
 };
-#define NUM_HANDLES 2048
+#define NUM_HANDLES 65536-1
 extern struct handle_info handles[NUM_HANDLES];
 ent_basics*  get_ent(handle i); //----------------- Get an entity* from its handle.
 handle              copy_handle(handle i); //------------- Copy a handle to another entity.
@@ -97,6 +97,7 @@ struct ent_zombie {
     vec2f targetPos;
     vec2f wanderDir;
     float speed;
+    int walkTime;
     struct counter walkDelay;
 };
 enum gib_sprites {GIB_SPRITE_1, NUM_GIB_SPRITES};                            // GIB

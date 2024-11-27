@@ -152,7 +152,7 @@ void chunkSetWall(struct chunk* c, int x, int y, int wall_top_anim, int wall_sid
 #define MAX_WORLD_NAME_LEN 64
 #define MAX_ENTS 2048 //  temp value
 #define MAX_CLIENTS 1 // temp value
-#define ENTITY_BYTES_ARRAY_LEN 8192*16
+#define ENTITY_BYTES_ARRAY_LEN 2000000
 #define MAX_DRAW_DISTANCE 32
 #define MAX_GIBS 512
 struct world { //---------------------------------------------- Collection of chunks and entities.
@@ -161,6 +161,7 @@ struct world { //---------------------------------------------- Collection of ch
     char entity_bytes_array[ENTITY_BYTES_ARRAY_LEN]; //-------- Entities.
     int entArraySpace;
     int numGibs;
+    int numZombies;
 };
 void initMainWorld();
 struct tile* worldGetTile(vec2i tile_i);
@@ -173,6 +174,7 @@ extern struct client playerClient; //-------------------------- Player client.
 // Events: (defined in ent.cpp)
 #define EVENT_LIST(f) \
     f(ZombieDie, handle h;) \
+    f(ZombieWindShieldSplatter, handle h;) \
     f(PlayerMove, handle p; vec2f pos; vec2f vel;) \
     f(PlayerShoot, handle p; vec2f pos; vec2f aimDir;) \
     f(EntMove, handle h; vec2f pos; vec2f vel;) \
@@ -202,13 +204,14 @@ struct packet {
     int sequenceNumber;
     struct event e;
 };
-#define EVENT_BUFFER_SIZE 2048
+#define EVENT_BUFFER_SIZE 8192*4
 struct eventsBuffer {
     int count;
     int index;
     int sequenceNumber;
     struct packet buffer[EVENT_BUFFER_SIZE];
 };
+extern float cur_frame_start;
 extern struct eventsBuffer events;
 void applyEvent(struct event* ev);
 void makeEvent(struct event e);

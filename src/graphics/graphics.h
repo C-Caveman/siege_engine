@@ -44,6 +44,7 @@ void chunkDrawTallEnts(vec2f camera_pos, vec2f camera_center, struct chunk* chun
 void chunkDrawShortEnts(vec2f camera_pos, vec2f camera_center, struct chunk* chunk, vec2i chunk_index);
 void draw_chunk_walls(vec2f camera_pos, vec2f camera_center, struct chunk* chunk, vec2i chunk_index);
 void renderText(char* text);
+void drawInfo(char* label, float value, int index);
 void drawFps(float fps);
 void drawHeat(float heat);
 void drawDebugRectangle(int x, int y, int w, int h);

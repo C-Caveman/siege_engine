@@ -12,6 +12,14 @@ extern struct anim_info anim_data[];
 struct handle_info handles[NUM_HANDLES] = { //=================================// ENTITY HANDLES //
     {0,1,true}, // Handle 0 is the Null handle.
 };
+int countRemainingHandles() {
+    int numAvailable = 0;
+    for (int i=0; i<NUM_HANDLES; i++) {
+        if (handles[i].copies == 0)
+            numAvailable++;
+    }
+    return numAvailable;
+}
 handle claim_handle(ent_basics* e) { //-------- Bind a handle to an entity.
     handle h = -1;
     for (int i=0; i<NUM_HANDLES; i++) {
@@ -91,7 +99,9 @@ void applyEvent(struct event* ev) {
 void makeEvent(struct event e) {
     if (events.count >= EVENT_BUFFER_SIZE-1)
         return;
-    int newEventIndex = (events.index+events.count) % EVENT_BUFFER_SIZE;
+    int newEventIndex = (events.index+events.count);
+    if (newEventIndex >= EVENT_BUFFER_SIZE)
+        newEventIndex -= EVENT_BUFFER_SIZE;
     events.buffer[newEventIndex].time = 0;
     events.buffer[newEventIndex].sequenceNumber = events.sequenceNumber++;
     //events.buffer[newEventIndex].e = e;
@@ -105,7 +115,7 @@ void takeEvent() {
     memset((void*)&events.buffer[events.index], 0, sizeof(struct packet));
     events.count--;
     events.index++;
-    if (events.index >= EVENT_BUFFER_SIZE)
+    if (events.index >= EVENT_BUFFER_SIZE-1)
         events.index = 0;
 }
 void evPlayerMove(struct detailsPlayerMove* d) {
@@ -195,9 +205,32 @@ void playerInteract(ent_basics* player, ent_basics* useTarget) {
         }
     }
 }
+void windShieldSplatter(ent_basics* attacker, ent_basics* victim) {
+    if (victim == 0 || attacker == 0)
+        return;
+    if (victim->type == zombie_type && v2fDist(victim->pos, attacker->pos) < RSIZE*2)
+        EVENT(ZombieWindShieldSplatter, .h=victim->h);
+}
 void playerThink(struct ent_player* e) {                              // PLAYER
-    if (playerClient.zombieSpawning)
+    if (playerClient.zombieSpawning && mainWorld->entArraySpace > ENTITY_BYTES_ARRAY_LEN/8 && countRemainingHandles() > 10)
         spawn(zombie_type, v2fAdd(playerClient.camera_center, v2iToF(playerClient.aim_pixel_pos)));
+    if (playerClient.explodingEverything) {
+        playerClient.explodingEverything = false;
+        for (int i=get_first_ent(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); i != -1; i=get_next_ent(i, mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN)) {
+            if (mainWorld->entity_bytes_array[i] != HEADER_BYTE) {
+                if (DEBUG_ENTS) { printf("*** Invalid index given by get_next_ent() in think_all_ents()\n"); }
+                break;
+            }
+            // Run the correct think function for this entity:
+            ent_basics* e = (ent_basics*)&mainWorld->entity_bytes_array[i];
+            if (e->type == zombie_type && v2fDist(playerClient.player->pos, e->pos) < RSIZE*10)
+                EVENT(ZombieDie, .h=e->h);
+        }
+    }
+    if (e->heat.count == HEAT_MAX) {
+        ;;;
+        nearbyEntInteractionBidirectional((ent_basics*)e, windShieldSplatter);
+    }
     if (playerClient.dashing) {
         e->sprites[PLAYER_FLAMES].flags &= ~INVISIBLE;
     }
@@ -348,8 +381,9 @@ void zombieInit(struct ent_zombie* e) {                               // ZOMBIE
     e->thinkTimer.interval = 40;
     e->health = 1;
     e->wanderDir = (vec2f){1,0};
-    e->speed = 100.f + 180.f*randf();
+    e->speed = 50.f + 500.f*randf();
     e->num_sprites = 1;
+    e->walkTime = cur_frame_start;
     e->sprites[0].flags |= LOOPING;
     e->sprites[0].anim = zombie;
     e->target = 1; // first entity handle should be the player TODO add a player-finding function for reliability! TODO
@@ -399,6 +433,26 @@ void evZombieDie(struct detailsZombieDie* d) {
     }
     despawn_ent((ent_basics*)e);
 }
+#define SPLATTER_FORCE 16000
+void evZombieWindShieldSplatter(struct detailsZombieWindShieldSplatter* d) {
+    struct ent_zombie* e = (struct ent_zombie*)get_ent(d->h);
+    if (!e)
+        return;
+    playSoundChannel(zombieDie01, CHAN_MONSTER);
+    int numGibs = anim_data[zombieGibs].len;
+    vec2f splatterDir = v2fAdd(v2fScale(v2fNormalized(playerClient.player->vel),-1), (vec2f){randfn()*0.1,randfn()*0.1});
+    for (int i=0; i<numGibs; i++) {
+        ent_basics* newGib = (ent_basics*)spawn(gib_type, e->pos);
+        if (newGib) {
+            ((struct ent_gib*)newGib)->sprites[0].rotation = e->sprites[0].rotation;
+            ((struct ent_gib*)newGib)->sprites[0].anim = zombieGibs;
+            ((struct ent_gib*)newGib)->sprites[0].frame = i;
+            ((struct ent_gib*)newGib)->vel = v2fScale(splatterDir, SPLATTER_FORCE*randf());
+        }
+    }
+    despawn_ent((ent_basics*)e);
+}
+
 void zombieThink(struct ent_zombie* e) {
     if (e->health <= 0) {
         EVENT(ZombieDie, .h=e->h);
@@ -410,7 +464,8 @@ void zombieThink(struct ent_zombie* e) {
     }
     counterInc(&e->walkDelay);
     vec2f targetVector = v2fNormalized(v2fSub(v2fAdd(e->targetPos, v2fScale(t->vel, 0.15f)), e->pos));
-    if (e->walkDelay.count > 0) {
+    if (cur_frame_start > e->walkTime) { //e->walkDelay.count > 0) {
+        e->walkTime = cur_frame_start + 40;
         e->walkDelay.count = 0;
         e->wanderDir = targetVector;
         nearbyEntInteractionBidirectional((ent_basics*)e, divertNearbyZombies);
@@ -523,7 +578,17 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
     }
     if (i >= array_len-1) {
         printf("***\n*** No space left in the entity array!!!\n***\n");
+        return 0;
         //exit(-1);
+    }
+    int remainingHandles = countRemainingHandles();
+    if (remainingHandles == 0) {
+        printf("***\n*** No entity handles left!!!\n***\n");
+        return 0;
+    }
+    else if (remainingHandles < 10 && type == gib_type) {
+        printf("!!! Only %d handles left!!! Skipping gib spawn.\n", remainingHandles);
+        return 0;
     }
     // Initialize the entity's header info:
     ent_basics* new_entity = (ent_basics*)&array[i];
@@ -543,6 +608,8 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
     //printf("Spawning a '%s' at index %d.\n", get_type_name(type), i);
     if (type == gib_type)
         mainWorld->numGibs++;
+    if (type == zombie_type)
+        mainWorld->numZombies++;
     return &array[i];
 }
 // Remove an entity from an entity segment array. TODO ent-specific cleanup TODO
@@ -558,6 +625,8 @@ void despawn_ent(ent_basics* e) {
     if (DEBUG_ENTS) { printf("Despawning ent of size %d\n", size); }
     if (e->type == gib_type)
         mainWorld->numGibs--;
+    if (e->type == zombie_type)
+        mainWorld->numZombies--;
     memset((void*)e, 0, size*sizeof(char));
 }
 // Run the think() function for each entitiy in a segment array.

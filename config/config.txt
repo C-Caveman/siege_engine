@@ -40,6 +40,7 @@ inputAimLeft LEFT
 inputAimRight RIGHT
 
 inputSpawnZombie z
+inputExplodeEverything k
 inputInteract e
 inputSkipDialog c
 #inputDash UP

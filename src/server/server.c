@@ -282,8 +282,10 @@ int main() {
             }
         }
         // DRAW A HUD!   
-        drawFps(fps);
-        drawHeat(playerClient.player->heat.count);
+        //drawFps(fps);
+        drawInfo((char*)"fps", fps, 0);
+        drawInfo((char*)"heat", (float)playerClient.player->heat.count, 1);
+        drawInfo((char*)"zombies", (float)mainWorld->numZombies, 2);
         clientShowDialog();
         present_frame(); // Put the frame on the screen:
     }

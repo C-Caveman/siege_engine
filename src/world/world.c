@@ -3,11 +3,9 @@
 struct world* mainWorld = 0;
 
 void initMainWorld() {
+    memset((void*)mainWorld, 0, sizeof(struct world));
     strncpy(mainWorld->name, "Default World", MAX_WORLD_NAME_LEN);
-    memset((void*)mainWorld->chunks, 0, WORLD_WIDTH*WORLD_WIDTH);
-    memset((void*)mainWorld->entity_bytes_array, 0, ENTITY_BYTES_ARRAY_LEN);
     mainWorld->entArraySpace = ENTITY_BYTES_ARRAY_LEN;
-    mainWorld->numGibs = 0;
 }
 
 struct tile* worldGetTile(vec2i tile_i) {
@@ -26,3 +24,4 @@ struct tile* worldTileFromPos(vec2f pos) {
     vec2i local_i = v2iModulo(tile_i, CHUNK_WIDTH);
     return &mainWorld->chunks[chunk_i.y][chunk_i.x].tiles[local_i.y][local_i.x];
 }
+
