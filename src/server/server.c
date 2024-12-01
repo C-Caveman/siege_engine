@@ -77,49 +77,7 @@ void move_all_ents(char* array, int array_len) {
         }
     }
 }
-#define MAX_RAYCAST_DISTANCE 128
-struct tile* raycast_upto_selected_tile(vec2f pos, vec2f dir, vec2i sel) {
-    struct tile* cur_tile = 0;
-    struct tile* prev_tile = 0;
-    vec2i tile_index;
-    dir = v2fNormalized(dir);
-    for (int i=0; i<MAX_RAYCAST_DISTANCE; i++) {
-        pos = v2fAdd(pos, v2fScale(dir, RSIZE/4)); //------------- Step forward.
-        tile_index = v2fToIRoundUp(v2fScalarDiv(pos, RSIZE));
-        cur_tile = worldGetTile(tile_index);
-        if (cur_tile == 0 || cur_tile->wall_height >= 1) { break; }
-        prev_tile = cur_tile;
-        if (v2iIsEq(tile_index, sel)) { break; }
-    }
-    return prev_tile;
-}
-struct tile* raycast_into_selected_tile(vec2f pos, vec2f dir, vec2i sel) {
-    struct tile* cur_tile = 0;
-    vec2i tile_index;
-    dir = v2fNormalized(dir);
-    for (int i=0; i<MAX_RAYCAST_DISTANCE; i++) {
-        pos = v2fAdd(pos, v2fScale(dir, RSIZE/4)); //------------- Step forward.
-        tile_index = v2fToI(v2fScalarDiv(pos, RSIZE));
-        cur_tile = worldGetTile(tile_index);
-        if (cur_tile == 0 || cur_tile->wall_height >= 1 || v2iIsEq(tile_index, sel)) { break; }
-    }
-    return cur_tile;
-}
-int isPathToTileClear(vec2f pos, vec2f dir, vec2i sel) {
-    struct tile* cur_tile = 0;
-    vec2i tile_index;
-    dir = v2fNormalized(dir);
-    for (int i=0; i<MAX_RAYCAST_DISTANCE; i++) {
-        pos = v2fAdd(pos, v2fScale(dir, RSIZE/4)); //------------- Step forward.
-        tile_index = v2fToIRoundUp(v2fScalarDiv(pos, RSIZE));
-        cur_tile = worldGetTile(tile_index);
-        if (cur_tile == 0 || cur_tile->wall_height >= 1)
-            return 0;
-        if (v2iIsEq(tile_index, sel))
-            break;
-    }
-    return 1;
-}
+
 int main() {
     applyConfig((char*)"config/config.txt");                                                           //===========// Initialize server. //
     running = 1;
@@ -160,12 +118,6 @@ int main() {
     
     //playSoundChannel(arcLamp1, 6);
     playMusicLoop(campfire01); //TODO todon't do this
-    //playMusicLoop(dorian01);
-    
-    //char message[] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
-    //playerClient.startDialog(message);
-    //print_vars();
-    
     // GAME LOOP:
     while (running) {
         cur_frame_start = SDL_GetTicks();
@@ -282,7 +234,6 @@ int main() {
             }
         }
         // DRAW A HUD!   
-        //drawFps(fps);
         drawInfo((char*)"fps", fps, 0);
         drawInfo((char*)"heat", (float)playerClient.player->heat.count, 1);
         drawInfo((char*)"zombies", (float)mainWorld->numZombies, 2);

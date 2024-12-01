@@ -433,21 +433,22 @@ void evZombieDie(struct detailsZombieDie* d) {
     }
     despawn_ent((ent_basics*)e);
 }
-#define SPLATTER_FORCE 16000
+#define SPLATTER_FORCE 6000
+#define SCATTER_FORCE 0.8
 void evZombieWindShieldSplatter(struct detailsZombieWindShieldSplatter* d) {
     struct ent_zombie* e = (struct ent_zombie*)get_ent(d->h);
     if (!e)
         return;
     playSoundChannel(zombieDie01, CHAN_MONSTER);
     int numGibs = anim_data[zombieGibs].len;
-    vec2f splatterDir = v2fAdd(v2fScale(v2fNormalized(playerClient.player->vel),-1), (vec2f){randfn()*0.1,randfn()*0.1});
+    vec2f splatterDir = v2fNormalized(v2fAdd(v2fScale(v2fNormalized(playerClient.player->vel),-1), (vec2f){randfn()*SCATTER_FORCE,randfn()*SCATTER_FORCE}));
     for (int i=0; i<numGibs; i++) {
         ent_basics* newGib = (ent_basics*)spawn(gib_type, e->pos);
         if (newGib) {
             ((struct ent_gib*)newGib)->sprites[0].rotation = e->sprites[0].rotation;
             ((struct ent_gib*)newGib)->sprites[0].anim = zombieGibs;
             ((struct ent_gib*)newGib)->sprites[0].frame = i;
-            ((struct ent_gib*)newGib)->vel = v2fScale(splatterDir, SPLATTER_FORCE*randf());
+            ((struct ent_gib*)newGib)->vel = v2fAdd(v2fScale(splatterDir, SPLATTER_FORCE*(randfns()+0.25f)), playerClient.player->vel);
         }
     }
     despawn_ent((ent_basics*)e);
@@ -749,4 +750,48 @@ void defragEntArray() {
             break;;
     }
     //printf("Back to %d gibs.\n", mainWorld->numGibs);
+}
+
+#define MAX_RAYCAST_DISTANCE 128
+struct tile* raycast_upto_selected_tile(vec2f pos, vec2f dir, vec2i sel) {
+    struct tile* cur_tile = 0;
+    struct tile* prev_tile = 0;
+    vec2i tile_index;
+    dir = v2fNormalized(dir);
+    for (int i=0; i<MAX_RAYCAST_DISTANCE; i++) {
+        pos = v2fAdd(pos, v2fScale(dir, RSIZE/4)); //------------- Step forward.
+        tile_index = v2fToIRoundUp(v2fScalarDiv(pos, RSIZE));
+        cur_tile = worldGetTile(tile_index);
+        if (cur_tile == 0 || cur_tile->wall_height >= 1) { break; }
+        prev_tile = cur_tile;
+        if (v2iIsEq(tile_index, sel)) { break; }
+    }
+    return prev_tile;
+}
+struct tile* raycast_into_selected_tile(vec2f pos, vec2f dir, vec2i sel) {
+    struct tile* cur_tile = 0;
+    vec2i tile_index;
+    dir = v2fNormalized(dir);
+    for (int i=0; i<MAX_RAYCAST_DISTANCE; i++) {
+        pos = v2fAdd(pos, v2fScale(dir, RSIZE/4)); //------------- Step forward.
+        tile_index = v2fToI(v2fScalarDiv(pos, RSIZE));
+        cur_tile = worldGetTile(tile_index);
+        if (cur_tile == 0 || cur_tile->wall_height >= 1 || v2iIsEq(tile_index, sel)) { break; }
+    }
+    return cur_tile;
+}
+int isPathToTileClear(vec2f pos, vec2f dir, vec2i sel) {
+    struct tile* cur_tile = 0;
+    vec2i tile_index;
+    dir = v2fNormalized(dir);
+    for (int i=0; i<MAX_RAYCAST_DISTANCE; i++) {
+        pos = v2fAdd(pos, v2fScale(dir, RSIZE/4)); //------------- Step forward.
+        tile_index = v2fToIRoundUp(v2fScalarDiv(pos, RSIZE));
+        cur_tile = worldGetTile(tile_index);
+        if (cur_tile == 0 || cur_tile->wall_height >= 1)
+            return 0;
+        if (v2iIsEq(tile_index, sel))
+            break;
+    }
+    return 1;
 }

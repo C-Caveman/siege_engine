@@ -222,7 +222,9 @@ void takeEvent();
 //////////////////////////////////////////////////////////////////////////////////// ;;
 // Utility functions:
 float randf(); // Random float in range: [0,1]
+float randfs(); // Random float in range: [0,1] (squared, so biased towards zero)
 float randfn(); // Random float in range: [-1,1]
+float randfns(); // Random float in range: [-1,1] (biased toward zero; squared without changing the sign)
 vec2f angleToVector(float angle); // Convert an angle to a normalized vector.
 float vectorToAngle(vec2f v); // Convert a vector to an angle.
 float fclamp(float n, float min, float max);

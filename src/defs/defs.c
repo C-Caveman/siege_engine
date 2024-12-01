@@ -194,8 +194,16 @@ void counterDec(struct counter* c) {
 float randf() {
     return (float)((float)rand() / RAND_MAX);
 }
+float randfs() {
+    float n = (float)((float)rand() / RAND_MAX);
+    return n*n;
+}
 float randfn() {
-    return (float)((float)rand() / RAND_MAX) - 0.5;
+    return (float)((float)rand() / RAND_MAX)*2.f - 1.f;
+}
+float randfns() {
+    float n = ((float)((float)rand() / RAND_MAX))*2.f - 1.f;
+    return n*fabs(n);
 }
 vec2f angleToVector(float angle) {
     return (vec2f){
