@@ -26,13 +26,13 @@
 //==== HANDLES =========================================================================// HANDLES //
 //typedef int16_t handle; // Defined in defs.h already.
 struct handle_info {
-    ent_basics* ent; // Entity who owns this handle.
+    entBasics* ent; // Entity who owns this handle.
     int16_t copies;         // Num ents using this handle.
     bool claimed;           // Whether the entity is marked for deletion.
 };
 #define NUM_HANDLES 65536-1
 extern struct handle_info handles[NUM_HANDLES];
-ent_basics*  get_ent(handle i); //----------------- Get an entity* from its handle.
+entBasics*  getEnt(handle i); //----------------- Get an entity* from its handle.
 handle              copy_handle(handle i); //------------- Copy a handle to another entity.
 handle              uncopy_handle(handle i); //----------- Delete a handle to another entity.
 
@@ -87,7 +87,7 @@ struct ent_rabbit {
     ENT_BASICS
     struct sprite sprites[NUM_RABBIT_SPRITES];
     vec2f wanderDir;
-    int wanderWait;
+    handle target;
 };
 enum zombie_sprites {ZOMBIE_SPRITE_1, NUM_ZOMBIE_SPRITES};                      // ZOMBIE
 struct ent_zombie {
@@ -115,15 +115,15 @@ ENTITY_TYPES_LIST(TO_THINK_PROTOTYPES)
 //======================================================================// Generic entity functions. //
 void* spawn_ent(int type, char* array, int array_len);
 void* spawn(int type, vec2f pos);
-void despawn_ent(ent_basics* ent);
-void think_all_ents(char* array, int array_len);
+void despawn_ent(entBasics* ent);
+void thinkAllEnts(char* array, int array_len);
 char* get_type_name(int type);
-int get_ent_size(int type);
+int getEnt_size(int type);
 int get_first_ent(char* array, int array_len);
 int get_next_ent(int i, char* array, int array_len);
-void move_ent(ent_basics* ent);
+void move_ent(entBasics* ent);
 char* get_type_name(int type);
-void collide_wall(ent_basics* e);
+void collide_wall(entBasics* e);
 void wallCollision(char* array, int array_len);
 void defragEntArray();
 

@@ -192,7 +192,7 @@ void clientUpdateDialogue() { // Animate the dialog box.
         playerClient.dialogCharsPrinted++;
         playerClient.dialogStringPos++;
         if (!isSpace) {
-            playSoundChannel(actors[playerClient.dialogActorIndex].voices[playerClient.dialogActorVoiceIndex], 5);
+            playSoundChannel(actors[playerClient.dialogActorIndex].voices[playerClient.dialogActorVoiceIndex], CHAN_VOICE);
             playerClient.dialogActorFrame++;
         }
         /*

@@ -99,7 +99,7 @@ void counterDec(struct counter* c);
     handle h;            \
     uint16_t flags;      \
     uint16_t health;     \
-    struct counter thinkTimer; \
+    uint32_t nextThink; \
     vec2f pos;           \
     vec2f vel;           \
     vec2f dir;           \
@@ -107,7 +107,7 @@ void counterDec(struct counter* c);
     vec2i chunk;         \
 
 typedef uint16_t handle; //-------------------- Entity handle.
-typedef struct { ENT_BASICS } ent_basics; //----------------------------------- Generic entity.
+typedef struct { ENT_BASICS } entBasics; //----------------------------------- Generic entity.
 enum ent_flags {
     NODRAW =      1,
     NOANIMATION = 2,
@@ -211,7 +211,7 @@ struct eventsBuffer {
     int sequenceNumber;
     struct packet buffer[EVENT_BUFFER_SIZE];
 };
-extern float cur_frame_start;
+extern uint32_t curFrameStart;
 extern struct eventsBuffer events;
 void applyEvent(struct event* ev);
 void makeEvent(struct event e);
@@ -229,5 +229,6 @@ vec2f angleToVector(float angle); // Convert an angle to a normalized vector.
 float vectorToAngle(vec2f v); // Convert a vector to an angle.
 float fclamp(float n, float min, float max);
 int   iclamp(int n, int min, int max);
+bool isAfter(uint32_t timeA, uint32_t timeB); // Correctly compare two timestamps, taking into account time overflow. (if time delta > 600 hours, assume time overflow)
 
 #endif

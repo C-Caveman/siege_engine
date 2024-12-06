@@ -29,11 +29,11 @@ vec2i getTileAtCursor(struct client* c) {
     > Update our chunk.
 */
 void move_all_ents(char* array, int array_len) {
-    ent_basics* e;
+    entBasics* e;
     for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
         if (array[i] != HEADER_BYTE) { printf("*** Invalid index given by get_next_ent() in move_all_ents()\n"); exit(-1); }
                                                                                     //- move the entity, record its position in the chunk
-        e = (ent_basics*)&array[i];
+        e = (entBasics*)&array[i];
         vec2i old_tile = e->tile;                                                   //- Old tile.
         vec2i old_chunk = e->chunk;                                                 //- Old chunk.
         move_ent(e);
@@ -56,19 +56,19 @@ void move_all_ents(char* array, int array_len) {
             int numGibsInTile = 0;
             if (new_chunk_was_valid)
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
-                    ent_basics* tileEnt = get_ent(new_tile_ptr->ents[i]);
+                    entBasics* tileEnt = getEnt(new_tile_ptr->ents[i]);
                     numGibsInTile += (tileEnt && tileEnt->type == gib_type);
                 }
             bool tooManyGibs = (numGibsInTile > MAX_ENTS_PER_TILE*3/4);
             if (new_chunk_was_valid) {
-                ent_basics* firstTileEnt = get_ent(new_tile_ptr->ents[0]);
+                entBasics* firstTileEnt = getEnt(new_tile_ptr->ents[0]);
                 if (e->type != gib_type && firstTileEnt && firstTileEnt->type == gib_type && numGibsInTile > 0) {
                     new_tile_ptr->ents[0] = e->h;
                 }
             }
             if (new_chunk_was_valid)
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------------------------------------ Store handle in new tile.
-                    ent_basics* tileEnt = get_ent(new_tile_ptr->ents[i]);
+                    entBasics* tileEnt = getEnt(new_tile_ptr->ents[i]);
                     if (tileEnt == 0 || (i == MAX_ENTS_PER_TILE-1 && tileEnt && e->type != gib_type && tileEnt->type == gib_type && tooManyGibs)) {
                         new_tile_ptr->ents[i] = e->h;
                         break;
@@ -111,21 +111,21 @@ int main() {
     s->pos = (vec2f){(float)(RSIZE*1.5), RSIZE*CHUNK_WIDTH/2};
     s->fren = p->h;
     //printf("*Type name: '%s'\n", get_type_name(s->type));
-    ent_basics* bunny = (ent_basics*)spawn(rabbit_type, (vec2f){0,0});
+    entBasics* bunny = (entBasics*)spawn(rabbit_type, (vec2f){0,0});
     bunny->pos = (vec2f){RSIZE*2, RSIZE*2};
     EVENT(EntSpawn, .type=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/2), RSIZE*(CHUNK_WIDTH+1)});
     EVENT(EntSpawn, .type=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH+1), RSIZE*(CHUNK_WIDTH/2)});
     
     //playSoundChannel(arcLamp1, 6);
-    playMusicLoop(campfire01); //TODO todon't do this
+    playMusicLoop(spookyWind1);
     // GAME LOOP:
     while (running) {
-        cur_frame_start = SDL_GetTicks();
-        dt = (cur_frame_start - last_frame_end) / 1000;
+        curFrameStart = SDL_GetTicks();
+        dt = ((float)curFrameStart - (float)lastFrameEnd) / 1000.f;
         if (dt > 0.1f) // Cap the delta time.
             dt = 0.05f;
         anim_tick = SDL_GetTicks() % 256; //- 8-bit timestamp for animations.
-        last_frame_end = SDL_GetTicks();
+        lastFrameEnd = SDL_GetTicks();
         track_fps();
         
         // Client input:
@@ -139,26 +139,26 @@ int main() {
             continue;
         }
         clientUpdatePlayerEntity();                                   //- Client_Inputs -> Player_Entity.
-        if (playerClient.attacking && (cur_frame_start - playerClient.lastAttackTime) > 300 && playerClient.player->heat.count < 1) {
+        if (playerClient.attacking && (curFrameStart - playerClient.lastAttackTime) > 300 && playerClient.player->heat.count < 1) {
             //playerClient.player->heat.count = (uint8_t)iclamp(20+(int)playerClient.player->heat.count, 0, 200);
-            playerClient.lastAttackTime = cur_frame_start;
+            playerClient.lastAttackTime = curFrameStart;
             playerClient.player->sprites[PLAYER_GUN].frame = 0;;
             playerClient.player->sprites[PLAYER_GUN].flags &= ~PAUSED;
             //playSound(bam02);
             playSoundChannel(bam02, CHAN_WEAPON);
             void* e = spawn(projectile_type, (vec2f){0,0});
             vec2f aimDir = angleToVector(playerClient.aim_dir);
-            ((ent_basics*)e)->pos = v2fAdd(playerClient.player->pos, v2fScale(aimDir, RSIZE/2));
-            ((ent_basics*)e)->tile = v2iScalarDiv(v2fToI(((ent_basics*)e)->pos), RSIZE);
-            ((ent_basics*)e)->vel = v2fScale(aimDir, 800);
+            ((entBasics*)e)->pos = v2fAdd(playerClient.player->pos, v2fScale(aimDir, RSIZE/2));
+            ((entBasics*)e)->tile = v2iScalarDiv(v2fToI(((entBasics*)e)->pos), RSIZE);
+            ((entBasics*)e)->vel = v2fScale(aimDir, 800);
         }
-        if (playerClient.building && (cur_frame_start - playerClient.lastBuildTime) > 50) {
+        if (playerClient.building && (curFrameStart - playerClient.lastBuildTime) > 50) {
             struct tile* timmy = worldGetTile(getTileAtCursor(&playerClient));
             for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
                 if (timmy == 0)
                     break;
                 if (timmy->ents[i] != 0) {
-                    ent_basics* e = get_ent(timmy->ents[i]);
+                    entBasics* e = getEnt(timmy->ents[i]);
                     if (e->type == gib_type)
                         despawn_ent(e);
                     else
@@ -166,7 +166,7 @@ int main() {
                 }
             }
             if (timmy != 0 && timmy->wall_height <= 0) {
-                playerClient.lastBuildTime = cur_frame_start;
+                playerClient.lastBuildTime = curFrameStart;
                 timmy->wall_height = 8;
                 timmy->floor_anim = grass1Floor;
                 timmy->wall_side_anim = grass1Side;
@@ -175,7 +175,7 @@ int main() {
             }
         }
         // Entity updates (server):
-        think_all_ents(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+        thinkAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         move_all_ents(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         wallCollision(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         defragEntArray();

@@ -41,6 +41,7 @@
     f(rocketSteamHiss) \
     f(rocketSteamRelease) \
     f(shlick) \
+    f(slice001) \
     f(tack) \
     f(thud) \
     f(thump01) \

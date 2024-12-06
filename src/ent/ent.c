@@ -20,7 +20,7 @@ int countRemainingHandles() {
     }
     return numAvailable;
 }
-handle claim_handle(ent_basics* e) { //-------- Bind a handle to an entity.
+handle claim_handle(entBasics* e) { //-------- Bind a handle to an entity.
     handle h = -1;
     for (int i=0; i<NUM_HANDLES; i++) {
         if (handles[i].copies == 0) {h=i; break;}
@@ -51,20 +51,20 @@ handle uncopy_handle(handle i) { //------------------- Uncopy a bound handle, re
     if (i != 0) { handles[i].copies--; } //Null handle cannot be destroyed.
     return 0;
 }
-ent_basics*  get_ent(handle i) { //------------ Get an entity by its handle.
+entBasics*  getEnt(handle i) { //------------ Get an entity by its handle.
     if (handles[i].claimed == 1)
         { return handles[i].ent; }
     else
         { handles[i].copies--; return 0; }
 }//===============================================================================// ENTITY FUNCTIONS. //;;
-void nearbyEntInteraction(vec2f position, void (*fn)(ent_basics*)) {
+void nearbyEntInteraction(vec2f position, void (*fn)(entBasics*)) {
     vec2f p = v2fSub(v2fAdd(position, HW), (vec2f){RSIZE,RSIZE}); // Top left corner of the 3x3.
     for (int i=0; i<3; i++) {
         for (int j=0; j<3; j++) {
             for (int k=0; k<MAX_ENTS_PER_TILE; k++) {
                 struct tile* curTile = worldTileFromPos(v2fAdd(v2fAdd(p, v2fScale((vec2f){0,RSIZE}, (float)(i))), v2fScale((vec2f){RSIZE,0}, (float)(j))));
                 if (curTile) {
-                    ent_basics* useTarget = get_ent(curTile->ents[k]);
+                    entBasics* useTarget = getEnt(curTile->ents[k]);
                     if (useTarget) {
                         fn(useTarget);
                     }
@@ -73,14 +73,14 @@ void nearbyEntInteraction(vec2f position, void (*fn)(ent_basics*)) {
         }
     }
 }
-void nearbyEntInteractionBidirectional(ent_basics* user, void (*fn)(ent_basics*, ent_basics*)) {
+void nearbyEntInteractionBidirectional(entBasics* user, void (*fn)(entBasics*, entBasics*)) {
     vec2f p = v2fSub(v2fAdd(user->pos, HW), (vec2f){RSIZE,RSIZE}); // Top left corner of the 3x3.
     for (int i=0; i<3; i++) {
         for (int j=0; j<3; j++) {
             for (int k=0; k<MAX_ENTS_PER_TILE; k++) {
                 struct tile* curTile = worldTileFromPos(v2fAdd(v2fAdd(p, v2fScale((vec2f){0,RSIZE}, (float)(i))), v2fScale((vec2f){RSIZE,0}, (float)(j))));
                 if (curTile) {
-                    ent_basics* useTarget = get_ent(curTile->ents[k]);
+                    entBasics* useTarget = getEnt(curTile->ents[k]);
                     if (useTarget) {
                         fn(user, useTarget);
                     }
@@ -120,7 +120,7 @@ void takeEvent() {
 }
 void evPlayerMove(struct detailsPlayerMove* d) {
     printf("Player moves!\n");
-    struct ent_player* p = (struct ent_player*)get_ent(d->p);
+    struct ent_player* p = (struct ent_player*)getEnt(d->p);
     if (p == 0)
         return;
     p->pos = d->pos;
@@ -130,32 +130,34 @@ void evPlayerShoot(struct detailsPlayerShoot* d) {
     printf("Player shoots!\n");
 }
 void evEntMove(struct detailsEntMove* d) {
-    ent_basics* e = get_ent(d->h);
+    entBasics* e = getEnt(d->h);
     if (!e)
         return;
     e->pos = d->pos;
     e->vel = d->vel;
 }
 void evTriggerDialog(struct detailsTriggerDialog* d) {
-    struct ent_player* e = (struct ent_player*)get_ent(d->h);
+    struct ent_player* e = (struct ent_player*)getEnt(d->h);
     if (!e)
         return;
     clientLoadDialog(d->fileName);
     clientStartDialog(playerClient.loadedDialog);
 }
 void evSpriteRotate(struct detailsSpriteRotate* d) {
-    ent_basics* e = get_ent(d->h);
+    entBasics* e = getEnt(d->h);
     if (!e || e->num_sprites <= d->index || d->index < 0)
         return;
-    struct sprite* sprites = (struct sprite*)( (char*)e+sizeof(ent_basics) );
+    struct sprite* sprites = (struct sprite*)( (char*)e+sizeof(entBasics) );
     sprites[d->index].rotation = d->angle;
 }
 void evEntSpawn(struct detailsEntSpawn* d) {
     spawn(d->type, d->pos);
 }
+handle findPlayer() { // first entity handle should be the player TODO add a player_type ent search for reliability! TODO
+    return 1;
+}
 void playerInit(struct ent_player* e) {
     if (DEBUG_ENTS) { printf("Player entity initializing!\n"); }
-    e->thinkTimer.interval = 0;
     e->health = 1;
     e->heat.interval = 4;
     e->pos = (vec2f){0,0};
@@ -177,7 +179,7 @@ void playerInit(struct ent_player* e) {
 int numRabbitPets = 0;
 #define INTERACT_DIALOG_LEN 256
 char rabbitPetDialog[INTERACT_DIALOG_LEN];
-void playerInteract(ent_basics* player, ent_basics* useTarget) {
+void playerInteract(entBasics* player, entBasics* useTarget) {
     struct ent_player* user = (struct ent_player*)player;
     if (useTarget && useTarget->type == scenery_type && user->cl && user->cl->interacting) {
         printf("Used a scenery ent!\n");
@@ -205,7 +207,7 @@ void playerInteract(ent_basics* player, ent_basics* useTarget) {
         }
     }
 }
-void windShieldSplatter(ent_basics* attacker, ent_basics* victim) {
+void windShieldSplatter(entBasics* attacker, entBasics* victim) {
     if (victim == 0 || attacker == 0)
         return;
     if (victim->type == zombie_type && v2fDist(victim->pos, attacker->pos) < RSIZE*2)
@@ -218,18 +220,18 @@ void playerThink(struct ent_player* e) {                              // PLAYER
         playerClient.explodingEverything = false;
         for (int i=get_first_ent(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); i != -1; i=get_next_ent(i, mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN)) {
             if (mainWorld->entity_bytes_array[i] != HEADER_BYTE) {
-                if (DEBUG_ENTS) { printf("*** Invalid index given by get_next_ent() in think_all_ents()\n"); }
+                if (DEBUG_ENTS) { printf("*** Invalid index given by get_next_ent() in thinkAllEnts()\n"); }
                 break;
             }
             // Run the correct think function for this entity:
-            ent_basics* e = (ent_basics*)&mainWorld->entity_bytes_array[i];
+            entBasics* e = (entBasics*)&mainWorld->entity_bytes_array[i];
             if (e->type == zombie_type && v2fDist(playerClient.player->pos, e->pos) < RSIZE*10)
                 EVENT(ZombieDie, .h=e->h);
         }
     }
     if (e->heat.count == HEAT_MAX) {
         ;;;
-        nearbyEntInteractionBidirectional((ent_basics*)e, windShieldSplatter);
+        nearbyEntInteractionBidirectional((entBasics*)e, windShieldSplatter);
     }
     if (playerClient.dashing) {
         e->sprites[PLAYER_FLAMES].flags &= ~INVISIBLE;
@@ -279,7 +281,7 @@ void playerThink(struct ent_player* e) {                              // PLAYER
     e->sprites[PLAYER_FLAMES_EXTRA].pos = v2fScale(e->sprites[PLAYER_FLAMES].pos, 1.8);
     //vec2f p = pos + HW;
     if (playerClient.interacting) {
-        nearbyEntInteractionBidirectional((ent_basics*)e, playerInteract);
+        nearbyEntInteractionBidirectional((entBasics*)e, playerInteract);
     }
 }
 
@@ -291,13 +293,12 @@ void sceneryInit(struct ent_scenery* e) {                              // SCENER
     e->sprites[SCENERY_SPRITE_1].anim = rocket_tank;
 }
 void sceneryThink(struct ent_scenery* e) {
-    //ent_basics* e = get_ent(fren);
+    //entBasics* e = getEnt(fren);
     //if (e != nullptr) { vel = vel + ( e->pos-pos ).normalized() * 15; } //- Follow the player.
     //vel = vel * 1.1; //---------------------------------------------------- Slip around.
 }
 
 void projectileInit(struct ent_projectile* e) {                           // PROJECTILE
-    e->thinkTimer.interval = 0;
     e->num_sprites = 1;
     e->health = 1;
     e->sprites[0].anim = grenade01Blink;
@@ -306,7 +307,7 @@ void projectileInit(struct ent_projectile* e) {                           // PRO
     e->lifetime = 100;
     e->isExploding = 0;
 }
-void projectileHitNearby(ent_basics* attacker, ent_basics* victim) {
+void projectileHitNearby(entBasics* attacker, entBasics* victim) {
     if (victim && victim->type == zombie_type && victim->health > 0) {
         float victimDistance = v2fDist(attacker->pos, victim->pos);
         if (victimDistance > RSIZE*0.8) {
@@ -316,13 +317,12 @@ void projectileHitNearby(ent_basics* attacker, ent_basics* victim) {
         ((struct ent_projectile*)attacker)->lifetime = 0;
     }
 }
-
 void projectileThink(struct ent_projectile* e) {
     e->lifetime -= 1;
     struct tile* curTile = 0;
     vec2f p = v2fAdd(e->pos, HW);
     p = v2fSub(p, (vec2f){RSIZE,RSIZE});
-    nearbyEntInteractionBidirectional((ent_basics*)e, projectileHitNearby);
+    nearbyEntInteractionBidirectional((entBasics*)e, projectileHitNearby);
     curTile = worldTileFromPos(v2fAdd(e->pos, HW));
     if (e->lifetime <= 0 && !e->isExploding) {
         e->isExploding = 1;
@@ -349,49 +349,50 @@ void projectileThink(struct ent_projectile* e) {
         return;
     }
     if (e->lifetime <= 0 || e->sprites[0].frame >= anim_data[grenade01Explode].len-1) {
-        despawn_ent((ent_basics*)e);
+        despawn_ent((entBasics*)e);
     }
 }
 
 void rabbitInit(struct ent_rabbit* e) {                               // RABBIT
-    e->thinkTimer.interval = 100;
     e->num_sprites = 1;
     e->health = 1;
     e->wanderDir = (vec2f){1,0};
-    e->wanderWait = 100;
     //sprites[0].flags |= LOOPING;
     e->sprites[0].anim = rabbitHop01;
     e->sprites[0].flags |= PAUSED;
     e->sprites[0].frame = 2;
+    e->target = findPlayer();
 }
 void rabbitThink(struct ent_rabbit* e) {
-    e->wanderWait -= 1;
-    if (e->wanderWait <= 0) {
-        e->wanderWait = 100;
-        e->wanderDir = (vec2f){ (float)(rand()) / (float)(RAND_MAX) - 0.5f, (float)(rand()) / (float)RAND_MAX - 0.5f };
-        e->vel = v2fScale(v2fNormalized(e->wanderDir), 800.f);
-        e->sprites[0].rotation = atan2(e->wanderDir.y, e->wanderDir.x) * 180. / F_PI + 90;
-        e->sprites[0].rotation = (float)((int)e->sprites[0].rotation % 360);
-        e->sprites[0].frame = 0;
-        e->sprites[0].flags &= ~PAUSED;
-    }
+    e->nextThink = curFrameStart + 750;
+    vec2f targetPos = e->pos;
+    entBasics* t = getEnt(e->target);
+    if (t)
+        targetPos = t->pos;
+    if (t && v2fDist(targetPos, e->pos) < RSIZE*10)
+        playSoundChannel(voiceTickerTape03, CHAN_MONSTER);
+    e->wanderDir = v2fAdd(v2fNormalized(v2fSub(targetPos, e->pos)), (vec2f){randfn(), randfn()});
+    e->vel = v2fScale(v2fNormalized(e->wanderDir), 800.f);
+    e->sprites[0].rotation = atan2(e->wanderDir.y, e->wanderDir.x) * 180. / F_PI + 90;
+    e->sprites[0].rotation = (float)((int)e->sprites[0].rotation % 360);
+    e->sprites[0].frame = 0;
+    e->sprites[0].flags &= ~PAUSED;
 }
 
 void zombieInit(struct ent_zombie* e) {                               // ZOMBIE
-    e->thinkTimer.interval = 40;
     e->health = 1;
     e->wanderDir = (vec2f){1,0};
-    e->speed = 50.f + 500.f*randf();
+    e->speed = 150.f + 200.f*randf();
     e->num_sprites = 1;
-    e->walkTime = cur_frame_start;
+    e->walkTime = curFrameStart;
     e->sprites[0].flags |= LOOPING;
     e->sprites[0].anim = zombie;
-    e->target = 1; // first entity handle should be the player TODO add a player-finding function for reliability! TODO
+    e->target = findPlayer(); 
     e->targetPos = (vec2f) {0,0};
     e->walkDelay.interval = 40;
 }
 #define PUSH_FORCE 50
-void pushNearbyEnts(ent_basics* me, ent_basics* them) {
+void pushNearbyEnts(entBasics* me, entBasics* them) {
     if (them->type != zombie_type)
         return;
     vec2f posDelta = v2fSub(me->pos, them->pos);
@@ -402,7 +403,7 @@ void pushNearbyEnts(ent_basics* me, ent_basics* them) {
     }
 }
 #define DIVERSION_STRENGTH 64
-void divertNearbyZombies(ent_basics* me, ent_basics* them) {
+void divertNearbyZombies(entBasics* me, entBasics* them) {
     if (them->type != zombie_type)
         return;
     struct ent_zombie* thisZombie = (struct ent_zombie*)me;
@@ -417,13 +418,13 @@ void divertNearbyZombies(ent_basics* me, ent_basics* them) {
 #define MSIZE 1024
 char message[MSIZE] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
 void evZombieDie(struct detailsZombieDie* d) {
-    struct ent_zombie* e = (struct ent_zombie*)get_ent(d->h);
+    struct ent_zombie* e = (struct ent_zombie*)getEnt(d->h);
     if (!e)
         return;
     playSoundChannel(zombieDie01, CHAN_MONSTER);
     int numGibs = anim_data[zombieGibs].len;
     for (int i=0; i<numGibs; i++) {
-        ent_basics* newGib = (ent_basics*)spawn(gib_type, e->pos);
+        entBasics* newGib = (entBasics*)spawn(gib_type, e->pos);
         if (newGib) {
             ((struct ent_gib*)newGib)->sprites[0].rotation = e->sprites[0].rotation;
             ((struct ent_gib*)newGib)->sprites[0].anim = zombieGibs;
@@ -431,19 +432,19 @@ void evZombieDie(struct detailsZombieDie* d) {
             ((struct ent_gib*)newGib)->vel = (vec2f){randfn()*randfn()*16000,randfn()*randfn()*16000}; //TODO ensure handles are not desynced in client/server!
         }
     }
-    despawn_ent((ent_basics*)e);
+    despawn_ent((entBasics*)e);
 }
 #define SPLATTER_FORCE 6000
 #define SCATTER_FORCE 0.8
 void evZombieWindShieldSplatter(struct detailsZombieWindShieldSplatter* d) {
-    struct ent_zombie* e = (struct ent_zombie*)get_ent(d->h);
+    struct ent_zombie* e = (struct ent_zombie*)getEnt(d->h);
     if (!e)
         return;
     playSoundChannel(zombieDie01, CHAN_MONSTER);
     int numGibs = anim_data[zombieGibs].len;
     vec2f splatterDir = v2fNormalized(v2fAdd(v2fScale(v2fNormalized(playerClient.player->vel),-1), (vec2f){randfn()*SCATTER_FORCE,randfn()*SCATTER_FORCE}));
     for (int i=0; i<numGibs; i++) {
-        ent_basics* newGib = (ent_basics*)spawn(gib_type, e->pos);
+        entBasics* newGib = (entBasics*)spawn(gib_type, e->pos);
         if (newGib) {
             ((struct ent_gib*)newGib)->sprites[0].rotation = e->sprites[0].rotation;
             ((struct ent_gib*)newGib)->sprites[0].anim = zombieGibs;
@@ -451,25 +452,30 @@ void evZombieWindShieldSplatter(struct detailsZombieWindShieldSplatter* d) {
             ((struct ent_gib*)newGib)->vel = v2fAdd(v2fScale(splatterDir, SPLATTER_FORCE*(randfns()+0.25f)), playerClient.player->vel);
         }
     }
-    despawn_ent((ent_basics*)e);
+    despawn_ent((entBasics*)e);
 }
-
 void zombieThink(struct ent_zombie* e) {
+    e->nextThink = curFrameStart + 40;
     if (e->health <= 0) {
         EVENT(ZombieDie, .h=e->h);
         return;
     }
-    ent_basics* t = get_ent(e->target);
-    if (t != 0 && v2fDist(t->pos, e->pos) < RSIZE/2 && playerClient.dialogVisible == 0) {
-        EVENT(TriggerDialog, .h=e->target, "assets/worlds/testWorld/hello.txt");
+    entBasics* t = getEnt(e->target);
+    bool attacking = (t != 0 && v2fDist(t->pos, e->pos) < RSIZE/2);
+    if (attacking) {
+        playSoundChannel(slice001, CHAN_MONSTER);
+        e->nextThink = curFrameStart + 500;
+    }
+    if (attacking && playerClient.dialogVisible == 0) {
+        //EVENT(TriggerDialog, .h=e->target, "assets/worlds/testWorld/hello.txt");
     }
     counterInc(&e->walkDelay);
     vec2f targetVector = v2fNormalized(v2fSub(v2fAdd(e->targetPos, v2fScale(t->vel, 0.15f)), e->pos));
-    if (cur_frame_start > e->walkTime) { //e->walkDelay.count > 0) {
-        e->walkTime = cur_frame_start + 40;
+    if (curFrameStart > e->walkTime) { //e->walkDelay.count > 0) {
+        e->walkTime = curFrameStart + 40;
         e->walkDelay.count = 0;
         e->wanderDir = targetVector;
-        nearbyEntInteractionBidirectional((ent_basics*)e, divertNearbyZombies);
+        nearbyEntInteractionBidirectional((entBasics*)e, divertNearbyZombies);
         vec2f persuitVelocity = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), e->speed));
         EVENT(EntMove, .h=e->h, .pos=e->pos, .vel=persuitVelocity); ;;
         e->targetPos = t->pos;
@@ -480,7 +486,6 @@ void zombieThink(struct ent_zombie* e) {
     EVENT(SpriteRotate, .h=e->h, .index=ZOMBIE_SPRITE_1, .angle=angleToPlayer);
 }
 void gibInit(struct ent_gib* e) {
-    e->thinkTimer.interval = 4;
     e->num_sprites = 1;
     if (e->h % 8 == 0)
         e->flags |= NOFRICTION;
@@ -490,6 +495,7 @@ void gibInit(struct ent_gib* e) {
     e->spinRate.count = GIB_SPIN_SPEED * randf()*randf();
 }
 void gibThink(struct ent_gib* e) {
+    e->nextThink = curFrameStart + 30;
     counterDec(&e->spinRate);
     e->sprites[0].rotation += (float)(e->spinRate.count*8*dt * (1-2*((e->h & 1) == 0)));
     if (e->spinRate.count < GIB_SPIN_SPEED*3/8)
@@ -508,14 +514,14 @@ char* get_type_name(int type) {
     return entity_type_names[type];
 }
 // Return the size of the current entity type (in segments).
-int get_ent_size(int type) {
+int getEnt_size(int type) {
     int size = -1;
     switch (type) {
     // X macro for ENTITY_TYPES_LIST:
     #define GET_ENT_SIZES(name) case name##_type:  size = sizeof(struct ent_##name); break; 
     ENTITY_TYPES_LIST(GET_ENT_SIZES)
     default:
-        printf("*** Unknown entity type in get_ent_size()\n");
+        printf("*** Unknown entity type in getEnt_size()\n");
         exit(-1);
     }
     return size;
@@ -523,7 +529,7 @@ int get_ent_size(int type) {
 // Return index of the next entity's first byte. Returns -1 if there are no more entities.
 int get_next_ent(int i, char* array, int array_len) {
     if (array[i] == HEADER_BYTE) {
-        int ent_size = ((ent_basics*)&array[i])->size;
+        int ent_size = ((entBasics*)&array[i])->size;
         i += ent_size; // Skip past this entity.
         if (DEBUG_ENTS) { printf("get_next_ent() entity at %d. Size is %d.\n", i, ent_size); }
     }
@@ -552,7 +558,7 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
         printf("*** Warning! 7/8 of entity bytes array are full!\n");
     char* array = mainWorld->entity_bytes_array;
     int array_len = ENTITY_BYTES_ARRAY_LEN;
-    int required_space = get_ent_size(type);
+    int required_space = getEnt_size(type);
     int empty_space_len = 0;
     int i = 0;
     while (i<array_len) {
@@ -564,7 +570,7 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
         }
         // Slot occupied.
         else {
-            int skip_bytes = ((ent_basics*)&array[i])->size;
+            int skip_bytes = ((entBasics*)&array[i])->size;
             if (DEBUG_ENT_SPAWNING) { printf("Slots [%d, %d] already taken.\n", i, i+skip_bytes-1); }
             empty_space_len = 0;
             i += skip_bytes;
@@ -592,11 +598,11 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
         return 0;
     }
     // Initialize the entity's header info:
-    ent_basics* new_entity = (ent_basics*)&array[i];
+    entBasics* new_entity = (entBasics*)&array[i];
     new_entity->header_byte = HEADER_BYTE;
     new_entity->type = type;
     new_entity->size = required_space;
-    new_entity->h = claim_handle((ent_basics*)&array[i]);
+    new_entity->h = claim_handle((entBasics*)&array[i]);
     new_entity->pos = pos;
     // Initialize the entity.
     switch (type) {
@@ -614,7 +620,7 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
     return &array[i];
 }
 // Remove an entity from an entity segment array. TODO ent-specific cleanup TODO
-void despawn_ent(ent_basics* e) {
+void despawn_ent(entBasics* e) {
     struct tile* old_tile = &mainWorld->chunks[e->chunk.y][e->chunk.x].tiles[e->tile.y][e->tile.x];
     bool old_tile_was_valid = (e->tile.x > -1 && e->tile.x < CHUNK_WIDTH && e->tile.y > -1 && e->tile.y < CHUNK_WIDTH);
     for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
@@ -631,16 +637,15 @@ void despawn_ent(ent_basics* e) {
     memset((void*)e, 0, size*sizeof(char));
 }
 // Run the think() function for each entitiy in a segment array.
-void think_all_ents(char* array, int array_len) {
+void thinkAllEnts(char* array, int array_len) {
     for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
         if (array[i] != HEADER_BYTE) {
-            if (DEBUG_ENTS) { printf("*** Invalid index given by get_next_ent() in think_all_ents()\n"); }
+            if (DEBUG_ENTS) { printf("*** Invalid index given by get_next_ent() in thinkAllEnts()\n"); }
             break;
         }
         // Run the correct think function for this entity:
-        ent_basics* e = (ent_basics*)&array[i];
-        counterInc(&e->thinkTimer);
-        if (e->thinkTimer.count < 1 || e->flags & NOTHINK) // If ent->thinkCounter hasn't reached 1, ent is sleeping.
+        entBasics* e = (entBasics*)&array[i];
+        if (curFrameStart < e->nextThink || e->flags & NOTHINK)
             continue;
         //printf("Thinking entity type: '%s' at index %d.\n", get_type_name(type), i);
         switch (e->type) {
@@ -648,12 +653,12 @@ void think_all_ents(char* array, int array_len) {
             #define ENT_THINK_CASES(name) case name##_type:  name##Think((struct ent_##name *)(&array[i])); break; 
             ENTITY_TYPES_LIST(ENT_THINK_CASES)
             default:
-                printf("*** entity type '%d' at %d not recognized in think_all_ents().\n", e->type,  i);
+                printf("*** entity type '%d' at %d not recognized in thinkAllEnts().\n", e->type,  i);
                 exit(-1);
         }
     }
 }
-void move_ent(ent_basics* e) { //------------ Update an ent's position based on its velocity:
+void move_ent(entBasics* e) { //------------ Update an ent's position based on its velocity:
     e->pos = v2fAdd(e->pos, v2fScale(e->vel, dt));
     // Apply friction:
     float speed = v2fLen(e->vel);
@@ -664,7 +669,7 @@ void move_ent(ent_basics* e) { //------------ Update an ent's position based on 
 }
 
 float MIN_SQUARE_DISTANCE = RSIZE;
-void collide_wall(ent_basics* e) {
+void collide_wall(entBasics* e) {
     vec2f* position = &e->pos;
     vec2f centered_position = v2fAdd(e->pos, (vec2f){RSIZE/2, RSIZE/2});
     vec2f nearest_corner = centered_position;
@@ -728,10 +733,10 @@ void collide_wall(ent_basics* e) {
 void wallCollision(char* array, int array_len) {
     for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
         if (array[i] != HEADER_BYTE) {
-            if (DEBUG_ENTS) { printf("*** Invalid index given by get_next_ent() in think_all_ents()\n"); }
+            if (DEBUG_ENTS) { printf("*** Invalid index given by get_next_ent() in thinkAllEnts()\n"); }
             break;
         }
-        ent_basics* e = ((ent_basics*)&array[i]);
+        entBasics* e = ((entBasics*)&array[i]);
         if ((e->flags & NOCOLLISION) != NOCOLLISION)
             collide_wall(e);
     }
@@ -742,7 +747,7 @@ void defragEntArray() {
     char* array = mainWorld->entity_bytes_array;
     int array_len = ENTITY_BYTES_ARRAY_LEN;
     for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
-        ent_basics* e = ((ent_basics*)&array[i]);
+        entBasics* e = ((entBasics*)&array[i]);
         if (e && e->type == gib_type && rand() < RAND_MAX/32){ // Delete random gibs (not just the newest ones).
             despawn_ent(e);
         }

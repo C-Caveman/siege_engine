@@ -25,7 +25,7 @@ SDL_Window* window;
 SDL_Rect window_size; // Dimensions of the screen. Set in the init_graphics() method.
 SDL_Rect background;
 int running;
-float last_frame_end, cur_frame_start, frame_time, frame_count, last_sec, fps;
+uint32_t lastFrameEnd, curFrameStart, frame_time, frame_count, last_sec, fps;
 float dt = 0;
 TTF_Font* font = 0;
 
@@ -173,7 +173,7 @@ void init_graphics() {
     background.w = window_x;
     background.h = window_x;
     // init some helpful variables
-    last_frame_end = frame_time = frame_count = last_sec = fps = 0;
+    lastFrameEnd = frame_time = frame_count = last_sec = fps = 0;
     
     // turn the images in the graphics folder into GPU-usable textures
     load_animations();
@@ -200,8 +200,8 @@ void goWindowed() {
 }
 
 void track_fps() {
-    if (last_frame_end > (last_sec + 1000)) {
-        last_sec = last_frame_end;
+    if (lastFrameEnd > (last_sec + 1000)) {
+        last_sec = lastFrameEnd;
         fps = frame_count;
         frame_count = 0;
         //std::cout << "One second has passed, fps = " << fps << "\n";
@@ -209,7 +209,7 @@ void track_fps() {
     }
 }
 // Animate and draw all sprites possesed by an entity. ;;
-void draw_ent_sprites(vec2f camera_pos, ent_basics* e) {
+void draw_ent_sprites(vec2f camera_pos, entBasics* e) {
     //if (e->type == scenery_type) { std::cout << "e->chunk: " << e->chunk << "\ne->tile: " << e->tile << "\n\n";}
     int num_sprites = e->num_sprites;
     vec2f p;
@@ -221,7 +221,7 @@ void draw_ent_sprites(vec2f camera_pos, ent_basics* e) {
     SDL_Rect ent_render_pos;
     ent_render_pos.w = ent_render_pos.h = tileWidth;
     if (DEBUG_GRAPHICS) { printf("Num sprites in %s entity: %d\n", get_type_name(e->type), num_sprites); }
-    struct sprite* sprites = (struct sprite*)( (char*)e+sizeof(ent_basics) );
+    struct sprite* sprites = (struct sprite*)( (char*)e+sizeof(entBasics) );
     struct sprite* s;
     for (int i=0; i<num_sprites; i++) {
         // Get sprite data: (stored after the basic_ent segments)
@@ -277,7 +277,7 @@ void draw_all_ents(vec2f camera_pos, char* array, int array_len) { // ;;
                 printf("*** Invalid index given by get_next_ent() in draw_all_ents()\n");
             break;
         }
-        draw_ent_sprites(camera_pos, (ent_basics*)&array[i]);
+        draw_ent_sprites(camera_pos, (entBasics*)&array[i]);
         i = get_next_ent(i, array, array_len);
     }
 }
@@ -287,7 +287,7 @@ void present_frame() {
     // finished rendering a frame, 
     // now make sure we don't exceed the fps cap
     //
-    frame_time = SDL_GetTicks() - last_frame_end;
+    frame_time = SDL_GetTicks() - lastFrameEnd;
     if (frame_time < min_frame_time) {
         SDL_Delay(min_frame_time - frame_time);
     }
@@ -412,13 +412,13 @@ void chunkDrawTallEnts(vec2f camera_pos, vec2f camera_center, struct chunk* chun
             vec2i right = {middle_x+spread, row};
             if (v2iInBounds(left, 0, CHUNK_WIDTH)) {
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------- Draw left side entities.
-                        ent_basics* e = get_ent(chunk->tiles[left.y][left.x].ents[i]);
+                        entBasics* e = getEnt(chunk->tiles[left.y][left.x].ents[i]);
                         if (e != 0 && e->type != gib_type) { draw_ent_sprites(old_camera, e); }
                 }
             }
             if (v2iInBounds(right, 0, CHUNK_WIDTH)) {
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------- Draw right side entities.
-                        ent_basics* e = get_ent(chunk->tiles[right.y][right.x].ents[i]);
+                        entBasics* e = getEnt(chunk->tiles[right.y][right.x].ents[i]);
                         if (e != 0 && e->type != gib_type) { draw_ent_sprites(old_camera, e); }
                 }
             }
@@ -448,13 +448,13 @@ void chunkDrawShortEnts(vec2f camera_pos, vec2f camera_center, struct chunk* chu
             vec2i right = {middle_x+spread, row};
             if (v2iInBounds(left, 0, CHUNK_WIDTH)) {
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------- Draw left side entities.
-                        ent_basics* e = get_ent(chunk->tiles[left.y][left.x].ents[i]);
+                        entBasics* e = getEnt(chunk->tiles[left.y][left.x].ents[i]);
                         if (e != 0 && e->type == gib_type) { draw_ent_sprites(old_camera, e); }
                 }
             }
             if (v2iInBounds(right, 0, CHUNK_WIDTH)) {
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------- Draw right side entities.
-                        ent_basics* e = get_ent(chunk->tiles[right.y][right.x].ents[i]);
+                        entBasics* e = getEnt(chunk->tiles[right.y][right.x].ents[i]);
                         if (e != 0 && e->type == gib_type) { draw_ent_sprites(old_camera, e); }
                 }
             }
@@ -499,7 +499,7 @@ void renderText(char* text) {
     SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage); //now you can convert it into a texture
     SDL_Rect Message_rect;
     float charWidth = window_y/16;
-    Message_rect.x = window_x/2 - strlen(text)*charWidth/2 /* + sin(last_frame_end / 128) * window_x / 16 */;
+    Message_rect.x = window_x/2 - strlen(text)*charWidth/2 /* + sin(lastFrameEnd / 128) * window_x / 16 */;
     Message_rect.y = window_y/32;
     Message_rect.w = strlen(text) * charWidth;
     Message_rect.h = window_y/16;

@@ -228,3 +228,11 @@ int   iclamp(int n, int min, int max) {
         n = max;
     return n;
 }
+#define MAX_TIME_DELTA (0xffff / 2)
+bool isAfter(uint32_t timeA, uint32_t timeB) {
+    uint32_t delta = timeB - timeA;
+    if (timeA > timeB || delta < MAX_TIME_DELTA)
+        return true;
+    else
+        return false;
+}
