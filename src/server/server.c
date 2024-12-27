@@ -116,9 +116,8 @@ int main() {
     EVENT(EntSpawn, .type=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/2), RSIZE*(CHUNK_WIDTH+1)});
     EVENT(EntSpawn, .type=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH+1), RSIZE*(CHUNK_WIDTH/2)});
     
-    //playSoundChannel(arcLamp1, 6);
     playMusicLoop(spookyWind1);
-    // GAME LOOP:
+    //;;; GAME LOOP:
     while (running) {
         curFrameStart = SDL_GetTicks();
         dt = ((float)curFrameStart - (float)lastFrameEnd) / 1000.f;
@@ -139,8 +138,7 @@ int main() {
             continue;
         }
         clientUpdatePlayerEntity();                                   //- Client_Inputs -> Player_Entity.
-        if (playerClient.attacking && (curFrameStart - playerClient.lastAttackTime) > 300 && playerClient.player->heat.count < 1) {
-            //playerClient.player->heat.count = (uint8_t)iclamp(20+(int)playerClient.player->heat.count, 0, 200);
+        if (playerClient.attacking && (curFrameStart - playerClient.lastAttackTime) > 300 && playerClient.player->heatTracker < 1) {
             playerClient.lastAttackTime = curFrameStart;
             playerClient.player->sprites[PLAYER_GUN].frame = 0;;
             playerClient.player->sprites[PLAYER_GUN].flags &= ~PAUSED;
@@ -235,7 +233,7 @@ int main() {
         }
         // DRAW A HUD!   
         drawInfo((char*)"fps", fps, 0);
-        drawInfo((char*)"heat", (float)playerClient.player->heat.count, 1);
+        drawInfo((char*)"heat", (float)playerClient.player->heatTracker, 1);
         drawInfo((char*)"zombies", (float)mainWorld->numZombies, 2);
         clientShowDialog();
         present_frame(); // Put the frame on the screen:

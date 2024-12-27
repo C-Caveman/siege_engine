@@ -188,6 +188,10 @@ void client_input(struct client* client) {
                     client->dialogVisible = 0;
                     break;
                 case enum_inputDash:
+                    if (!client->dashing) {
+                        client->player->heat = client->player->heatTracker;
+                        timerStart(&client->player->heatTimer);
+                    }
                     client->dashing = true;
                     playSoundChannel(rocketEngineLoop, CHAN_ENGINE);
                     //playMusicLoop(rocketEngineLoopMusic);
@@ -239,9 +243,13 @@ void client_input(struct client* client) {
                     client->interacting = false;
                     break;
                 case enum_inputDash:
+                    if (client->dashing) {
+                        client->player->heat = client->player->heatTracker;
+                        timerStart(&client->player->heatTimer);
+                    }
                     client->dashing = false;
                     playSoundChannel(rocketEngineShutdown, CHAN_ENGINE);
-                    if (client->player->heat.count >= HEAT_MAX)
+                    if (client->player->heat >= HEAT_MAX)
                         playSoundChannel(rocketSteamHiss, CHAN_STEAM);
                     break;
                 case enum_inputSpawnZombie:

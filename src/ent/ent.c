@@ -159,7 +159,6 @@ handle findPlayer() { // first entity handle should be the player TODO add a pla
 void playerInit(struct ent_player* e) {
     if (DEBUG_ENTS) { printf("Player entity initializing!\n"); }
     e->health = 1;
-    e->heat.interval = 4;
     e->pos = (vec2f){0,0};
     // Init the sprites:
     e->num_sprites = NUM_PLAYER_SPRITES;
@@ -213,6 +212,7 @@ void windShieldSplatter(entBasics* attacker, entBasics* victim) {
     if (victim->type == zombie_type && v2fDist(victim->pos, attacker->pos) < RSIZE*2)
         EVENT(ZombieWindShieldSplatter, .h=victim->h);
 }
+#define HEAT_UPDATE_DELAY_MILLIS 10
 void playerThink(struct ent_player* e) {                              // PLAYER
     if (playerClient.zombieSpawning && mainWorld->entArraySpace > ENTITY_BYTES_ARRAY_LEN/8 && countRemainingHandles() > 10)
         spawn(zombie_type, v2fAdd(playerClient.camera_center, v2iToF(playerClient.aim_pixel_pos)));
@@ -229,7 +229,16 @@ void playerThink(struct ent_player* e) {                              // PLAYER
                 EVENT(ZombieDie, .h=e->h);
         }
     }
-    if (e->heat.count == HEAT_MAX) {
+    timerUpdate(&e->heatTimer, HEAT_UPDATE_DELAY_MILLIS);
+    //e->heatTimer.count = iclamp(e->heatTimer.count, 0, HEAT_MAX);
+    int heat = e->heat;
+    if (playerClient.dashing)
+        heat = e->heat + e->heatTimer.count;
+    else
+        heat = e->heat - e->heatTimer.count;
+    heat = iclamp(heat, 0, HEAT_MAX);
+    e->heatTracker = heat;
+    if (heat == HEAT_MAX) {
         ;;;
         nearbyEntInteractionBidirectional((entBasics*)e, windShieldSplatter);
     }
@@ -240,29 +249,25 @@ void playerThink(struct ent_player* e) {                              // PLAYER
         e->sprites[PLAYER_FLAMES].flags |= INVISIBLE;
         e->sprites[PLAYER_FLAMES_EXTRA].flags |= INVISIBLE;
     }
-    if (playerClient.dashing && e->heat.count < HEAT_MAX)
-        counterInc(&e->heat);
-    else if (e->heat.count > 0 && !playerClient.dashing)
-        counterDec(&e->heat);
-    if (playerClient.dashing && e->heat.count < HEAT_MAX && !isChannelPlaying(CHAN_ENGINE)) {
+    if (playerClient.dashing && heat < HEAT_MAX && !isChannelPlaying(CHAN_ENGINE)) {
         playSoundChannel(rocketEngineLoop, CHAN_ENGINE);
     }
-    else if (playerClient.dashing && e->heat.count == HEAT_MAX && !isChannelPlaying(CHAN_ENGINE)) {
+    else if (playerClient.dashing && heat == HEAT_MAX && !isChannelPlaying(CHAN_ENGINE)) {
         playSoundChannel(rocketEngineLoopFast, CHAN_ENGINE);
     }
-    if (e->heat.count > 0) {
-        if (e->heat.count == HEAT_MAX && e->sprites[PLAYER_GUN].frame < anim_data[gunGrenadeBoost].len-1) {
+    if (heat > 0) {
+        if (heat == HEAT_MAX && e->sprites[PLAYER_GUN].frame < anim_data[gunGrenadeBoost].len-1) {
             playSoundChannel(rocketBoostEngage, CHAN_WEAPON_ALT);
             playSoundChannel(rocketEngineLoopFast, CHAN_ENGINE);
             e->sprites[PLAYER_FLAMES_EXTRA].flags &= ~INVISIBLE;
         }
         e->sprites[PLAYER_GUN].anim = gunGrenadeBoost;
         e->sprites[PLAYER_GUN].flags |= PAUSED;
-        e->sprites[PLAYER_GUN].frame = (int)((float)e->heat.count/(float)(HEAT_MAX)*(float)(anim_data[gunGrenadeBoost].len-1));
-        e->sprites[PLAYER_BODY].frame = (int)((float)e->heat.count/(float)(HEAT_MAX)*(float)(anim_data[vTankBody03].len-1));
-        e->sprites[PLAYER_CROSSHAIR].frame = (int)((float)e->heat.count/(float)(HEAT_MAX)*(float)(anim_data[crosshair01].len-1));
+        e->sprites[PLAYER_GUN].frame = (int)((float)heat/(float)(HEAT_MAX)*(float)(anim_data[gunGrenadeBoost].len-1));
+        e->sprites[PLAYER_BODY].frame = (int)((float)heat/(float)(HEAT_MAX)*(float)(anim_data[vTankBody03].len-1));
+        e->sprites[PLAYER_CROSSHAIR].frame = (int)((float)heat/(float)(HEAT_MAX)*(float)(anim_data[crosshair01].len-1));
     }
-    else if (!playerClient.dashing && e->sprites[PLAYER_GUN].anim == gunGrenadeBoost && e->heat.count <= 0) {
+    else if (!playerClient.dashing && e->sprites[PLAYER_GUN].anim == gunGrenadeBoost && heat <= 0) {
         e->sprites[PLAYER_GUN].anim = gunGrenadeRetract;
         e->sprites[PLAYER_GUN].frame = anim_data[gunGrenadeRetract].len-1;
         playSoundChannel(rocketBoostEnd, CHAN_WEAPON_ALT);
@@ -752,7 +757,7 @@ void defragEntArray() {
             despawn_ent(e);
         }
         if (mainWorld->numGibs < MAX_GIBS)
-            break;;
+            break;
     }
     //printf("Back to %d gibs.\n", mainWorld->numGibs);
 }

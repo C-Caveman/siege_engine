@@ -174,6 +174,7 @@ bool v2iInBounds(vec2i v, int min, int max) {
     return (v.x >= min && v.x < max && v.y >= min && v.y < max);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Utility primitives:
 #define MAX_COUNTER_VALUE 255
 void counterInc(struct counter* c) {
     int ms_since_last_count = anim_tick - c->prevTick + (anim_tick < c->prevTick)*256;
@@ -188,6 +189,19 @@ void counterDec(struct counter* c) {
         c->prevTick = anim_tick;
         c->count -= 1;
     }
+}
+// struct timer functions
+void timerStart(struct timer* t) {
+    t->start = curFrameStart;
+    t->count = 0;
+}
+void timerUpdate(struct timer* t, uint32_t intervalMillis) {
+    uint32_t elapsedMillis = ( (curFrameStart < t->start)*((uint32_t)0xffff) + curFrameStart ) - t->start; // Account for overflow in SDL_GetTicks() value.
+    t->count = elapsedMillis / intervalMillis;
+}
+void timerUpdate30FPS(struct timer* t) {
+    uint32_t elapsedMillis = ( (curFrameStart < t->start)*((uint32_t)0xffff) + curFrameStart ) - t->start; // Account for overflow in SDL_GetTicks() value.
+    t->count = elapsedMillis >> 5; // Divide by 32 via bit shifting.
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Utility functions:

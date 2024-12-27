@@ -66,7 +66,9 @@ struct ent_player {
     uint8_t movetype;   // Selected speed.
     uint8_t movetypes[NUM_MOVE_TYPES];    // Available speeds.
     struct client* cl;
-    struct counter heat;
+    int heat;
+    struct timer heatTimer;
+    int heatTracker;
 };
 enum scenery_sprites {SCENERY_SPRITE_1, NUM_SCENERY_SPRITES};                     // SCENERY
 struct ent_scenery {

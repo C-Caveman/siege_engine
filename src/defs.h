@@ -85,6 +85,14 @@ struct counter {
     uint8_t flags;
     uint8_t count;
 };
+//===================================================== Track number of times X milliseconds have passed.
+struct timer { // Framerate-independent timer.
+    uint32_t start;
+    int count;
+};
+void timerStart(struct timer* t);
+void timerUpdate(struct timer* t, uint32_t intervalMillis);
+void timerUpdate30FPS(struct timer* t);
 void counterInc(struct counter* c);
 void counterDec(struct counter* c);
 //=======================================================================// Entities //

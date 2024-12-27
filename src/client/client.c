@@ -56,7 +56,7 @@ void clientUpdatePlayerEntity() {
         playerClient.player->vel = 
             v2fAdd(
                 playerClient.player->vel, 
-                v2fScale(angleToVector(playerClient.aim_dir), ((DASH_ACCELERATION+BONUS_DASH_ACCELERATION*(playerClient.player->heat.count == HEAT_MAX))*dt))
+                v2fScale(angleToVector(playerClient.aim_dir), ((DASH_ACCELERATION+BONUS_DASH_ACCELERATION*(playerClient.player->heatTracker == HEAT_MAX))*dt))
             );
     }
     else {
