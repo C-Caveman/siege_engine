@@ -78,13 +78,6 @@ struct anim_info {
     uint8_t  keyframe_1;     // Frame where an event occurs.
     uint8_t  keyframe_2;     // Frame where an event occurs.
 };
-//===================================================== Counter that ticks up after 'interval' milliseconds:
-struct counter {
-    uint8_t prevTick;
-    uint8_t interval;
-    uint8_t flags;
-    uint8_t count;
-};
 //===================================================== Track number of times X milliseconds have passed.
 struct timer { // Framerate-independent timer.
     uint32_t start;
@@ -93,8 +86,7 @@ struct timer { // Framerate-independent timer.
 void timerStart(struct timer* t);
 void timerUpdate(struct timer* t, uint32_t intervalMillis);
 void timerUpdate30FPS(struct timer* t);
-void counterInc(struct counter* c);
-void counterDec(struct counter* c);
+bool passedTimestamp(uint32_t t);
 //=======================================================================// Entities //
 #define RSIZE 80    //--------------- Diameter of entities and tiles.
 #define HW (vec2f){RSIZE/2,RSIZE/2} //- Half the width of a tile/entity.

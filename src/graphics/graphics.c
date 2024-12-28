@@ -202,7 +202,7 @@ void goWindowed() {
 void track_fps() {
     if (lastFrameEnd > (last_sec + 1000)) {
         last_sec = lastFrameEnd;
-        fps = frame_count;
+        fps = frame_count * timeScale;
         frame_count = 0;
         //std::cout << "One second has passed, fps = " << fps << "\n";
         //std::cout << "Delta time was: " << dt << "\n";

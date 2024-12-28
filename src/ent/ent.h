@@ -81,7 +81,7 @@ struct ent_projectile {
     ENT_BASICS
     struct sprite sprites[NUM_PLAYER_SPRITES];
     handle parent;
-    int lifetime;
+    uint32_t timeOut;
     char isExploding;
 };
 enum rabbit_sprites {RABBIT_SPRITE_1, NUM_RABBIT_SPRITES};                      // RABBIT
@@ -99,15 +99,14 @@ struct ent_zombie {
     vec2f targetPos;
     vec2f wanderDir;
     float speed;
-    int walkTime;
-    struct counter walkDelay;
+    uint32_t nextWalk;
 };
 enum gib_sprites {GIB_SPRITE_1, NUM_GIB_SPRITES};                            // GIB
 #define GIB_SPIN_SPEED 100
 struct ent_gib {
     ENT_BASICS
     struct sprite sprites[NUM_GIB_SPRITES];
-    struct counter spinRate;
+    float spinMultiplier;
 };
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 #define TO_INIT_PROTOTYPES(name) void name##Init(struct ent_##name* e); 

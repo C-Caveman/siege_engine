@@ -65,14 +65,6 @@ void clientUpdatePlayerEntity() {
             v2fScale(v2fNormalized(playerClient.accel_dir), ((PLAYER_ACCELERATION + playerClient.sprinting*PLAYER_ACCELERATION*1.25)*dt))
         );
     }
-    /*
-    float dotProd = playerClient.accel_dir.dot(playerClient.player->vel);
-    if (dotProd < 0) {
-        //printf("reverse!\n");
-        //playerClient.player->vel = playerClient.player->vel - (playerClient.accel_dir * dotProd);
-    }
-    */
-    //std::cout << "pos: " << playerClient.player->pos << "\n";
     if (v2fLen(playerClient.accel_dir) == 0 && !playerClient.dashing)
         playerClient.player->vel = v2fScale(playerClient.player->vel, (1 - dt*25)); // Add friction when no direction is held.
     // Gun direction:

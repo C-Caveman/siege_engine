@@ -117,14 +117,18 @@ int main() {
     EVENT(EntSpawn, .type=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH+1), RSIZE*(CHUNK_WIDTH/2)});
     
     playMusicLoop(spookyWind1);
+    
+    if (timeScale < 0.01)
+        timeScale = 1;
+    
     //;;; GAME LOOP:
     while (running) {
-        curFrameStart = SDL_GetTicks();
+        curFrameStart = SDL_GetTicks()*timeScale;
         dt = ((float)curFrameStart - (float)lastFrameEnd) / 1000.f;
         if (dt > 0.1f) // Cap the delta time.
             dt = 0.05f;
         anim_tick = SDL_GetTicks() % 256; //- 8-bit timestamp for animations.
-        lastFrameEnd = SDL_GetTicks();
+        lastFrameEnd = SDL_GetTicks()*timeScale;
         track_fps();
         
         // Client input:

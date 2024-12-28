@@ -214,6 +214,7 @@ void windShieldSplatter(entBasics* attacker, entBasics* victim) {
 }
 #define HEAT_UPDATE_DELAY_MILLIS 10
 void playerThink(struct ent_player* e) {                              // PLAYER
+    // Debug commands:
     if (playerClient.zombieSpawning && mainWorld->entArraySpace > ENTITY_BYTES_ARRAY_LEN/8 && countRemainingHandles() > 10)
         spawn(zombie_type, v2fAdd(playerClient.camera_center, v2iToF(playerClient.aim_pixel_pos)));
     if (playerClient.explodingEverything) {
@@ -229,17 +230,17 @@ void playerThink(struct ent_player* e) {                              // PLAYER
                 EVENT(ZombieDie, .h=e->h);
         }
     }
+    // Get the heat value:
     timerUpdate(&e->heatTimer, HEAT_UPDATE_DELAY_MILLIS);
-    //e->heatTimer.count = iclamp(e->heatTimer.count, 0, HEAT_MAX);
     int heat = e->heat;
     if (playerClient.dashing)
         heat = e->heat + e->heatTimer.count;
     else
         heat = e->heat - e->heatTimer.count;
     heat = iclamp(heat, 0, HEAT_MAX);
-    e->heatTracker = heat;
+    e->heatTracker = heat; // When the boost key is pressed/released, e->heatTracker becomes the new e->heat value.
+    // Heat value obtained, now do stuff with it:
     if (heat == HEAT_MAX) {
-        ;;;
         nearbyEntInteractionBidirectional((entBasics*)e, windShieldSplatter);
     }
     if (playerClient.dashing) {
@@ -273,6 +274,7 @@ void playerThink(struct ent_player* e) {                              // PLAYER
         playSoundChannel(rocketBoostEnd, CHAN_WEAPON_ALT);
         e->sprites[PLAYER_CROSSHAIR].frame = 0;
     }
+    // Crosshair things:
     if (!playerClient.keyboardAiming) {
         e->sprites[PLAYER_CROSSHAIR].pos = v2iToF(playerClient.aim_pixel_pos);
     }
@@ -284,7 +286,7 @@ void playerThink(struct ent_player* e) {                              // PLAYER
     e->sprites[PLAYER_FLAMES].pos = v2fScale(angleToVector(e->sprites[PLAYER_GUN].rotation), (-RSIZE*3/4));
     e->sprites[PLAYER_FLAMES_EXTRA].rotation = e->sprites[PLAYER_FLAMES].rotation;
     e->sprites[PLAYER_FLAMES_EXTRA].pos = v2fScale(e->sprites[PLAYER_FLAMES].pos, 1.8);
-    //vec2f p = pos + HW;
+    // Interacting with the 'e' key:
     if (playerClient.interacting) {
         nearbyEntInteractionBidirectional((entBasics*)e, playerInteract);
     }
@@ -309,7 +311,7 @@ void projectileInit(struct ent_projectile* e) {                           // PRO
     e->sprites[0].anim = grenade01Blink;
     e->sprites[0].flags |= LOOPING;
     e->flags = NOFRICTION | NOCOLLISION;
-    e->lifetime = 100;
+    e->timeOut = curFrameStart + 2000;
     e->isExploding = 0;
 }
 void projectileHitNearby(entBasics* attacker, entBasics* victim) {
@@ -319,24 +321,23 @@ void projectileHitNearby(entBasics* attacker, entBasics* victim) {
             return;
         }
         victim->health -= 1;
-        ((struct ent_projectile*)attacker)->lifetime = 0;
+        ((struct ent_projectile*)attacker)->timeOut = curFrameStart;
     }
 }
 void projectileThink(struct ent_projectile* e) {
-    e->lifetime -= 1;
     struct tile* curTile = 0;
     vec2f p = v2fAdd(e->pos, HW);
     p = v2fSub(p, (vec2f){RSIZE,RSIZE});
     nearbyEntInteractionBidirectional((entBasics*)e, projectileHitNearby);
     curTile = worldTileFromPos(v2fAdd(e->pos, HW));
-    if (e->lifetime <= 0 && !e->isExploding) {
+    if (passedTimestamp(e->timeOut) && !e->isExploding) {
         e->isExploding = 1;
         playSound(explosion01);
         e->sprites[0].anim = grenade01Explode;
         e->sprites[0].frame = 0;
         e->sprites[0].flags &= ~LOOPING;
         //vel = (vec2f) {0,0};
-        e->lifetime = 500;
+        e->timeOut = curFrameStart + 500;
     }
     if (curTile != 0 && curTile->wall_height > 0 && !e->isExploding) {
         e->isExploding = 1;
@@ -346,14 +347,14 @@ void projectileThink(struct ent_projectile* e) {
         e->sprites[0].frame = 3;
         e->sprites[0].flags &= ~LOOPING;
         e->vel = (vec2f) {0,0};
-        e->lifetime = 500;
+        e->timeOut = curFrameStart + 500;
         if (curTile != 0 && curTile->wall_height > 0) {
             curTile->wall_height = 0;
             curTile->floor_anim = tileGold01;
         }
         return;
     }
-    if (e->lifetime <= 0 || e->sprites[0].frame >= anim_data[grenade01Explode].len-1) {
+    if (passedTimestamp(e->timeOut) || e->sprites[0].frame >= anim_data[grenade01Explode].len-1) {
         despawn_ent((entBasics*)e);
     }
 }
@@ -389,12 +390,11 @@ void zombieInit(struct ent_zombie* e) {                               // ZOMBIE
     e->wanderDir = (vec2f){1,0};
     e->speed = 150.f + 200.f*randf();
     e->num_sprites = 1;
-    e->walkTime = curFrameStart;
+    e->nextWalk = curFrameStart;
     e->sprites[0].flags |= LOOPING;
     e->sprites[0].anim = zombie;
     e->target = findPlayer(); 
     e->targetPos = (vec2f) {0,0};
-    e->walkDelay.interval = 40;
 }
 #define PUSH_FORCE 50
 void pushNearbyEnts(entBasics* me, entBasics* them) {
@@ -420,8 +420,7 @@ void divertNearbyZombies(entBasics* me, entBasics* them) {
         thatZombie->wanderDir = v2fSub(thatZombie->wanderDir, v2fScale(posDelta, (DIVERSION_STRENGTH/(d+1))*DIVERSION_STRENGTH*dt));
     }
 }
-#define MSIZE 1024
-char message[MSIZE] = "Example message.... Greetings! Hello world! Goodbye world! Farewell world? Nice to meet you world? Oh well, see ya world!";
+#define GIB_SPEED 4000
 void evZombieDie(struct detailsZombieDie* d) {
     struct ent_zombie* e = (struct ent_zombie*)getEnt(d->h);
     if (!e)
@@ -434,7 +433,7 @@ void evZombieDie(struct detailsZombieDie* d) {
             ((struct ent_gib*)newGib)->sprites[0].rotation = e->sprites[0].rotation;
             ((struct ent_gib*)newGib)->sprites[0].anim = zombieGibs;
             ((struct ent_gib*)newGib)->sprites[0].frame = i;
-            ((struct ent_gib*)newGib)->vel = (vec2f){randfn()*randfn()*16000,randfn()*randfn()*16000}; //TODO ensure handles are not desynced in client/server!
+            ((struct ent_gib*)newGib)->vel = (vec2f){randfn()*randfn()*GIB_SPEED,randfn()*randfn()*GIB_SPEED}; //TODO ensure handles are not desynced in client/server!
         }
     }
     despawn_ent((entBasics*)e);
@@ -471,14 +470,9 @@ void zombieThink(struct ent_zombie* e) {
         playSoundChannel(slice001, CHAN_MONSTER);
         e->nextThink = curFrameStart + 500;
     }
-    if (attacking && playerClient.dialogVisible == 0) {
-        //EVENT(TriggerDialog, .h=e->target, "assets/worlds/testWorld/hello.txt");
-    }
-    counterInc(&e->walkDelay);
     vec2f targetVector = v2fNormalized(v2fSub(v2fAdd(e->targetPos, v2fScale(t->vel, 0.15f)), e->pos));
-    if (curFrameStart > e->walkTime) { //e->walkDelay.count > 0) {
-        e->walkTime = curFrameStart + 40;
-        e->walkDelay.count = 0;
+    if (passedTimestamp(e->nextWalk)) { //e->walkDelay.count > 0) {
+        e->nextWalk = curFrameStart + 40;
         e->wanderDir = targetVector;
         nearbyEntInteractionBidirectional((entBasics*)e, divertNearbyZombies);
         vec2f persuitVelocity = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), e->speed));
@@ -493,18 +487,15 @@ void zombieThink(struct ent_zombie* e) {
 void gibInit(struct ent_gib* e) {
     e->num_sprites = 1;
     if (e->h % 8 == 0)
-        e->flags |= NOFRICTION;
+        e->vel = v2fScale(e->vel, 4.f); // 1/8 chance to quadruple velocity!
+    e->spinMultiplier = randf() * randf() * 20;
     e->sprites[0].anim = zombieGibs;
     e->sprites[0].flags |= PAUSED;
-    e->spinRate.interval = 8;
-    e->spinRate.count = GIB_SPIN_SPEED * randf()*randf();
 }
 void gibThink(struct ent_gib* e) {
-    e->nextThink = curFrameStart + 30;
-    counterDec(&e->spinRate);
-    e->sprites[0].rotation += (float)(e->spinRate.count*8*dt * (1-2*((e->h & 1) == 0)));
-    if (e->spinRate.count < GIB_SPIN_SPEED*3/8)
-        e->flags &= ~NOFRICTION;
+    e->nextThink = curFrameStart + 10;
+    float spinRate = v2fLen(e->vel) * e->spinMultiplier;
+    e->sprites[0].rotation += (float)(spinRate*dt * (1-2*((e->h & 1) == 0)));
     if (v2fLen(e->vel) < 10.f)
         e->flags |= NOTHINK;
 }
@@ -627,7 +618,8 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
 // Remove an entity from an entity segment array. TODO ent-specific cleanup TODO
 void despawn_ent(entBasics* e) {
     struct tile* old_tile = &mainWorld->chunks[e->chunk.y][e->chunk.x].tiles[e->tile.y][e->tile.x];
-    bool old_tile_was_valid = (e->tile.x > -1 && e->tile.x < CHUNK_WIDTH && e->tile.y > -1 && e->tile.y < CHUNK_WIDTH);
+    // Make sure the old_tile is in bounds:
+    bool old_tile_was_valid = v2iInBounds(e->tile, 0, CHUNK_WIDTH) && v2iInBounds(e->chunk, 0, WORLD_WIDTH);
     for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
         if (old_tile_was_valid && old_tile->ents[i] == e->h) { old_tile->ents[i] = 0; } //---- Remove handle from old tile.
     }

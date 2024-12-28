@@ -25,6 +25,7 @@ void print_vars();
     f(vsync) \
 
 #define FLOAT_VARS_LIST(f) \
+    f(timeScale) \
     f(aimSpeedA) \
     f(aimSpeedB) \
     f(musicVolume) \
