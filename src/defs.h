@@ -187,6 +187,7 @@ enum EVENT_ENUM {
     EVENT_LIST(TO_EVENT_PREFIXED_ENUM)
     NUM_EVENTS
 };
+char* eventName(int eventType);
 #define TO_EVENT_STRUCT_DECLARATION(name, members) struct details##name { members }; 
 EVENT_LIST(TO_EVENT_STRUCT_DECLARATION)
 #define TO_EVENT_FUNCTION_PROTOTYPE(name, detailsUnused) void ev##name(struct details##name* d);
@@ -200,9 +201,11 @@ struct event {
     } details;
 };
 struct packet {
-    int time;
-    int sequenceNumber;
+    char head[4];
+    uint32_t sequenceNumber;
+    uint32_t time;
     struct event e;
+    char foot[4];
 };
 #define EVENT_BUFFER_SIZE 8192*4
 struct eventsBuffer {
@@ -211,7 +214,7 @@ struct eventsBuffer {
     int sequenceNumber;
     struct packet buffer[EVENT_BUFFER_SIZE];
 };
-extern uint32_t curFrameStart;
+extern volatile uint32_t curFrameStart;
 extern struct eventsBuffer events;
 void applyEvent(struct event* ev);
 void makeEvent(struct event e);
@@ -229,6 +232,5 @@ vec2f angleToVector(float angle); // Convert an angle to a normalized vector.
 float vectorToAngle(vec2f v); // Convert a vector to an angle.
 float fclamp(float n, float min, float max);
 int   iclamp(int n, int min, int max);
-bool isAfter(uint32_t timeA, uint32_t timeB); // Correctly compare two timestamps, taking into account time overflow. (if time delta > 600 hours, assume time overflow)
 
 #endif

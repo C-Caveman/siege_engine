@@ -18,6 +18,8 @@ void print_vars();
 
 // List of variables!
 #define INT_VARS_LIST(f) \
+    f(recordingDemo) \
+    f(playingDemo) \
     f(fullscreen) \
     f(window_x) \
     f(window_y) \

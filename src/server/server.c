@@ -118,6 +118,37 @@ int main() {
     
     playMusicLoop(spookyWind1);
     
+    // Demo recording:
+    char demoFileName[] = "demos/demo001.bin";
+    FILE* demoFile = 0;
+    if (recordingDemo)
+        demoFile = fopen(demoFileName, "wb");
+    if (recordingDemo && !demoFile) {
+        printf("*** Failed to create/open %s.\n", demoFileName);
+        exit(-1);
+    }
+    
+    // Demo playback:
+    if (playingDemo)
+        demoFile = fopen(demoFileName, "r");
+    if (playingDemo && !demoFile) {
+        printf("*** Failed to open %s.\n", demoFileName);
+        exit(-1);
+    }
+    if (playingDemo && recordingDemo) {
+        printf("*** playingDemo and recordingDemo at the same time is not allowed!\n");
+        exit(-1);
+    }
+    int demoFileSize = 0;
+    if (playingDemo) {
+        /* Size of file */
+        fseek(demoFile, 0, SEEK_END);
+        demoFileSize = ftell(demoFile);
+        fseek(demoFile, 0, SEEK_SET);
+    }
+    int numDemoEvents = demoFileSize / sizeof(struct packet);
+    int numDemoEventsRead = 0;
+    
     if (timeScale < 0.01)
         timeScale = 1;
     
@@ -131,61 +162,110 @@ int main() {
         lastFrameEnd = SDL_GetTicks()*timeScale;
         track_fps();
         
-        // Client input:
-        client_input(&playerClient);
-        if (playerClient.paused) {
-            //memcpy(playerClient.menuText, pauseMenuText, sizeof(playerClient.menuText));
-            SDL_RenderClear(renderer);
-            renderMenu(&playerClient);
-            //renderText(playerClient.menuText[0]);
-            present_frame();
-            continue;
-        }
-        clientUpdatePlayerEntity();                                   //- Client_Inputs -> Player_Entity.
-        if (playerClient.attacking && (curFrameStart - playerClient.lastAttackTime) > 300 && playerClient.player->heatTracker < 1) {
-            playerClient.lastAttackTime = curFrameStart;
-            playerClient.player->sprites[PLAYER_GUN].frame = 0;;
-            playerClient.player->sprites[PLAYER_GUN].flags &= ~PAUSED;
-            //playSound(bam02);
-            playSoundChannel(bam02, CHAN_WEAPON);
-            void* e = spawn(projectile_type, (vec2f){0,0});
-            vec2f aimDir = angleToVector(playerClient.aim_dir);
-            ((entBasics*)e)->pos = v2fAdd(playerClient.player->pos, v2fScale(aimDir, RSIZE/2));
-            ((entBasics*)e)->tile = v2iScalarDiv(v2fToI(((entBasics*)e)->pos), RSIZE);
-            ((entBasics*)e)->vel = v2fScale(aimDir, 800);
-        }
-        if (playerClient.building && (curFrameStart - playerClient.lastBuildTime) > 50) {
-            struct tile* timmy = worldGetTile(getTileAtCursor(&playerClient));
-            for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
-                if (timmy == 0)
-                    break;
-                if (timmy->ents[i] != 0) {
-                    entBasics* e = getEnt(timmy->ents[i]);
-                    if (e->type == gib_type)
-                        despawn_ent(e);
-                    else
-                        timmy = 0;
-                }
+        if (!playingDemo) {
+            // Client input:
+            client_input(&playerClient);
+            if (playerClient.paused) {
+                //memcpy(playerClient.menuText, pauseMenuText, sizeof(playerClient.menuText));
+                SDL_RenderClear(renderer);
+                renderMenu(&playerClient);
+                //renderText(playerClient.menuText[0]);
+                present_frame();
+                continue;
             }
-            if (timmy != 0 && timmy->wall_height <= 0) {
-                playerClient.lastBuildTime = curFrameStart;
-                timmy->wall_height = 8;
-                timmy->floor_anim = grass1Floor;
-                timmy->wall_side_anim = grass1Side;
-                timmy->wall_top_anim = grass1Side;
-                playSound(thud);
+            clientUpdatePlayerEntity();                                   //- Client_Inputs -> Player_Entity.
+            if (playerClient.attacking && (curFrameStart - playerClient.lastAttackTime) > 300 && playerClient.player->heatTracker < 1) {
+                playerClient.lastAttackTime = curFrameStart;
+                playerClient.player->sprites[PLAYER_GUN].frame = 0;;
+                playerClient.player->sprites[PLAYER_GUN].flags &= ~PAUSED;
+                //playSound(bam02);
+                playSoundChannel(bam02, CHAN_WEAPON);
+                void* e = spawn(projectile_type, (vec2f){0,0});
+                vec2f aimDir = angleToVector(playerClient.aim_dir);
+                ((entBasics*)e)->pos = v2fAdd(playerClient.player->pos, v2fScale(aimDir, RSIZE/2));
+                ((entBasics*)e)->tile = v2iScalarDiv(v2fToI(((entBasics*)e)->pos), RSIZE);
+                ((entBasics*)e)->vel = v2fScale(aimDir, 800);
+            }
+            if (playerClient.building && (curFrameStart - playerClient.lastBuildTime) > 50) {
+                struct tile* timmy = worldGetTile(getTileAtCursor(&playerClient));
+                for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
+                    if (timmy == 0)
+                        break;
+                    if (timmy->ents[i] != 0) {
+                        entBasics* e = getEnt(timmy->ents[i]);
+                        if (e->type == gib_type)
+                            despawn_ent(e);
+                        else
+                            timmy = 0;
+                    }
+                }
+                if (timmy != 0 && timmy->wall_height <= 0) {
+                    playerClient.lastBuildTime = curFrameStart;
+                    timmy->wall_height = 8;
+                    timmy->floor_anim = grass1Floor;
+                    timmy->wall_side_anim = grass1Side;
+                    timmy->wall_top_anim = grass1Side;
+                    playSound(thud);
+                }
             }
         }
         // Entity updates (server):
-        thinkAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+        if (!playingDemo)
+            thinkAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         move_all_ents(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         wallCollision(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         defragEntArray();
+        // Record the player's movement for the demo:
+        if (!playingDemo)
+            EVENT(PlayerMove, .p=playerClient.player->h, .pos=playerClient.player->pos, .vel=playerClient.player->vel);
         
+        // Record demo:
+        if (recordingDemo && demoFile && events.count > 0) {
+            fwrite(events.buffer, sizeof(struct packet), events.count, demoFile);
+            //printf("Frame recording started: %d packets to record...\n", events.count);
+            //int lastEventIndex = (events.index + events.count-1) % EVENT_BUFFER_SIZE;
+            printf("Recording packets %d to %d.\n", events.buffer[0].sequenceNumber, events.buffer[events.count-1].sequenceNumber);
+            //printf("Recording packets %d to %d.\n", events.buffer[events.index].time, events.buffer[lastEventIndex].time);
+        }
+        // Play demo:
+        if (playingDemo && demoFile) {
+            printf("New frame! %d/%d events read so far...\n", numDemoEventsRead, numDemoEvents);
+            if (events.count == 0 && numDemoEventsRead < numDemoEvents && !feof(demoFile)) {
+                int gotAnEvent = fread(events.buffer, sizeof(struct packet), 1, demoFile);
+                events.count += (gotAnEvent == 1);
+                numDemoEventsRead += (gotAnEvent == 1);
+            }
+            // Quit if no events remain:
+            if (events.count < 1 || feof(demoFile)) {
+                running = false;
+                break;
+            }
+            uint32_t packetTime = events.buffer[0].time;
+            while (packetTime < curFrameStart && numDemoEventsRead < numDemoEvents && events.count < EVENT_BUFFER_SIZE-2 && !feof(demoFile)) {
+                printf("    Reading a packet...\n");
+                int numFrameEvents = 1;
+                int eventsRead = fread(&events.buffer[events.count], sizeof(struct packet), numFrameEvents, demoFile);
+                events.count += eventsRead;
+                numDemoEventsRead += eventsRead;
+                if (events.count <= 0)
+                    break;
+                if (events.buffer[events.count-1].sequenceNumber >= numDemoEvents) {
+                    printf("**** END OF DEMO!!!\n");
+                    running = false;
+                    break;
+                }
+                packetTime = events.buffer[events.count-1].time;
+            }
+            printf("T = %d. Read %d events this frame.\n", curFrameStart, events.count);
+            printf("First event: Seq: %d, time: %d, type: '%s'\n", events.buffer[0].sequenceNumber, events.buffer[0].time, eventName(events.buffer[0].e.type));
+            printf("Last event: Seq: %d, time: %d, type: '%s'\n\n", events.buffer[events.count-1].sequenceNumber, events.buffer[events.count-1].time, eventName(events.buffer[events.count-1].e.type));
+        }
         // Update gamestate from the server's packets:
         while (events.count > 0) {
             takeEvent();
         }
+        if (playingDemo && numDemoEventsRead >= numDemoEvents)
+            break;
         
         ////////////////////////////////////////////////////////////////////////
         // Rendering:
@@ -243,6 +323,8 @@ int main() {
         present_frame(); // Put the frame on the screen:
     }
     printf("Server was running for %d seconds.\n", SDL_GetTicks() / 1000);
+    if (demoFile)
+        fclose(demoFile);
     cleanup_graphics();
     cleanup_audio();
     return 0;

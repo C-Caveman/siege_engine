@@ -1,0 +1,5 @@
+This folder is where demos are stored.
+
+When recording a demo, the server events (everything that happens in the game) get saved to a file.
+
+When playing a demo, the game replays the events directly from that file.

@@ -90,6 +90,16 @@ void nearbyEntInteractionBidirectional(entBasics* user, void (*fn)(entBasics*, e
     }
 }
 struct eventsBuffer events;
+#define TO_EVENT_NAMES(name, detailsUnused) #name,
+char eventNames[NUM_EVENTS][64] = {
+    EVENT_LIST(TO_EVENT_NAMES)
+};
+char* eventName(int eventType) {
+    if (eventType > 0 && eventType < NUM_EVENTS)
+        return &eventNames[eventType][0];
+    else
+        return "Invalid event!";
+}
 #define TO_EVENT_CASE(name, detailsUnused) case event##name: ev##name(&ev->details.d##name); break;
 void applyEvent(struct event* ev) {
     switch(ev->type) {
@@ -99,11 +109,16 @@ void applyEvent(struct event* ev) {
 void makeEvent(struct event e) {
     if (events.count >= EVENT_BUFFER_SIZE-1)
         return;
+    int newEventIndex = events.count;
+    /*
     int newEventIndex = (events.index+events.count);
     if (newEventIndex >= EVENT_BUFFER_SIZE)
         newEventIndex -= EVENT_BUFFER_SIZE;
-    events.buffer[newEventIndex].time = 0;
+    */
+    events.buffer[newEventIndex].time = curFrameStart;
     events.buffer[newEventIndex].sequenceNumber = events.sequenceNumber++;
+    strcpy(events.buffer[newEventIndex].head, "AAA");
+    strcpy(events.buffer[newEventIndex].foot, "ZZZ");
     //events.buffer[newEventIndex].e = e;
     memcpy((void*)&events.buffer[newEventIndex].e, (void*)&e, sizeof(struct event));
     events.count++;
@@ -111,12 +126,18 @@ void makeEvent(struct event e) {
 void takeEvent() {
     if (events.count <= 0)
         return;
+    /*
     applyEvent(&events.buffer[events.index].e);
     memset((void*)&events.buffer[events.index], 0, sizeof(struct packet));
+    */
+    applyEvent(&events.buffer[events.count-1].e);
+    memset((void*)&events.buffer[events.count-1], 0, sizeof(struct packet));
     events.count--;
+    /*
     events.index++;
     if (events.index >= EVENT_BUFFER_SIZE-1)
         events.index = 0;
+    */
 }
 void evPlayerMove(struct detailsPlayerMove* d) {
     printf("Player moves!\n");
@@ -215,8 +236,11 @@ void windShieldSplatter(entBasics* attacker, entBasics* victim) {
 #define HEAT_UPDATE_DELAY_MILLIS 10
 void playerThink(struct ent_player* e) {                              // PLAYER
     // Debug commands:
-    if (playerClient.zombieSpawning && mainWorld->entArraySpace > ENTITY_BYTES_ARRAY_LEN/8 && countRemainingHandles() > 10)
-        spawn(zombie_type, v2fAdd(playerClient.camera_center, v2iToF(playerClient.aim_pixel_pos)));
+    if (playerClient.zombieSpawning && mainWorld->entArraySpace > ENTITY_BYTES_ARRAY_LEN/8 && countRemainingHandles() > 10) {
+        vec2f spawnPos = v2fAdd(playerClient.camera_center, v2iToF(playerClient.aim_pixel_pos));
+        EVENT(EntSpawn, zombie_type, spawnPos);
+        //spawn(zombie_type, v2fAdd(playerClient.camera_center, v2iToF(playerClient.aim_pixel_pos)));
+    }
     if (playerClient.explodingEverything) {
         playerClient.explodingEverything = false;
         for (int i=get_first_ent(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); i != -1; i=get_next_ent(i, mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN)) {

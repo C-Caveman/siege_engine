@@ -3,6 +3,8 @@ o/*.o
 ex
 #=========================================// Don't track game assets. //
 assets
+#=========================================// Don't track demos. //
+demos/*.bin
 #=========================================// Don't track logs. //
 sup.log
 sup_list.supp
