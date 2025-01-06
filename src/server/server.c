@@ -53,19 +53,19 @@ void move_all_ents(char* array, int array_len) {
             int numGibsInTile = 0;
             if (new_chunk_was_valid)
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
-                    entBasics* tileEnt = getEnt(new_tile_ptr->ents[i]);
+                    entBasics* tileEnt = getEnt(new_tile_ptr->ents[i], 0);
                     numGibsInTile += (tileEnt && tileEnt->type == gib_type);
                 }
             bool tooManyGibs = (numGibsInTile > MAX_ENTS_PER_TILE*3/4);
             if (new_chunk_was_valid) {
-                entBasics* firstTileEnt = getEnt(new_tile_ptr->ents[0]);
+                entBasics* firstTileEnt = getEnt(new_tile_ptr->ents[0], 0);
                 if (e->type != gib_type && firstTileEnt && firstTileEnt->type == gib_type && numGibsInTile > 0) {
                     new_tile_ptr->ents[0] = e->h;
                 }
             }
             if (new_chunk_was_valid)
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------------------------------------ Store handle in new tile.
-                    entBasics* tileEnt = getEnt(new_tile_ptr->ents[i]);
+                    entBasics* tileEnt = getEnt(new_tile_ptr->ents[i], 0);
                     if (tileEnt == 0 || (i == MAX_ENTS_PER_TILE-1 && tileEnt && e->type != gib_type && tileEnt->type == gib_type && tooManyGibs)) {
                         new_tile_ptr->ents[i] = e->h;
                         break;

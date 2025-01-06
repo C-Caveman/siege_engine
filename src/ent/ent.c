@@ -20,7 +20,7 @@ int countRemainingHandles() {
     }
     return numAvailable;
 }
-handle claim_handle(entBasics* e) { //-------- Bind a handle to an entity.
+handle claim_handle(entBasics* e, uint16_t entType) { //-------- Bind a handle to an entity.
     handle h = -1;
     for (int i=0; i<NUM_HANDLES; i++) {
         if (handles[i].copies == 0) {h=i; break;}
@@ -29,6 +29,7 @@ handle claim_handle(entBasics* e) { //-------- Bind a handle to an entity.
     handles[h].copies = 1;
     handles[h].ent = e;
     handles[h].claimed = 1;
+    handles[h].entType = entType;
     //printf("Handle %d claimed by a '%s' ent.\n", h, get_type_name(handles[h].ent->type));
     return h;
 }
@@ -51,8 +52,8 @@ handle uncopy_handle(handle i) { //------------------- Uncopy a bound handle, re
     if (i != 0) { handles[i].copies--; } //Null handle cannot be destroyed.
     return 0;
 }
-entBasics*  getEnt(handle i) { //------------ Get an entity by its handle.
-    if (handles[i].claimed == 1)
+entBasics*  getEnt(handle i, uint16_t entType) { //------------ Get an entity by its handle.
+    if (handles[i].claimed == 1 && (handles[i].entType == entType || entType == 0))
         { return handles[i].ent; }
     else
         { handles[i].copies--; return 0; }
@@ -64,7 +65,7 @@ void nearbyEntInteraction(vec2f position, void (*fn)(entBasics*)) {
             for (int k=0; k<MAX_ENTS_PER_TILE; k++) {
                 struct tile* curTile = worldTileFromPos(v2fAdd(v2fAdd(p, v2fScale((vec2f){0,RSIZE}, (float)(i))), v2fScale((vec2f){RSIZE,0}, (float)(j))));
                 if (curTile) {
-                    entBasics* useTarget = getEnt(curTile->ents[k]);
+                    entBasics* useTarget = getEnt(curTile->ents[k], 0);
                     if (useTarget) {
                         fn(useTarget);
                     }
@@ -80,7 +81,7 @@ void nearbyEntInteractionBidirectional(entBasics* user, void (*fn)(entBasics*, e
             for (int k=0; k<MAX_ENTS_PER_TILE; k++) {
                 struct tile* curTile = worldTileFromPos(v2fAdd(v2fAdd(p, v2fScale((vec2f){0,RSIZE}, (float)(i))), v2fScale((vec2f){RSIZE,0}, (float)(j))));
                 if (curTile) {
-                    entBasics* useTarget = getEnt(curTile->ents[k]);
+                    entBasics* useTarget = getEnt(curTile->ents[k], 0);
                     if (useTarget) {
                         fn(user, useTarget);
                     }
@@ -115,14 +116,14 @@ void takeEvent() {
     events.count--;
 }
 void evPlayerMove(struct dPlayerMove* d) {
-    struct ent_player* p = (struct ent_player*)getEnt(d->p);
+    struct ent_player* p = (struct ent_player*)getEnt(d->p, player_type);
     if (p == 0)
         return;
     p->pos = d->pos;
     p->vel = d->vel;
 }
 void evPlayerShoot(struct dPlayerShoot* d) {
-    struct ent_player* p = (struct ent_player*)getEnt(d->p);
+    struct ent_player* p = (struct ent_player*)getEnt(d->p, player_type);
     // Are we missing a player/client?
     if (!p || !p->cl)
         return;
@@ -138,21 +139,21 @@ void evPlayerShoot(struct dPlayerShoot* d) {
     ((entBasics*)e)->vel = v2fScale(aimDir, 800);
 }
 void evEntMove(struct dEntMove* d) {
-    entBasics* e = getEnt(d->h);
+    entBasics* e = getEnt(d->h, 0);
     if (!e)
         return;
     e->pos = d->pos;
     e->vel = d->vel;
 }
 void evTriggerDialog(struct dTriggerDialog* d) {
-    struct ent_player* e = (struct ent_player*)getEnt(d->h);
+    struct ent_player* e = (struct ent_player*)getEnt(d->h, player_type);
     if (!e)
         return;
     clientLoadDialog(d->fileName);
     clientStartDialog(playerClient.loadedDialog);
 }
 void evSpriteRotate(struct dSpriteRotate* d) {
-    entBasics* e = getEnt(d->h);
+    entBasics* e = getEnt(d->h, 0);
     if (!e || e->num_sprites <= d->index || d->index < 0)
         return;
     struct sprite* sprites = (struct sprite*)( (char*)e+sizeof(entBasics) );
@@ -316,7 +317,7 @@ void playerThink(struct ent_player* e) {                              // PLAYER
             if (timmy == 0)
                 break;
             if (timmy->ents[i] != 0) {
-                entBasics* e = getEnt(timmy->ents[i]);
+                entBasics* e = getEnt(timmy->ents[i], 0);
                 if (e->type == gib_type)
                     despawn_ent(e);
                 else
@@ -414,7 +415,7 @@ void rabbitInit(struct ent_rabbit* e) {                               // RABBIT
 void rabbitThink(struct ent_rabbit* e) {
     e->nextThink = curFrameStart + 750;
     vec2f targetPos = e->pos;
-    entBasics* t = getEnt(e->target);
+    entBasics* t = getEnt(e->target, player_type);
     if (t)
         targetPos = t->pos;
     if (t && v2fDist(targetPos, e->pos) < RSIZE*10)
@@ -469,7 +470,7 @@ void evFrameStart(struct dFrameStart* d) {}
 void evFrameEnd(struct dFrameEnd* d) {}
 #define GIB_SPEED 4000
 void evZombieDie(struct dZombieDie* d) {
-    struct ent_zombie* e = (struct ent_zombie*)getEnt(d->h);
+    struct ent_zombie* e = (struct ent_zombie*)getEnt(d->h, zombie_type);
     if (!e)
         return;
     playSoundChannel(zombieDie01, CHAN_MONSTER);
@@ -488,7 +489,7 @@ void evZombieDie(struct dZombieDie* d) {
 #define SPLATTER_FORCE 6000
 #define SCATTER_FORCE 0.8
 void evZombieWindShieldSplatter(struct dZombieWindShieldSplatter* d) {
-    struct ent_zombie* e = (struct ent_zombie*)getEnt(d->h);
+    struct ent_zombie* e = (struct ent_zombie*)getEnt(d->h, zombie_type);
     if (!e)
         return;
     playSoundChannel(zombieDie01, CHAN_MONSTER);
@@ -511,7 +512,7 @@ void zombieThink(struct ent_zombie* e) {
         E(ZombieDie, e->h);
         return;
     }
-    entBasics* t = getEnt(e->target);
+    entBasics* t = getEnt(e->target, player_type);
     bool attacking = (t != 0 && v2fDist(t->pos, e->pos) < RSIZE/2);
     if (attacking) {
         playSoundChannel(slice001, CHAN_MONSTER);
@@ -645,7 +646,7 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
     new_entity->header_byte = HEADER_BYTE;
     new_entity->type = type;
     new_entity->size = required_space;
-    new_entity->h = claim_handle((entBasics*)&array[i]);
+    new_entity->h = claim_handle((entBasics*)&array[i], (uint16_t)type);
     new_entity->pos = pos;
     // Initialize the entity.
     switch (type) {

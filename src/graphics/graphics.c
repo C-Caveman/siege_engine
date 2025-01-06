@@ -412,13 +412,13 @@ void chunkDrawTallEnts(vec2f camera_pos, vec2f camera_center, struct chunk* chun
             vec2i right = {middle_x+spread, row};
             if (v2iInBounds(left, 0, CHUNK_WIDTH)) {
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------- Draw left side entities.
-                        entBasics* e = getEnt(chunk->tiles[left.y][left.x].ents[i]);
+                        entBasics* e = getEnt(chunk->tiles[left.y][left.x].ents[i], 0);
                         if (e != 0 && e->type != gib_type) { draw_ent_sprites(old_camera, e); }
                 }
             }
             if (v2iInBounds(right, 0, CHUNK_WIDTH)) {
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------- Draw right side entities.
-                        entBasics* e = getEnt(chunk->tiles[right.y][right.x].ents[i]);
+                        entBasics* e = getEnt(chunk->tiles[right.y][right.x].ents[i], 0);
                         if (e != 0 && e->type != gib_type) { draw_ent_sprites(old_camera, e); }
                 }
             }
@@ -448,13 +448,13 @@ void chunkDrawShortEnts(vec2f camera_pos, vec2f camera_center, struct chunk* chu
             vec2i right = {middle_x+spread, row};
             if (v2iInBounds(left, 0, CHUNK_WIDTH)) {
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------- Draw left side entities.
-                        entBasics* e = getEnt(chunk->tiles[left.y][left.x].ents[i]);
+                        entBasics* e = getEnt(chunk->tiles[left.y][left.x].ents[i], 0);
                         if (e != 0 && e->type == gib_type) { draw_ent_sprites(old_camera, e); }
                 }
             }
             if (v2iInBounds(right, 0, CHUNK_WIDTH)) {
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------- Draw right side entities.
-                        entBasics* e = getEnt(chunk->tiles[right.y][right.x].ents[i]);
+                        entBasics* e = getEnt(chunk->tiles[right.y][right.x].ents[i], 0);
                         if (e != 0 && e->type == gib_type) { draw_ent_sprites(old_camera, e); }
                 }
             }

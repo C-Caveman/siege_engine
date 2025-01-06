@@ -27,12 +27,13 @@
 //typedef int16_t handle; // Defined in defs.h already.
 struct handle_info {
     entBasics* ent; // Entity who owns this handle.
+    uint16_t entType;
     int16_t copies;         // Num ents using this handle.
     bool claimed;           // Whether the entity is marked for deletion.
 };
 #define NUM_HANDLES 65536-1
 extern struct handle_info handles[NUM_HANDLES];
-entBasics*  getEnt(handle i); //----------------- Get an entity* from its handle.
+entBasics*  getEnt(handle i, uint16_t entType); //----------------- Get an entity* from its handle.
 handle              copy_handle(handle i); //------------- Copy a handle to another entity.
 handle              uncopy_handle(handle i); //----------- Delete a handle to another entity.
 
