@@ -20,7 +20,7 @@ musicVolume 0.1
 sfxVolume 0.3
 timeScale 1
 recordingDemo 0
-playingDemo 0
+playingDemo 1
 
 #########################
 # Controls:

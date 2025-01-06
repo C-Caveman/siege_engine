@@ -145,6 +145,7 @@ int main() {
     }
     int numDemoEvents = demoFileSize / sizeof(events.buffer[0]);
     int numDemoEventsRead = 0;
+    uint32_t nextDemoFrameTime = 0;
     
     if (timeScale < 0.01)
         timeScale = 1;
@@ -195,30 +196,20 @@ int main() {
         if (playingDemo && demoFile) {
             playerClient.player->sprites[PLAYER_CROSSHAIR].flags |= INVISIBLE;
             //printf("New frame! %d/%d events read so far...\n", numDemoEventsRead, numDemoEvents);
-            if (events.count == 0 && numDemoEventsRead < numDemoEvents && !feof(demoFile)) {
-                int gotAnEvent = fread(events.buffer, sizeof(events.buffer[0]), 1, demoFile);
+            
+
+            while (nextDemoFrameTime < curFrameStart && numDemoEventsRead < numDemoEvents && events.count < EVENT_BUFFER_SIZE-2 && !feof(demoFile)) {
+                // peek at the next event's FrameStart time
+                int gotAnEvent = fread(&events.buffer[events.count], sizeof(events.buffer[0]), 1, demoFile);
+                if (gotAnEvent == 1 && events.buffer[events.count].type == eventFrameStart) {
+                    nextDemoFrameTime = events.buffer[events.count].data.detFrameStart.time;
+                }
                 events.count += (gotAnEvent == 1);
                 numDemoEventsRead += 1;
             }
-            // Quit if no events remain:
-            if (events.count < 1 || feof(demoFile)) {
+            if (numDemoEventsRead >= numDemoEvents) {
+                printf("**** END OF DEMO!!!\n");
                 running = false;
-                break;
-            }
-            int eventType = events.buffer[0].type;
-            while (eventType != eventFrameEnd && numDemoEventsRead < numDemoEvents && events.count < EVENT_BUFFER_SIZE-2 && !feof(demoFile)) {
-                //printf("    Reading an event...\n");
-                int eventsRead = fread(&events.buffer[events.count], sizeof(events.buffer[0]), 1, demoFile);
-                events.count += eventsRead;
-                numDemoEventsRead += 1;
-                if (events.count <= 0)
-                    break;
-                if (numDemoEventsRead >= numDemoEvents) {
-                    printf("**** END OF DEMO!!!\n");
-                    running = false;
-                    break;
-                }
-                eventType = events.buffer[events.count-1].type;
             }
             /*
             printf("T = %d. Read %d events this frame.\n", curFrameStart, events.count);
