@@ -100,79 +100,66 @@ char* eventName(int eventType) {
     else
         return "Invalid event!";
 }
-#define TO_EVENT_CASE(name, detailsUnused) case event##name: ev##name(&ev->details.d##name); break;
+#define TO_EVENT_CASE(name, detailsUnused) case event##name: ev##name(&ev->data.det##name); break;
 void applyEvent(struct event* ev) {
     switch(ev->type) {
         EVENT_LIST(TO_EVENT_CASE)
     };
 }
-void makeEvent(struct event e) {
-    if (events.count >= EVENT_BUFFER_SIZE-1)
-        return;
-    int newEventIndex = events.count;
-    /*
-    int newEventIndex = (events.index+events.count);
-    if (newEventIndex >= EVENT_BUFFER_SIZE)
-        newEventIndex -= EVENT_BUFFER_SIZE;
-    */
-    events.buffer[newEventIndex].time = curFrameStart;
-    events.buffer[newEventIndex].sequenceNumber = events.sequenceNumber++;
-    strcpy(events.buffer[newEventIndex].head, "AAA");
-    strcpy(events.buffer[newEventIndex].foot, "ZZZ");
-    //events.buffer[newEventIndex].e = e;
-    memcpy((void*)&events.buffer[newEventIndex].e, (void*)&e, sizeof(struct event));
-    events.count++;
-}
 void takeEvent() {
     if (events.count <= 0)
         return;
-    /*
-    applyEvent(&events.buffer[events.index].e);
-    memset((void*)&events.buffer[events.index], 0, sizeof(struct packet));
-    */
-    applyEvent(&events.buffer[events.count-1].e);
-    memset((void*)&events.buffer[events.count-1], 0, sizeof(struct packet));
+    //printf("Event: %d '%s'\n", events.buffer[events.count-1].type, eventName(events.buffer[events.count-1].type));
+    applyEvent(&events.buffer[events.count-1]);
+    memset((void*)&events.buffer[events.count-1], 0, sizeof(events.buffer[0]));
     events.count--;
-    /*
-    events.index++;
-    if (events.index >= EVENT_BUFFER_SIZE-1)
-        events.index = 0;
-    */
 }
-void evPlayerMove(struct detailsPlayerMove* d) {
-    printf("Player moves!\n");
+void evPlayerMove(struct dPlayerMove* d) {
     struct ent_player* p = (struct ent_player*)getEnt(d->p);
     if (p == 0)
         return;
     p->pos = d->pos;
     p->vel = d->vel;
 }
-void evPlayerShoot(struct detailsPlayerShoot* d) {
-    printf("Player shoots!\n");
+void evPlayerShoot(struct dPlayerShoot* d) {
+    struct ent_player* p = (struct ent_player*)getEnt(d->p);
+    // Are we missing a player/client?
+    if (!p || !p->cl)
+        return;
+    p->cl->lastAttackTime = curFrameStart;
+    p->cl->player->sprites[PLAYER_GUN].frame = 0;;
+    p->cl->player->sprites[PLAYER_GUN].flags &= ~PAUSED;
+    //playSound(bam02);
+    playSoundChannel(bam02, CHAN_WEAPON);
+    void* e = spawn(projectile_type, (vec2f){0,0});
+    vec2f aimDir = angleToVector(d->shootDir);
+    ((entBasics*)e)->pos = v2fAdd(d->shootPos, v2fScale(aimDir, RSIZE/2));
+    ((entBasics*)e)->tile = v2iScalarDiv(v2fToI(((entBasics*)e)->pos), RSIZE);
+    ((entBasics*)e)->vel = v2fScale(aimDir, 800);
 }
-void evEntMove(struct detailsEntMove* d) {
+void evEntMove(struct dEntMove* d) {
     entBasics* e = getEnt(d->h);
     if (!e)
         return;
     e->pos = d->pos;
     e->vel = d->vel;
 }
-void evTriggerDialog(struct detailsTriggerDialog* d) {
+void evTriggerDialog(struct dTriggerDialog* d) {
     struct ent_player* e = (struct ent_player*)getEnt(d->h);
     if (!e)
         return;
     clientLoadDialog(d->fileName);
     clientStartDialog(playerClient.loadedDialog);
 }
-void evSpriteRotate(struct detailsSpriteRotate* d) {
+void evSpriteRotate(struct dSpriteRotate* d) {
     entBasics* e = getEnt(d->h);
     if (!e || e->num_sprites <= d->index || d->index < 0)
         return;
     struct sprite* sprites = (struct sprite*)( (char*)e+sizeof(entBasics) );
     sprites[d->index].rotation = d->angle;
 }
-void evEntSpawn(struct detailsEntSpawn* d) {
-    spawn(d->type, d->pos);
+void evEntSpawn(struct dEntSpawn* d) {
+    spawn(d->entType, d->pos);
 }
 handle findPlayer() { // first entity handle should be the player TODO add a player_type ent search for reliability! TODO
     return 1;
@@ -231,14 +218,18 @@ void windShieldSplatter(entBasics* attacker, entBasics* victim) {
     if (victim == 0 || attacker == 0)
         return;
     if (victim->type == zombie_type && v2fDist(victim->pos, attacker->pos) < RSIZE*2)
-        EVENT(ZombieWindShieldSplatter, .h=victim->h);
+        E(ZombieWindShieldSplatter, victim->h);
+}
+vec2i getTileAtCursor(struct client* c) {
+    if (c == 0) { printf("*** null client in getTileAtCursor!\n"); exit(-1); }
+    return v2fToIRoundUp(v2fScalarDiv(v2fAdd(c->camera_center,v2iToF(c->aim_pixel_pos)), RSIZE));
 }
 #define HEAT_UPDATE_DELAY_MILLIS 10
 void playerThink(struct ent_player* e) {                              // PLAYER
     // Debug commands:
     if (playerClient.zombieSpawning && mainWorld->entArraySpace > ENTITY_BYTES_ARRAY_LEN/8 && countRemainingHandles() > 10) {
         vec2f spawnPos = v2fAdd(playerClient.camera_center, v2iToF(playerClient.aim_pixel_pos));
-        EVENT(EntSpawn, zombie_type, spawnPos);
+        E(EntSpawn, zombie_type, spawnPos);
         //spawn(zombie_type, v2fAdd(playerClient.camera_center, v2iToF(playerClient.aim_pixel_pos)));
     }
     if (playerClient.explodingEverything) {
@@ -251,7 +242,7 @@ void playerThink(struct ent_player* e) {                              // PLAYER
             // Run the correct think function for this entity:
             entBasics* e = (entBasics*)&mainWorld->entity_bytes_array[i];
             if (e->type == zombie_type && v2fDist(playerClient.player->pos, e->pos) < RSIZE*10)
-                EVENT(ZombieDie, .h=e->h);
+                E(ZombieDie, e->h);
         }
     }
     // Get the heat value:
@@ -313,6 +304,33 @@ void playerThink(struct ent_player* e) {                              // PLAYER
     // Interacting with the 'e' key:
     if (playerClient.interacting) {
         nearbyEntInteractionBidirectional((entBasics*)e, playerInteract);
+    }
+    
+    
+    if (playerClient.attacking && (curFrameStart - playerClient.lastAttackTime) > 300 && playerClient.player->heatTracker < 1) {
+        E(PlayerShoot, e->h, e->pos, playerClient.aim_dir);
+    }
+    if (playerClient.building && (curFrameStart - playerClient.lastBuildTime) > 50) {
+        struct tile* timmy = worldGetTile(getTileAtCursor(&playerClient));
+        for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
+            if (timmy == 0)
+                break;
+            if (timmy->ents[i] != 0) {
+                entBasics* e = getEnt(timmy->ents[i]);
+                if (e->type == gib_type)
+                    despawn_ent(e);
+                else
+                    timmy = 0;
+            }
+        }
+        if (timmy != 0 && timmy->wall_height <= 0) {
+            playerClient.lastBuildTime = curFrameStart;
+            timmy->wall_height = 8;
+            timmy->floor_anim = grass1Floor;
+            timmy->wall_side_anim = grass1Side;
+            timmy->wall_top_anim = grass1Side;
+            playSound(thud);
+        }
     }
 }
 
@@ -444,8 +462,13 @@ void divertNearbyZombies(entBasics* me, entBasics* them) {
         thatZombie->wanderDir = v2fSub(thatZombie->wanderDir, v2fScale(posDelta, (DIVERSION_STRENGTH/(d+1))*DIVERSION_STRENGTH*dt));
     }
 }
+// A blank event (type zero):
+void evInvalid(struct dInvalid* d) {}
+// Markers for the start/end of a server frame:
+void evFrameStart(struct dFrameStart* d) {}
+void evFrameEnd(struct dFrameEnd* d) {}
 #define GIB_SPEED 4000
-void evZombieDie(struct detailsZombieDie* d) {
+void evZombieDie(struct dZombieDie* d) {
     struct ent_zombie* e = (struct ent_zombie*)getEnt(d->h);
     if (!e)
         return;
@@ -464,7 +487,7 @@ void evZombieDie(struct detailsZombieDie* d) {
 }
 #define SPLATTER_FORCE 6000
 #define SCATTER_FORCE 0.8
-void evZombieWindShieldSplatter(struct detailsZombieWindShieldSplatter* d) {
+void evZombieWindShieldSplatter(struct dZombieWindShieldSplatter* d) {
     struct ent_zombie* e = (struct ent_zombie*)getEnt(d->h);
     if (!e)
         return;
@@ -485,7 +508,7 @@ void evZombieWindShieldSplatter(struct detailsZombieWindShieldSplatter* d) {
 void zombieThink(struct ent_zombie* e) {
     e->nextThink = curFrameStart + 40;
     if (e->health <= 0) {
-        EVENT(ZombieDie, .h=e->h);
+        E(ZombieDie, e->h);
         return;
     }
     entBasics* t = getEnt(e->target);
@@ -500,13 +523,13 @@ void zombieThink(struct ent_zombie* e) {
         e->wanderDir = targetVector;
         nearbyEntInteractionBidirectional((entBasics*)e, divertNearbyZombies);
         vec2f persuitVelocity = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), e->speed));
-        EVENT(EntMove, .h=e->h, .pos=e->pos, .vel=persuitVelocity); ;;
+        E(EntMove, .h=e->h, .pos=e->pos, .vel=persuitVelocity); ;;
         e->targetPos = t->pos;
     }
     float angleToPlayer = vectorToAngle(targetVector) + 270;
     if (angleToPlayer > 360.f)
         angleToPlayer -= 360.f;
-    EVENT(SpriteRotate, .h=e->h, .index=ZOMBIE_SPRITE_1, .angle=angleToPlayer);
+    E(SpriteRotate, .h=e->h, .index=ZOMBIE_SPRITE_1, .angle=angleToPlayer);
 }
 void gibInit(struct ent_gib* e) {
     e->num_sprites = 1;

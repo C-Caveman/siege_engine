@@ -173,12 +173,15 @@ extern struct client playerClient; //-------------------------- Player client.
 /////////////////////////////////////////////////////////////////////////////////////////////////////////// ;;
 // Events: (defined in ent.cpp)
 #define EVENT_LIST(f) \
+    f(Invalid, int foobarScoobar;) \
+    f(FrameStart, uint32_t time; uint32_t frameNumber;) \
+    f(FrameEnd, uint32_t time; uint32_t frameNumber;) \
     f(ZombieDie, handle h;) \
     f(ZombieWindShieldSplatter, handle h;) \
     f(PlayerMove, handle p; vec2f pos; vec2f vel;) \
-    f(PlayerShoot, handle p; vec2f pos; vec2f aimDir;) \
+    f(PlayerShoot, handle p; vec2f shootPos; float shootDir;) \
     f(EntMove, handle h; vec2f pos; vec2f vel;) \
-    f(EntSpawn, int type; vec2f pos;) \
+    f(EntSpawn, int entType; vec2f pos;) \
     f(TriggerDialog, handle h; char fileName[64];) \
     f(SpriteRotate, handle h; int index; float angle;) \
 
@@ -188,39 +191,50 @@ enum EVENT_ENUM {
     NUM_EVENTS
 };
 char* eventName(int eventType);
-#define TO_EVENT_STRUCT_DECLARATION(name, members) struct details##name { members }; 
-EVENT_LIST(TO_EVENT_STRUCT_DECLARATION)
-#define TO_EVENT_FUNCTION_PROTOTYPE(name, detailsUnused) void ev##name(struct details##name* d);
+#define EVENT_PARAMS 7
+struct param {
+    union {
+        int i;
+        float f;
+        char c[4];
+    } intSizedItem;
+};
+#define TO_STRUCTS(eventName, details) struct d##eventName { int type; details };
+EVENT_LIST(TO_STRUCTS)
+#define TO_EVENT_FUNCTION_PROTOTYPE(name, detailsUnused) void ev##name(struct d##name* d);
 EVENT_LIST(TO_EVENT_FUNCTION_PROTOTYPE)
-#define TO_EVENT_STRUCT_UNION_MEMBER(name, detailsUnused) struct details##name d##name; 
+#define TO_STRUCT_UNION(eventName, details) struct d##eventName det##eventName;
 struct event {
     int type;
-    union { // Event details:
-        EVENT_LIST(TO_EVENT_STRUCT_UNION_MEMBER)
-        int dummy;
-    } details;
-};
-struct packet {
-    char head[4];
-    uint32_t sequenceNumber;
-    uint32_t time;
-    struct event e;
-    char foot[4];
+    union {
+        struct param params[EVENT_PARAMS];
+        EVENT_LIST(TO_STRUCT_UNION)
+    } data;
 };
 #define EVENT_BUFFER_SIZE 8192*4
 struct eventsBuffer {
     int count;
     int index;
     int sequenceNumber;
-    struct packet buffer[EVENT_BUFFER_SIZE];
+    struct event buffer[EVENT_BUFFER_SIZE];
 };
 extern volatile uint32_t curFrameStart;
 extern struct eventsBuffer events;
 void applyEvent(struct event* ev);
 void makeEvent(struct event e);
 void takeEvent();
-#define EVENT(eventName, ...) makeEvent((struct event) { event##eventName, .details.d##eventName = { __VA_ARGS__ }})
-
+//#define EVENT(eventName, ...) makeEvent((struct event) { event##eventName, .details.d##eventName = { __VA_ARGS__ }})
+#define E(eventName, ...) {\
+    if (events.count < EVENT_BUFFER_SIZE) { \
+        events.buffer[events.count].data.det##eventName = (struct d##eventName) { event##eventName, __VA_ARGS__ }; \
+        events.buffer[events.count].type = event##eventName;\
+        events.count++; \
+    } \
+    else { \
+        printf("*** Too many events this frame!!\n"); \
+        exit(-1); \
+    } \
+}
 
 //////////////////////////////////////////////////////////////////////////////////// ;;
 // Utility functions:
