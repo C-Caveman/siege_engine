@@ -146,10 +146,13 @@ void evEntMove(struct dEntMove* d) {
     e->vel = d->vel;
 }
 void evTriggerDialog(struct dTriggerDialog* d) {
-    struct ent_player* e = (struct ent_player*)getEnt(d->h, player_type);
+    struct ent_player* e = (struct ent_player*)getEnt(d->p, player_type);
     if (!e)
         return;
-    clientLoadDialog(d->fileName);
+    #define DIALOG_FILE_NAME_SIZE 64
+    char dialogFileName[DIALOG_FILE_NAME_SIZE] = {0};
+    snprintf(dialogFileName, DIALOG_FILE_NAME_SIZE, "assets/worlds/%.*s.txt", (int)sizeof(d->fileName), d->fileName);
+    clientLoadDialog(dialogFileName);
     clientStartDialog(playerClient.loadedDialog);
 }
 void evSpriteRotate(struct dSpriteRotate* d) {
@@ -192,10 +195,7 @@ void playerInteract(entBasics* player, entBasics* useTarget) {
     if (useTarget && useTarget->type == scenery_type && user->cl && user->cl->interacting) {
         printf("Used a scenery ent!\n");
         user->cl->interacting = false;
-        //cl->interacting = false;
-        //playerClient.loadDialog((char*)"assets/worlds/testWorld/hello.txt");
-        strcpy(playerClient.loadedDialog, (char*)"<apig>Hello world!\n");
-        clientStartDialog(playerClient.loadedDialog);
+        E(TriggerDialog, .p=user->h, .fileName="test/piggy");
     }
     else if (useTarget && useTarget->type == rabbit_type) {
         user->cl->interacting = false;
@@ -326,10 +326,13 @@ void playerThink(struct ent_player* e) {                              // PLAYER
         }
         if (timmy != 0 && timmy->wall_height <= 0) {
             playerClient.lastBuildTime = curFrameStart;
+            /*
             timmy->wall_height = 8;
             timmy->floor_anim = grass1Floor;
             timmy->wall_side_anim = grass1Side;
             timmy->wall_top_anim = grass1Side;
+            */
+            E(ChangeTile, .tileNumber=tileIndexToNumber(getTileAtCursor(&playerClient)), .floor=grass1Floor, .height=8, .wall=grass1Side, .wallSide=grass1Side);
             playSound(thud);
         }
     }
@@ -367,12 +370,20 @@ void projectileHitNearby(entBasics* attacker, entBasics* victim) {
         ((struct ent_projectile*)attacker)->timeOut = curFrameStart;
     }
 }
+void evChangeTile(struct dChangeTile* d) {
+    struct tile* t = worldGetTile(tileNumberToIndex(d->tileNumber));
+    if (t) {
+        t->wall_height = d->height;
+        t->wall_top_anim = d->wall;
+        t->wall_side_anim = d->wallSide;
+        t->floor_anim = d->floor;
+    }
+}
 void projectileThink(struct ent_projectile* e) {
     struct tile* curTile = 0;
     vec2f p = v2fAdd(e->pos, HW);
-    p = v2fSub(p, (vec2f){RSIZE,RSIZE});
     nearbyEntInteractionBidirectional((entBasics*)e, projectileHitNearby);
-    curTile = worldTileFromPos(v2fAdd(e->pos, HW));
+    curTile = worldTileFromPos(p);
     if (passedTimestamp(e->timeOut) && !e->isExploding) {
         e->isExploding = 1;
         playSound(explosion01);
@@ -391,10 +402,7 @@ void projectileThink(struct ent_projectile* e) {
         e->sprites[0].flags &= ~LOOPING;
         e->vel = (vec2f) {0,0};
         e->timeOut = curFrameStart + 500;
-        if (curTile != 0 && curTile->wall_height > 0) {
-            curTile->wall_height = 0;
-            curTile->floor_anim = tileGold01;
-        }
+        E(ChangeTile, .tileNumber=tileIndexToNumber(v2fToI(v2fScalarDiv(p, RSIZE))), .floor=tileGold01, .height=0, .wall=tiledark, .wallSide=tiledark);
         return;
     }
     if (passedTimestamp(e->timeOut) || e->sprites[0].frame >= anim_data[grenade01Explode].len-1) {

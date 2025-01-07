@@ -166,6 +166,9 @@ struct world { //---------------------------------------------- Collection of ch
 void initMainWorld();
 struct tile* worldGetTile(vec2i tile_i);
 struct tile* worldTileFromPos(vec2f pos);
+vec2i worldTileIndexFromPos(vec2f pos);
+vec2i tileNumberToIndex(uint32_t tileNumber);
+uint32_t tileIndexToNumber(vec2i tileIndex);
 extern struct world* mainWorld; //---------------------------- Main world.
 extern uint8_t anim_tick; //----------------------------------- Frame counter for animations.
 extern struct client playerClient; //-------------------------- Player client.
@@ -180,9 +183,10 @@ extern struct client playerClient; //-------------------------- Player client.
     f(ZombieWindShieldSplatter, handle h;) \
     f(PlayerMove, handle p; vec2f pos; vec2f vel;) \
     f(PlayerShoot, handle p; vec2f shootPos; float shootDir;) \
+    f(ChangeTile, uint32_t tileNumber; uint32_t wall; uint32_t wallSide; uint32_t height; uint32_t floor;) \
     f(EntMove, handle h; vec2f pos; vec2f vel;) \
     f(EntSpawn, int entType; vec2f pos;) \
-    f(TriggerDialog, handle h; char fileName[64];) \
+    f(TriggerDialog, handle p; char fileName[16];) \
     f(SpriteRotate, handle h; int index; float angle;) \
 
 #define TO_EVENT_PREFIXED_ENUM(name, detailsUnused) event##name, 

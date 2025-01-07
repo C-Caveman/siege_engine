@@ -25,3 +25,15 @@ struct tile* worldTileFromPos(vec2f pos) {
     return &mainWorld->chunks[chunk_i.y][chunk_i.x].tiles[local_i.y][local_i.x];
 }
 
+vec2i worldTileIndexFromPos(vec2f pos) {
+    return v2fToI(v2fScalarDiv(pos, RSIZE));
+}
+
+vec2i tileNumberToIndex(uint32_t tileNumber) {
+    vec2i index = { tileNumber % CHUNK_WIDTH, tileNumber / CHUNK_WIDTH };
+    return index;
+}
+uint32_t tileIndexToNumber(vec2i tileIndex) {
+    uint32_t tileNumber = (uint32_t) (tileIndex.x + tileIndex.y*CHUNK_WIDTH);
+    return tileNumber;
+}

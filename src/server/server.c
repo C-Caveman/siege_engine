@@ -110,9 +110,10 @@ int main() {
     //printf("*Type name: '%s'\n", get_type_name(s->type));
     entBasics* bunny = (entBasics*)spawn(rabbit_type, (vec2f){0,0});
     bunny->pos = (vec2f){RSIZE*2, RSIZE*2};
-    E(EntSpawn, .entType=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/2), RSIZE*(CHUNK_WIDTH+1)});
-    E(EntSpawn, .entType=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH+1), RSIZE*(CHUNK_WIDTH/2)});
-    
+    if (!playingDemo) {
+        E(EntSpawn, .entType=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/2), RSIZE*(CHUNK_WIDTH+1)});
+        E(EntSpawn, .entType=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH+1), RSIZE*(CHUNK_WIDTH/2)});
+    }
     playMusicLoop(spookyWind1);
     
     // Demo recording:
@@ -146,6 +147,9 @@ int main() {
     int numDemoEvents = demoFileSize / sizeof(events.buffer[0]);
     int numDemoEventsRead = 0;
     uint32_t nextDemoFrameTime = 0;
+    
+    #define TO_SIZE_PRINT(name, ...) printf("%32s: %3ld bytes long.\n", #name, sizeof(struct d##name));
+    EVENT_LIST(TO_SIZE_PRINT)
     
     if (timeScale < 0.01)
         timeScale = 1;
@@ -190,14 +194,10 @@ int main() {
         // Record demo:
         if (recordingDemo && demoFile && events.count > 0) {
             fwrite(events.buffer, sizeof(events.buffer[0]), events.count, demoFile);
-            //printf("Recording events %d to %d.\n", events.sequenceNumber-events.count, events.sequenceNumber);
         }
         // Play demo:
         if (playingDemo && demoFile) {
             playerClient.player->sprites[PLAYER_CROSSHAIR].flags |= INVISIBLE;
-            //printf("New frame! %d/%d events read so far...\n", numDemoEventsRead, numDemoEvents);
-            
-
             while (nextDemoFrameTime < curFrameStart && numDemoEventsRead < numDemoEvents && events.count < EVENT_BUFFER_SIZE-2 && !feof(demoFile)) {
                 // peek at the next event's FrameStart time
                 int gotAnEvent = fread(&events.buffer[events.count], sizeof(events.buffer[0]), 1, demoFile);
@@ -211,11 +211,6 @@ int main() {
                 printf("**** END OF DEMO!!!\n");
                 running = false;
             }
-            /*
-            printf("T = %d. Read %d events this frame.\n", curFrameStart, events.count);
-            printf("First event: Seq: %d, type: '%s' %d\n", numDemoEventsRead-events.count, eventName(events.buffer[0].type), events.buffer[0].type);
-            printf("Last event: Seq: %d, type: '%s'\n\n", numDemoEventsRead, eventName(events.buffer[events.count-1].type));
-            */
         }
         // Update gamestate from the server's packets:
         while (events.count > 0) {
