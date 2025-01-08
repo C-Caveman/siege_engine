@@ -30,10 +30,10 @@ vec2i worldTileIndexFromPos(vec2f pos) {
 }
 
 vec2i tileNumberToIndex(uint32_t tileNumber) {
-    vec2i index = { tileNumber % CHUNK_WIDTH, tileNumber / CHUNK_WIDTH };
+    vec2i index = { tileNumber % (CHUNK_WIDTH*WORLD_WIDTH), tileNumber / (CHUNK_WIDTH*WORLD_WIDTH) };
     return index;
 }
 uint32_t tileIndexToNumber(vec2i tileIndex) {
-    uint32_t tileNumber = (uint32_t) (tileIndex.x + tileIndex.y*CHUNK_WIDTH);
+    uint32_t tileNumber = (uint32_t) (tileIndex.x + tileIndex.y*CHUNK_WIDTH*WORLD_WIDTH);
     return tileNumber;
 }

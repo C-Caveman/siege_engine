@@ -326,12 +326,6 @@ void playerThink(struct ent_player* e) {                              // PLAYER
         }
         if (timmy != 0 && timmy->wall_height <= 0) {
             playerClient.lastBuildTime = curFrameStart;
-            /*
-            timmy->wall_height = 8;
-            timmy->floor_anim = grass1Floor;
-            timmy->wall_side_anim = grass1Side;
-            timmy->wall_top_anim = grass1Side;
-            */
             E(ChangeTile, .tileNumber=tileIndexToNumber(getTileAtCursor(&playerClient)), .floor=grass1Floor, .height=8, .wall=grass1Side, .wallSide=grass1Side);
             playSound(thud);
         }
