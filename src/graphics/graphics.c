@@ -220,7 +220,7 @@ void draw_ent_sprites(vec2f camera_pos, entBasics* e) {
     float rotation;
     SDL_Rect ent_render_pos;
     ent_render_pos.w = ent_render_pos.h = tileWidth;
-    if (DEBUG_GRAPHICS) { printf("Num sprites in %s entity: %d\n", get_type_name(e->type), num_sprites); }
+    if (DEBUG_GRAPHICS) { printf("Num sprites in %s entity: %d\n", entTypeName(e->type), num_sprites); }
     struct sprite* sprites = (struct sprite*)( (char*)e+sizeof(entBasics) );
     struct sprite* s;
     for (int i=0; i<num_sprites; i++) {
@@ -240,7 +240,7 @@ void draw_ent_sprites(vec2f camera_pos, entBasics* e) {
         bool isLastFrame = (s->frame == (anim_data[anim].len-1));
         if (  isLastFrame && !(s->flags & (uint8_t)LOOPING)) {
             s->flags |= PAUSED;
-            //printf("Stopped anim for %s.\n", get_type_name(e->type));
+            //printf("Stopped anim for %s.\n", entTypeName(e->type));
         }
         // Handle anim_tick overflowing back to lower values:
         ms_since_last_frame = anim_tick - tick + (anim_tick < tick)*256;
@@ -270,15 +270,15 @@ void draw_ent_sprites(vec2f camera_pos, entBasics* e) {
 }
 void draw_all_ents(vec2f camera_pos, char* array, int array_len) { // ;;
     int i = 0;
-    i = get_first_ent(array, array_len);
+    i = getFirstEnt(array, array_len);
     while (i != -1) {
         if (array[i] != HEADER_BYTE) {
             if (DEBUG_GRAPHICS)
-                printf("*** Invalid index given by get_next_ent() in draw_all_ents()\n");
+                printf("*** Invalid index given by getNextEnt() in draw_all_ents()\n");
             break;
         }
         draw_ent_sprites(camera_pos, (entBasics*)&array[i]);
-        i = get_next_ent(i, array, array_len);
+        i = getNextEnt(i, array, array_len);
     }
 }
 

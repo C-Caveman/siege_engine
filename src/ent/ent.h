@@ -75,7 +75,6 @@ enum scenery_sprites {SCENERY_SPRITE_1, NUM_SCENERY_SPRITES};                   
 struct ent_scenery {
     ENT_BASICS
     struct sprite sprites[NUM_PLAYER_SPRITES];
-    handle fren;
 };
 enum projectile_sprites {PROJECTILE_SPRITE_1, PROJECTILE_SPRITE_2};             // PROJECTILE
 struct ent_projectile {
@@ -112,19 +111,21 @@ struct ent_gib {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 #define TO_INIT_PROTOTYPES(name) void name##Init(struct ent_##name* e); 
 #define TO_THINK_PROTOTYPES(name) void name##Think(struct ent_##name* e); 
+#define TO_ANIMATE_PROTOTYPES(name) void name##Anim(struct ent_##name* e); 
 ENTITY_TYPES_LIST(TO_INIT_PROTOTYPES)
 ENTITY_TYPES_LIST(TO_THINK_PROTOTYPES)
+ENTITY_TYPES_LIST(TO_ANIMATE_PROTOTYPES)
 //======================================================================// Generic entity functions. //
-void* spawn_ent(int type, char* array, int array_len);
 void* spawn(int type, vec2f pos);
-void despawn_ent(entBasics* ent);
+void despawnEnt(entBasics* ent);
 void thinkAllEnts(char* array, int array_len);
-char* get_type_name(int type);
-int getEnt_size(int type);
-int get_first_ent(char* array, int array_len);
-int get_next_ent(int i, char* array, int array_len);
-void move_ent(entBasics* ent);
-char* get_type_name(int type);
+void animateAllEnts(char* array, int array_len);
+char* entTypeName(int type);
+int getEntSize(int type);
+int getFirstEnt(char* array, int array_len);
+int getNextEnt(int i, char* array, int array_len);
+void moveEnt(entBasics* ent);
+char* entTypeName(int type);
 void collide_wall(entBasics* e);
 void wallCollision(char* array, int array_len);
 void defragEntArray();

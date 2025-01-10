@@ -27,13 +27,13 @@ uint8_t anim_tick = 0;
 */
 void move_all_ents(char* array, int array_len) {
     entBasics* e;
-    for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
-        if (array[i] != HEADER_BYTE) { printf("*** Invalid index given by get_next_ent() in move_all_ents()\n"); exit(-1); }
+    for (int i=getFirstEnt(array, array_len); i != -1; i=getNextEnt(i, array, array_len)) {
+        if (array[i] != HEADER_BYTE) { printf("*** Invalid index given by getNextEnt() in move_all_ents()\n"); exit(-1); }
                                                                                     //- move the entity, record its position in the chunk
         e = (entBasics*)&array[i];
         vec2i old_tile = e->tile;                                                   //- Old tile.
         vec2i old_chunk = e->chunk;                                                 //- Old chunk.
-        move_ent(e);
+        moveEnt(e);
         e->chunk = v2fToI(v2fScalarDiv( v2fAdd(e->pos,(vec2f){RSIZE/2,RSIZE/2}), (RSIZE*CHUNK_WIDTH) ));
         vec2f floored = v2fSub(e->pos, v2iToF(v2iScale(e->chunk, RSIZE*CHUNK_WIDTH)));
         e->tile = v2fToI(v2fAdd(v2fScalarDiv(floored, RSIZE), (vec2f){0.5,0.5}));
@@ -104,15 +104,12 @@ int main() {
     p->pos = (vec2f){RSIZE,RSIZE};
     playerClient.player = (struct ent_player*)p;
     ((struct ent_player*)p)->cl = &playerClient;
-    struct ent_scenery* s = (struct ent_scenery*)spawn(scenery_type, (vec2f){0,0});
-    s->pos = (vec2f){(float)(RSIZE*1.5), RSIZE*CHUNK_WIDTH/2};
-    s->fren = p->h;
-    //printf("*Type name: '%s'\n", get_type_name(s->type));
-    entBasics* bunny = (entBasics*)spawn(rabbit_type, (vec2f){0,0});
-    bunny->pos = (vec2f){RSIZE*2, RSIZE*2};
+    //printf("*Type name: '%s'\n", entTypeName(s->type));
     if (!playingDemo) {
         E(EntSpawn, .entType=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/2), RSIZE*(CHUNK_WIDTH+1)});
         E(EntSpawn, .entType=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH+1), RSIZE*(CHUNK_WIDTH/2)});
+        E(EntSpawn, .entType=rabbit_type, .pos=(vec2f){RSIZE*5, RSIZE*5});
+        E(EntSpawn, .entType=scenery_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)});
     }
     playMusicLoop(spookyWind1);
     
@@ -218,6 +215,9 @@ int main() {
         }
         if (playingDemo && numDemoEventsRead >= numDemoEvents)
             break;
+        
+        // Do clientside animations (zombies' per-frame rotation towards the player):
+        animateAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         
         ////////////////////////////////////////////////////////////////////////
         // Rendering:

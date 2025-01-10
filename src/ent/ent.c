@@ -30,7 +30,7 @@ handle claim_handle(entBasics* e, uint16_t entType) { //-------- Bind a handle t
     handles[h].ent = e;
     handles[h].claimed = 1;
     handles[h].entType = entType;
-    //printf("Handle %d claimed by a '%s' ent.\n", h, get_type_name(handles[h].ent->type));
+    //printf("Handle %d claimed by a '%s' ent.\n", h, entTypeName(handles[h].ent->type));
     return h;
 }
 void unclaim_handle(handle i) { //-------------------- Unbind a handle (not a copy of one).
@@ -235,9 +235,9 @@ void playerThink(struct ent_player* e) {                              // PLAYER
     }
     if (playerClient.explodingEverything) {
         playerClient.explodingEverything = false;
-        for (int i=get_first_ent(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); i != -1; i=get_next_ent(i, mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN)) {
+        for (int i=getFirstEnt(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); i != -1; i=getNextEnt(i, mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN)) {
             if (mainWorld->entity_bytes_array[i] != HEADER_BYTE) {
-                if (DEBUG_ENTS) { printf("*** Invalid index given by get_next_ent() in thinkAllEnts()\n"); }
+                if (DEBUG_ENTS) { printf("*** Invalid index given by getNextEnt() in thinkAllEnts()\n"); }
                 break;
             }
             // Run the correct think function for this entity:
@@ -319,7 +319,7 @@ void playerThink(struct ent_player* e) {                              // PLAYER
             if (timmy->ents[i] != 0) {
                 entBasics* e = getEnt(timmy->ents[i], 0);
                 if (e->type == gib_type)
-                    despawn_ent(e);
+                    despawnEnt(e);
                 else
                     timmy = 0;
             }
@@ -331,6 +331,8 @@ void playerThink(struct ent_player* e) {                              // PLAYER
         }
     }
 }
+// Client-side animation:
+void playerAnim(struct ent_player* e) {}
 
 void sceneryInit(struct ent_scenery* e) {                              // SCENERY
     if (DEBUG_ENTS)
@@ -344,6 +346,7 @@ void sceneryThink(struct ent_scenery* e) {
     //if (e != nullptr) { vel = vel + ( e->pos-pos ).normalized() * 15; } //- Follow the player.
     //vel = vel * 1.1; //---------------------------------------------------- Slip around.
 }
+void sceneryAnim(struct ent_scenery* e) {}
 
 void projectileInit(struct ent_projectile* e) {                           // PROJECTILE
     e->num_sprites = 1;
@@ -400,9 +403,10 @@ void projectileThink(struct ent_projectile* e) {
         return;
     }
     if (passedTimestamp(e->timeOut) || e->sprites[0].frame >= anim_data[grenade01Explode].len-1) {
-        despawn_ent((entBasics*)e);
+        despawnEnt((entBasics*)e);
     }
 }
+void projectileAnim(struct ent_projectile* e) {}
 
 void rabbitInit(struct ent_rabbit* e) {                               // RABBIT
     e->num_sprites = 1;
@@ -414,20 +418,48 @@ void rabbitInit(struct ent_rabbit* e) {                               // RABBIT
     e->sprites[0].frame = 2;
     e->target = findPlayer();
 }
+#define RABBIT_IGNORE_DIST RSIZE*10
 void rabbitThink(struct ent_rabbit* e) {
-    e->nextThink = curFrameStart + 750;
+    e->nextThink = curFrameStart + 1500;
     vec2f targetPos = e->pos;
     entBasics* t = getEnt(e->target, player_type);
     if (t)
         targetPos = t->pos;
-    if (t && v2fDist(targetPos, e->pos) < RSIZE*10)
+    if (t && v2fDist(targetPos, e->pos) < RABBIT_IGNORE_DIST) {
         playSoundChannel(voiceTickerTape03, CHAN_MONSTER);
-    e->wanderDir = v2fAdd(v2fNormalized(v2fSub(targetPos, e->pos)), (vec2f){randfn(), randfn()});
+        e->wanderDir = v2fSub(targetPos, e->pos);
+    }
+    else {
+        e->wanderDir = v2fAdd(v2fNormalized(v2fSub(targetPos, e->pos)), (vec2f){randfn(), randfn()});
+    }
     e->vel = v2fScale(v2fNormalized(e->wanderDir), 800.f);
-    e->sprites[0].rotation = atan2(e->wanderDir.y, e->wanderDir.x) * 180. / F_PI + 90;
+    e->sprites[0].rotation = vectorToAngle(e->wanderDir) + 90;//atan2(e->wanderDir.y, e->wanderDir.x) * 180. / F_PI + 90;
     e->sprites[0].rotation = (float)((int)e->sprites[0].rotation % 360);
     e->sprites[0].frame = 0;
     e->sprites[0].flags &= ~PAUSED;
+}
+void rabbitAnim(struct ent_rabbit* e) {
+    vec2f targetPos = {0,0};
+    entBasics* t = getEnt(e->target, player_type);
+    if (t)
+        targetPos = t->pos;
+    float a = vectorToAngle(v2fSub(targetPos, e->pos)) + 90;
+    float b = e->sprites[0].rotation;
+    float angleDelta = b - a;
+    float wrapDelta = b - (a+360);
+    if (abs(wrapDelta) < abs(angleDelta))
+        angleDelta = wrapDelta;
+    bool aboutToHop = (e->nextThink-curFrameStart) < 1000; // 1/3 of a second before hop.
+    // Wiggle before hop:
+    if (aboutToHop)
+        e->sprites[0].rotation += sin(curFrameStart*0.02f)*150.f*dt;
+    // Look at player:
+    if (t && v2fDist(targetPos, e->pos) < RABBIT_IGNORE_DIST)
+        e->sprites[0].rotation -= angleDelta*4.f*dt;
+    if (e->sprites[0].rotation > 360)
+        e->sprites[0].rotation -= 360;
+    if (e->sprites[0].rotation < 0)
+        e->sprites[0].rotation += 360;
 }
 
 void zombieInit(struct ent_zombie* e) {                               // ZOMBIE
@@ -486,7 +518,7 @@ void evZombieDie(struct dZombieDie* d) {
             ((struct ent_gib*)newGib)->vel = (vec2f){randfn()*randfn()*GIB_SPEED,randfn()*randfn()*GIB_SPEED}; //TODO ensure handles are not desynced in client/server!
         }
     }
-    despawn_ent((entBasics*)e);
+    despawnEnt((entBasics*)e);
 }
 #define SPLATTER_FORCE 6000
 #define SCATTER_FORCE 0.8
@@ -506,7 +538,7 @@ void evZombieWindShieldSplatter(struct dZombieWindShieldSplatter* d) {
             ((struct ent_gib*)newGib)->vel = v2fAdd(v2fScale(splatterDir, SPLATTER_FORCE*(randfns()+0.25f)), playerClient.player->vel);
         }
     }
-    despawn_ent((entBasics*)e);
+    despawnEnt((entBasics*)e);
 }
 void zombieThink(struct ent_zombie* e) {
     e->nextThink = curFrameStart + 40;
@@ -534,6 +566,16 @@ void zombieThink(struct ent_zombie* e) {
         angleToPlayer -= 360.f;
     E(SpriteRotate, .h=e->h, .index=ZOMBIE_SPRITE_1, .angle=angleToPlayer);
 }
+void zombieAnim(struct ent_zombie* e) {
+    // Face the player:
+    entBasics* t = getEnt(e->target, player_type);
+    vec2f targetVector = v2fNormalized(v2fSub(v2fAdd(e->targetPos, v2fScale(t->vel, 0.15f)), e->pos));
+    float angleToPlayer = vectorToAngle(targetVector) + 270;
+    if (angleToPlayer > 360.f)
+        angleToPlayer -= 360.f;
+    e->sprites[ZOMBIE_SPRITE_1].rotation = angleToPlayer;
+}
+
 void gibInit(struct ent_gib* e) {
     e->num_sprites = 1;
     if (e->h % 8 == 0)
@@ -549,6 +591,8 @@ void gibThink(struct ent_gib* e) {
     if (v2fLen(e->vel) < 10.f)
         e->flags |= NOTHINK;
 }
+void gibAnim(struct ent_gib* e) {}
+
 //======================================================================================================================//
 //=====================================================// Entity management functions. (spawn, despawn, get_next, ect.) //
 // X macro for ENTITY_TYPES_LIST:
@@ -556,39 +600,41 @@ char entity_type_names[NUM_ENT_TYPES][MAX_ENTITY_TYPE_NAME_LEN] = {
     ENTITY_TYPES_LIST(TO_STRING)
 };
 // Return the name for a given entity type.
-char* get_type_name(int type) {
-    return entity_type_names[type];
+char* entTypeName(int entType) {
+    if (entType < 0 || entType > NUM_ENT_TYPES-1)
+        return "*** invalid entType";
+    return entity_type_names[entType];
 }
 // Return the size of the current entity type (in segments).
-int getEnt_size(int type) {
+int getEntSize(int type) {
     int size = -1;
     switch (type) {
     // X macro for ENTITY_TYPES_LIST:
     #define GET_ENT_SIZES(name) case name##_type:  size = sizeof(struct ent_##name); break; 
     ENTITY_TYPES_LIST(GET_ENT_SIZES)
     default:
-        printf("*** Unknown entity type in getEnt_size()\n");
+        printf("*** Unknown entity type in getEntSize()\n");
         exit(-1);
     }
     return size;
 }
 // Return index of the next entity's first byte. Returns -1 if there are no more entities.
-int get_next_ent(int i, char* array, int array_len) {
+int getNextEnt(int i, char* array, int array_len) {
     if (array[i] == HEADER_BYTE) {
         int ent_size = ((entBasics*)&array[i])->size;
         i += ent_size; // Skip past this entity.
-        if (DEBUG_ENTS) { printf("get_next_ent() entity at %d. Size is %d.\n", i, ent_size); }
+        if (DEBUG_ENTS) { printf("getNextEnt() entity at %d. Size is %d.\n", i, ent_size); }
     }
     while (array[i] != HEADER_BYTE && i < array_len) { // Increment i until reaching the next entity.
         i += 1;
-        if (DEBUG_ENTS) { printf("get_next_ent() skipping past %d.\n", i); }
+        if (DEBUG_ENTS) { printf("getNextEnt() skipping past %d.\n", i); }
     }
     if (i >= array_len-1) // Out of bounds.
         i = -1;
     return i;
 }
 // Return index of the first entity in a segment array. Return -1 if no entities are found.
-int get_first_ent(char* array, int array_len) {
+int getFirstEnt(char* array, int array_len) {
     int i=0;
     // Search for the first valid header segment with non-empty entity.
     for (i=0; i<array_len; i++) {
@@ -599,12 +645,90 @@ int get_first_ent(char* array, int array_len) {
         i = -1;
     return i;
 }
+handle reserveEntHandle(uint16_t entType) {
+    handle h = 0;
+    // Make sure there are handles left:
+    int remainingHandles = countRemainingHandles();
+    if (remainingHandles == 0) {
+        printf("***\n*** No entity handles left!!!\n***\n");
+        return 0;
+    }
+    else if (remainingHandles < 10 && entType == gib_type) {
+        printf("!!! Only %d handles left!!! Skipping gib spawn.\n", remainingHandles);
+        return 0;
+    }
+    // Locate memory for the handle to map to:
+    if (mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/8)
+        printf("*** Warning! 7/8 of entity bytes array are full!\n");
+    char* array = mainWorld->entity_bytes_array;
+    int required_space = getEntSize(entType);
+    int empty_space_len = 0;
+    int i = 0;
+    while (i<ENTITY_BYTES_ARRAY_LEN) {
+        // Empty slot?
+        if (array[i] != HEADER_BYTE) {
+            if (DEBUG_ENT_SPAWNING) { printf("Found an open slot at %d.\n", i); }
+            empty_space_len += 1;
+            i += 1;
+        }
+        // Slot occupied.
+        else {
+            int skip_bytes = ((entBasics*)&array[i])->size;
+            if (DEBUG_ENT_SPAWNING) { printf("Slots [%d, %d] already taken.\n", i, i+skip_bytes-1); }
+            empty_space_len = 0;
+            i += skip_bytes;
+        }
+        // Got enough space to store the ent.
+        if (empty_space_len == required_space) {
+            if (DEBUG_ENT_SPAWNING) { printf("Found enough space for ent in [%d, %d]\n", i-required_space, i-1); }
+            i = i-required_space;
+            mainWorld->entArraySpace += required_space;
+            break;
+        }
+    }
+    if (i >= ENTITY_BYTES_ARRAY_LEN-1) {
+        printf("***\n*** No space left in the entity array!!!\n***\n");
+        return 0;
+    }
+    // A handle is available and we have enough memory for its entity type.
+    h = claim_handle((entBasics*)&array[i], entType);
+    return h;
+}
+void* spawnEnt(int entType, vec2f pos) {
+    // Reserve a handle first (so the server can tell the clients where to store their entity):
+    handle h = reserveEntHandle(entType);
+    if (!h) {
+        printf("*** Could not get a handle to spawn '%s'\n", entTypeName(entType));
+        return 0;
+    }
+    // Initialize the entity in the reserved memory location:
+    entBasics* new_entity = (entBasics*)handles[h].ent;
+    new_entity->header_byte = HEADER_BYTE;
+    new_entity->type = entType;
+    new_entity->size = getEntSize(entType);
+    new_entity->h = h;
+    new_entity->pos = pos;
+    // Call the associated init function for entType:
+    switch (entType) {
+        #define ENT_INITIALIZERS(name) case name##_type:  name##Init((struct ent_##name *)(new_entity)); break; //--- Init the entity.
+        ENTITY_TYPES_LIST(ENT_INITIALIZERS)
+        default:
+            printf("*** spawnEnt() error: invalid entity type: %d", entType);
+            exit(-1);
+    }
+    //printf("Spawning a '%s' at index %d.\n", entTypeName(entType), i);
+    if (entType == gib_type)
+        mainWorld->numGibs++;
+    if (entType == zombie_type)
+        mainWorld->numZombies++;
+    return new_entity;
+}
 void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
     if (mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/8)
         printf("*** Warning! 7/8 of entity bytes array are full!\n");
     char* array = mainWorld->entity_bytes_array;
     int array_len = ENTITY_BYTES_ARRAY_LEN;
-    int required_space = getEnt_size(type);
+    int required_space = getEntSize(type);
     int empty_space_len = 0;
     int i = 0;
     while (i<array_len) {
@@ -658,7 +782,7 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
             printf("*** spawn_ent() error: invalid entity type: %d", type);
             exit(-1);
     }
-    //printf("Spawning a '%s' at index %d.\n", get_type_name(type), i);
+    //printf("Spawning a '%s' at index %d.\n", entTypeName(type), i);
     if (type == gib_type)
         mainWorld->numGibs++;
     if (type == zombie_type)
@@ -666,7 +790,7 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
     return &array[i];
 }
 // Remove an entity from an entity segment array. TODO ent-specific cleanup TODO
-void despawn_ent(entBasics* e) {
+void despawnEnt(entBasics* e) {
     struct tile* old_tile = &mainWorld->chunks[e->chunk.y][e->chunk.x].tiles[e->tile.y][e->tile.x];
     // Make sure the old_tile is in bounds:
     bool old_tile_was_valid = v2iInBounds(e->tile, 0, CHUNK_WIDTH) && v2iInBounds(e->chunk, 0, WORLD_WIDTH);
@@ -685,16 +809,16 @@ void despawn_ent(entBasics* e) {
 }
 // Run the think() function for each entitiy in a segment array.
 void thinkAllEnts(char* array, int array_len) {
-    for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
+    for (int i=getFirstEnt(array, array_len); i != -1; i=getNextEnt(i, array, array_len)) {
         if (array[i] != HEADER_BYTE) {
-            if (DEBUG_ENTS) { printf("*** Invalid index given by get_next_ent() in thinkAllEnts()\n"); }
+            if (DEBUG_ENTS) { printf("*** Invalid index given by getNextEnt() in thinkAllEnts()\n"); }
             break;
         }
         // Run the correct think function for this entity:
         entBasics* e = (entBasics*)&array[i];
         if (curFrameStart < e->nextThink || e->flags & NOTHINK)
             continue;
-        //printf("Thinking entity type: '%s' at index %d.\n", get_type_name(type), i);
+        //printf("Thinking entity type: '%s' at index %d.\n", entTypeName(type), i);
         switch (e->type) {
             // X macro for ENTITY_TYPES_LIST:
             #define ENT_THINK_CASES(name) case name##_type:  name##Think((struct ent_##name *)(&array[i])); break; 
@@ -705,7 +829,27 @@ void thinkAllEnts(char* array, int array_len) {
         }
     }
 }
-void move_ent(entBasics* e) { //------------ Update an ent's position based on its velocity:
+void animateAllEnts(char* array, int array_len) {
+    for (int i=getFirstEnt(array, array_len); i != -1; i=getNextEnt(i, array, array_len)) {
+        if (array[i] != HEADER_BYTE) {
+            if (DEBUG_ENTS) { printf("*** Invalid index given by getNextEnt() in animateAllEnts()\n"); }
+            break;
+        }
+        // Run the correct animation function for this entity:
+        entBasics* e = (entBasics*)&array[i];
+        if (e->flags & NOANIMATION)
+            continue;
+        switch (e->type) {
+            // X macro for ENTITY_TYPES_LIST:
+            #define ENT_ANIM_CASES(name) case name##_type:  name##Anim((struct ent_##name *)(&array[i])); break; 
+            ENTITY_TYPES_LIST(ENT_ANIM_CASES)
+            default:
+                printf("*** entity type '%d' at %d not recognized in animateAllEnts().\n", e->type,  i);
+                exit(-1);
+        }
+    }
+}
+void moveEnt(entBasics* e) { //------------ Update an ent's position based on its velocity:
     e->pos = v2fAdd(e->pos, v2fScale(e->vel, dt));
     // Apply friction:
     float speed = v2fLen(e->vel);
@@ -778,9 +922,9 @@ void collide_wall(entBasics* e) {
     }
 }
 void wallCollision(char* array, int array_len) {
-    for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
+    for (int i=getFirstEnt(array, array_len); i != -1; i=getNextEnt(i, array, array_len)) {
         if (array[i] != HEADER_BYTE) {
-            if (DEBUG_ENTS) { printf("*** Invalid index given by get_next_ent() in thinkAllEnts()\n"); }
+            if (DEBUG_ENTS) { printf("*** Invalid index given by getNextEnt() in thinkAllEnts()\n"); }
             break;
         }
         entBasics* e = ((entBasics*)&array[i]);
@@ -793,10 +937,10 @@ void defragEntArray() {
             return;
     char* array = mainWorld->entity_bytes_array;
     int array_len = ENTITY_BYTES_ARRAY_LEN;
-    for (int i=get_first_ent(array, array_len); i != -1; i=get_next_ent(i, array, array_len)) {
+    for (int i=getFirstEnt(array, array_len); i != -1; i=getNextEnt(i, array, array_len)) {
         entBasics* e = ((entBasics*)&array[i]);
         if (e && e->type == gib_type && rand() < RAND_MAX/32){ // Delete random gibs (not just the newest ones).
-            despawn_ent(e);
+            despawnEnt(e);
         }
         if (mainWorld->numGibs < MAX_GIBS)
             break;

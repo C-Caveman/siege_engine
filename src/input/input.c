@@ -32,6 +32,9 @@ bool mouse_moved = false;
 
 void client_input(struct client* client) {
     SDL_Event event;
+    // Make sure we have a real client!
+    if (!client)
+        return;
     
     //
     // check all of the keyboard and mouse events

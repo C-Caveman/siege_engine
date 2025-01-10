@@ -18,7 +18,7 @@ void server_config();
 
 //TODO manage the entities array
 struct ent* add_ent(int type); // TODO this
-void remove_ent(int id); // TODO this
+void removeEnt(int id); // TODO this
 //TODO manage client array
 struct client* add_client();
 
