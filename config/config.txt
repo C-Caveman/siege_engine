@@ -18,7 +18,7 @@ windowName Siege Engine
 welcomeMessage Tiles and triggers. Entities and dialogue boxes. Atmosphere and music. Story and characters. Smoking embers and a steady wind.
 musicVolume 0.1
 sfxVolume 0.3
-timeScale 1
+timeScale 1.0
 recordingDemo 0
 playingDemo 0
 

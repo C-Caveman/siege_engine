@@ -110,7 +110,7 @@ typedef uint16_t handle; //-------------------- Entity handle.
 typedef struct { ENT_BASICS } entBasics; //----------------------------------- Generic entity.
 enum ent_flags {
     NODRAW =      1,
-    NOANIMATION = 2,
+    NO_ANIMATION = 2,
     NOMOVE =      2*2,
     NOFRICTION =  2*2*2,
     NOCOLLISION = 2*2*2*2,

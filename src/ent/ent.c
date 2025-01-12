@@ -426,7 +426,7 @@ void rabbitThink(struct ent_rabbit* e) {
     if (t)
         targetPos = t->pos;
     if (t && v2fDist(targetPos, e->pos) < RABBIT_IGNORE_DIST) {
-        playSoundChannel(voiceTickerTape03, CHAN_MONSTER);
+        playSoundChannel(fft, CHAN_MONSTER);
         e->wanderDir = v2fSub(targetPos, e->pos);
     }
     else {
@@ -438,24 +438,33 @@ void rabbitThink(struct ent_rabbit* e) {
     e->sprites[0].frame = 0;
     e->sprites[0].flags &= ~PAUSED;
 }
+float closestAngleDelta(float a, float b) {
+    float angleDelta = b - a;
+    float wrapDelta = b - (a+360);
+    if (abs(wrapDelta) < abs(angleDelta))
+        angleDelta = wrapDelta;
+    return angleDelta;
+}
+float lerpAngle(float a, float b, float t) {
+    t = fclamp(t, 0, 1);
+    return a + closestAngleDelta(a,b)*t;
+}
 void rabbitAnim(struct ent_rabbit* e) {
     vec2f targetPos = {0,0};
     entBasics* t = getEnt(e->target, player_type);
     if (t)
         targetPos = t->pos;
-    float a = vectorToAngle(v2fSub(targetPos, e->pos)) + 90;
-    float b = e->sprites[0].rotation;
-    float angleDelta = b - a;
-    float wrapDelta = b - (a+360);
-    if (abs(wrapDelta) < abs(angleDelta))
-        angleDelta = wrapDelta;
     bool aboutToHop = (e->nextThink-curFrameStart) < 1000; // 1/3 of a second before hop.
     // Wiggle before hop:
     if (aboutToHop)
         e->sprites[0].rotation += sin(curFrameStart*0.02f)*150.f*dt;
     // Look at player:
-    if (t && v2fDist(targetPos, e->pos) < RABBIT_IGNORE_DIST)
-        e->sprites[0].rotation -= angleDelta*4.f*dt;
+    float a = vectorToAngle(v2fSub(targetPos, e->pos)) + 90;
+    float b = e->sprites[0].rotation;
+    if (t && v2fDist(targetPos, e->pos) < RABBIT_IGNORE_DIST) {
+        e->sprites[0].rotation -= closestAngleDelta(a,b)*4.f*dt;
+        //e->sprites[0].rotation = lerpAngle(a, b, (float)(e->nextThink-curFrameStart)/1500.f);
+    }
     if (e->sprites[0].rotation > 360)
         e->sprites[0].rotation -= 360;
     if (e->sprites[0].rotation < 0)
@@ -561,10 +570,6 @@ void zombieThink(struct ent_zombie* e) {
         E(EntMove, .h=e->h, .pos=e->pos, .vel=persuitVelocity); ;;
         e->targetPos = t->pos;
     }
-    float angleToPlayer = vectorToAngle(targetVector) + 270;
-    if (angleToPlayer > 360.f)
-        angleToPlayer -= 360.f;
-    E(SpriteRotate, .h=e->h, .index=ZOMBIE_SPRITE_1, .angle=angleToPlayer);
 }
 void zombieAnim(struct ent_zombie* e) {
     // Face the player:
@@ -578,20 +583,22 @@ void zombieAnim(struct ent_zombie* e) {
 
 void gibInit(struct ent_gib* e) {
     e->num_sprites = 1;
+    e->flags |= NOTHINK;
     if (e->h % 8 == 0)
         e->vel = v2fScale(e->vel, 4.f); // 1/8 chance to quadruple velocity!
-    e->spinMultiplier = randf() * randf() * 20;
+    e->spinMultiplier = randf() * randfn() * 20;
     e->sprites[0].anim = zombieGibs;
     e->sprites[0].flags |= PAUSED;
 }
-void gibThink(struct ent_gib* e) {
-    e->nextThink = curFrameStart + 10;
+void gibThink(struct ent_gib* e) {}
+void gibAnim(struct ent_gib* e) {
     float spinRate = v2fLen(e->vel) * e->spinMultiplier;
-    e->sprites[0].rotation += (float)(spinRate*dt * (1-2*((e->h & 1) == 0)));
-    if (v2fLen(e->vel) < 10.f)
-        e->flags |= NOTHINK;
+    //float spinDir = 1 - 2*((e->h & 1) == 0);
+    e->sprites[0].rotation += (float)(spinRate*dt);
+    if (v2fLen(e->vel) < 10.f) {
+        e->flags |= NO_ANIMATION;
+    }
 }
-void gibAnim(struct ent_gib* e) {}
 
 //======================================================================================================================//
 //=====================================================// Entity management functions. (spawn, despawn, get_next, ect.) //
@@ -694,6 +701,7 @@ handle reserveEntHandle(uint16_t entType) {
     h = claim_handle((entBasics*)&array[i], entType);
     return h;
 }
+//TODO make a forceSpawn() function for the client to delete anything occupying the assigned byte array space
 void* spawnEnt(int entType, vec2f pos) {
     // Reserve a handle first (so the server can tell the clients where to store their entity):
     handle h = reserveEntHandle(entType);
@@ -837,7 +845,7 @@ void animateAllEnts(char* array, int array_len) {
         }
         // Run the correct animation function for this entity:
         entBasics* e = (entBasics*)&array[i];
-        if (e->flags & NOANIMATION)
+        if (e->flags & NO_ANIMATION)
             continue;
         switch (e->type) {
             // X macro for ENTITY_TYPES_LIST:

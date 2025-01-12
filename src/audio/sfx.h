@@ -17,6 +17,7 @@
     f(explosion02) \
     f(explosion03) \
     f(explosion04) \
+    f(fft) \
     f(fsHeavy01) \
     f(fump) \
     f(fuseLight) \
