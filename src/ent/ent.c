@@ -567,7 +567,7 @@ void zombieThink(struct ent_zombie* e) {
         e->wanderDir = targetVector;
         nearbyEntInteractionBidirectional((entBasics*)e, divertNearbyZombies);
         vec2f persuitVelocity = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), e->speed));
-        E(EntMove, .h=e->h, .pos=e->pos, .vel=persuitVelocity); ;;
+        E(EntMove, .h=e->h, .pos=e->pos, .vel=persuitVelocity);;;
         e->targetPos = t->pos;
     }
 }
@@ -701,12 +701,25 @@ handle reserveEntHandle(uint16_t entType) {
     h = claim_handle((entBasics*)&array[i], entType);
     return h;
 }
+void updateEntCount(uint16_t entType, int n) {
+    switch (entType) {
+        case gib_type:
+            mainWorld->numGibs += n;
+            break;
+        case zombie_type:
+            mainWorld->numZombies += n;
+            break;
+    }
+}
 //TODO make a forceSpawn() function for the client to delete anything occupying the assigned byte array space
-void* spawnEnt(int entType, vec2f pos) {
+entBasics* spawnEnt(int entType, vec2f pos, handle h) {
     // Reserve a handle first (so the server can tell the clients where to store their entity):
-    handle h = reserveEntHandle(entType);
-    if (!h) {
-        printf("*** Could not get a handle to spawn '%s'\n", entTypeName(entType));
+    if (!h || h >= NUM_HANDLES-1) {
+        printf("*** Null handle to spawn '%s' in spawnEnt()\n", entTypeName(entType));
+        return 0;
+    }
+    if (handles[h].claimed && handles[h].entType != entType) {
+        printf("*** Handle %d for spawning '%s' already claimed by a '%s' in spawnEnt()\n", h, entTypeName(entType), entTypeName(handles[h].entType));
         return 0;
     }
     // Initialize the entity in the reserved memory location:
@@ -725,21 +738,17 @@ void* spawnEnt(int entType, vec2f pos) {
             exit(-1);
     }
     //printf("Spawning a '%s' at index %d.\n", entTypeName(entType), i);
-    if (entType == gib_type)
-        mainWorld->numGibs++;
-    if (entType == zombie_type)
-        mainWorld->numZombies++;
+    updateEntCount(entType, 1);
     return new_entity;
 }
-void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
-    if (mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/8)
-        printf("*** Warning! 7/8 of entity bytes array are full!\n");
+entBasics* findEntSpace(uint16_t entType) {
     char* array = mainWorld->entity_bytes_array;
-    int array_len = ENTITY_BYTES_ARRAY_LEN;
-    int required_space = getEntSize(type);
+    int required_space = getEntSize(entType);
     int empty_space_len = 0;
     int i = 0;
-    while (i<array_len) {
+    if (mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/8)
+        printf("*** Warning! 7/8 of entity bytes array are full!\n");
+    while (i<ENTITY_BYTES_ARRAY_LEN) {
         // Empty slot?
         if (array[i] != HEADER_BYTE) {
             if (DEBUG_ENT_SPAWNING) { printf("Found an open slot at %d.\n", i); }
@@ -761,11 +770,26 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
             break;
         }
     }
-    if (i >= array_len-1) {
+    if (i >= ENTITY_BYTES_ARRAY_LEN-1) {
         printf("***\n*** No space left in the entity array!!!\n***\n");
         return 0;
         //exit(-1);
     }
+    return (entBasics*)&array[i];
+}
+//  ;;;
+// Clientside ent spawning:
+void forceSpawn(uint16_t entType, vec2f pos, handle h) {
+    // If this handle is taken by another type of ent, kill it.
+    if (handles[h].claimed && handles[h].entType != entType) {
+        despawnEnt(handles[h].ent);
+        handles[h].claimed = true;
+        handles[h].entType = entType;
+        spawnEnt(entType, pos, h);
+    }
+}
+void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
+    entBasics* entData = findEntSpace(type);
     int remainingHandles = countRemainingHandles();
     if (remainingHandles == 0) {
         printf("***\n*** No entity handles left!!!\n***\n");
@@ -776,15 +800,15 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
         return 0;
     }
     // Initialize the entity's header info:
-    entBasics* new_entity = (entBasics*)&array[i];
+    entBasics* new_entity = entData;
     new_entity->header_byte = HEADER_BYTE;
     new_entity->type = type;
-    new_entity->size = required_space;
-    new_entity->h = claim_handle((entBasics*)&array[i], (uint16_t)type);
+    new_entity->size = getEntSize(type);
+    new_entity->h = claim_handle(entData, (uint16_t)type);
     new_entity->pos = pos;
     // Initialize the entity.
     switch (type) {
-        #define ENT_INIT_CASES(name) case name##_type:  name##Init((struct ent_##name *)(&array[i])); break; //--- Init the entity.
+        #define ENT_INIT_CASES(name) case name##_type:  name##Init((struct ent_##name *)(entData)); break; //--- Init the entity.
         ENTITY_TYPES_LIST(ENT_INIT_CASES)
         default:
             printf("*** spawn_ent() error: invalid entity type: %d", type);
@@ -795,7 +819,7 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
         mainWorld->numGibs++;
     if (type == zombie_type)
         mainWorld->numZombies++;
-    return &array[i];
+    return entData;
 }
 // Remove an entity from an entity segment array. TODO ent-specific cleanup TODO
 void despawnEnt(entBasics* e) {
@@ -809,10 +833,7 @@ void despawnEnt(entBasics* e) {
     int size = e->size;
     mainWorld->entArraySpace -= size;
     if (DEBUG_ENTS) { printf("Despawning ent of size %d\n", size); }
-    if (e->type == gib_type)
-        mainWorld->numGibs--;
-    if (e->type == zombie_type)
-        mainWorld->numZombies--;
+    updateEntCount(e->type, -1);
     memset((void*)e, 0, size*sizeof(char));
 }
 // Run the think() function for each entitiy in a segment array.
