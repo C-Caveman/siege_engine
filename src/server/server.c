@@ -15,66 +15,6 @@ int id = 0;
 int new_id() {return ++id;}
 uint8_t anim_tick = 0;
 
-
-
-/*
-> Save the current pos.
-> Update the position.
-> Check if we entered a new tile.
-    > Move our handle from the old to the new tile.
-> Check if we entered a new chunk.
-    > Update our chunk.
-*/
-void move_all_ents(char* array, int array_len) {
-    entBasics* e;
-    for (int i=getFirstEnt(array, array_len); i != -1; i=getNextEnt(i, array, array_len)) {
-        if (array[i] != HEADER_BYTE) { printf("*** Invalid index given by getNextEnt() in move_all_ents()\n"); exit(-1); }
-                                                                                    //- move the entity, record its position in the chunk
-        e = (entBasics*)&array[i];
-        vec2i old_tile = e->tile;                                                   //- Old tile.
-        vec2i old_chunk = e->chunk;                                                 //- Old chunk.
-        moveEnt(e);
-        e->chunk = v2fToI(v2fScalarDiv( v2fAdd(e->pos,(vec2f){RSIZE/2,RSIZE/2}), (RSIZE*CHUNK_WIDTH) ));
-        vec2f floored = v2fSub(e->pos, v2iToF(v2iScale(e->chunk, RSIZE*CHUNK_WIDTH)));
-        e->tile = v2fToI(v2fAdd(v2fScalarDiv(floored, RSIZE), (vec2f){0.5,0.5}));
-        bool changed_tile = !v2iIsEq(e->tile, old_tile);                                  //- New tile?
-        bool old_tile_was_valid = v2iInBounds(old_tile, 0, CHUNK_WIDTH);
-        bool new_tile_was_valid = v2iInBounds(e->tile, 0, CHUNK_WIDTH);
-        bool old_chunk_was_valid = v2iInBounds(old_chunk, 0, WORLD_WIDTH) && old_tile_was_valid;
-        bool new_chunk_was_valid = v2iInBounds(e->chunk, 0, WORLD_WIDTH) && new_tile_was_valid;
-        struct tile* old_tile_ptr = &mainWorld->chunks[old_chunk.y][old_chunk.x].tiles[old_tile.y][old_tile.x];
-        struct tile* new_tile_ptr = &mainWorld->chunks[e->chunk.y][e->chunk.x].tiles[e->tile.y][e->tile.x];
-        if (changed_tile) {
-            if (old_chunk_was_valid)
-            for (int i=0; i<MAX_ENTS_PER_TILE; i++) {                               //- Remove handle from old tile.
-                if (old_tile_ptr->ents[i] == e->h)
-                    old_tile_ptr->ents[i] = 0; /* old_tile_ptr->floor_anim = stonedk; */
-            }
-            int numGibsInTile = 0;
-            if (new_chunk_was_valid)
-                for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
-                    entBasics* tileEnt = getEnt(new_tile_ptr->ents[i], 0);
-                    numGibsInTile += (tileEnt && tileEnt->type == gib_type);
-                }
-            bool tooManyGibs = (numGibsInTile > MAX_ENTS_PER_TILE*3/4);
-            if (new_chunk_was_valid) {
-                entBasics* firstTileEnt = getEnt(new_tile_ptr->ents[0], 0);
-                if (e->type != gib_type && firstTileEnt && firstTileEnt->type == gib_type && numGibsInTile > 0) {
-                    new_tile_ptr->ents[0] = e->h;
-                }
-            }
-            if (new_chunk_was_valid)
-                for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------------------------------------ Store handle in new tile.
-                    entBasics* tileEnt = getEnt(new_tile_ptr->ents[i], 0);
-                    if (tileEnt == 0 || (i == MAX_ENTS_PER_TILE-1 && tileEnt && e->type != gib_type && tileEnt->type == gib_type && tooManyGibs)) {
-                        new_tile_ptr->ents[i] = e->h;
-                        break;
-                    }
-                } //----- NOTE: copy_handle() isn't used on e->h here. Use it for sharing e->h with other ents.
-        }
-    }
-}
-
 int main() {
     applyConfig((char*)"config/config.txt");                                                           //===========// Initialize server. //
     running = 1;
@@ -101,7 +41,7 @@ int main() {
         chunkSetWall(chunk_0, x,CHUNK_WIDTH-1, wall_steel,wall_steel_side,16);
     }                                                                          //==============// Spawn entities. //
     struct ent_player* p = (struct ent_player*)spawn(player_type, (vec2f){0,0});
-    p->pos = (vec2f){RSIZE,RSIZE};
+    p->pos = (vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)};
     playerClient.player = (struct ent_player*)p;
     ((struct ent_player*)p)->cl = &playerClient;
     //printf("*Type name: '%s'\n", entTypeName(s->type));
@@ -174,7 +114,13 @@ int main() {
                 present_frame();
                 continue;
             }
-            clientUpdatePlayerEntity();                                   //- Client_Inputs -> Player_Entity.
+            // Update the client's local copy of the player entity:
+            clientUpdatePlayerEntity();
+            // Send the client events to the server events buffer: (singleplayer version)
+            memcpy(&events.buffer[events.count], clientEvents.buffer, clientEvents.count*sizeof(clientEvents.buffer[0]));
+            events.count += clientEvents.count;
+            memset(clientEvents.buffer, 0, clientEvents.count*sizeof(clientEvents.buffer[0]));
+            clientEvents.count = 0;
         }
         // Entity updates (server):
         if (!playingDemo)

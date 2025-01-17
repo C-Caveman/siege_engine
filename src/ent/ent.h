@@ -120,6 +120,7 @@ void* spawn(int type, vec2f pos);
 void despawnEnt(entBasics* ent);
 void thinkAllEnts(char* array, int array_len);
 void animateAllEnts(char* array, int array_len);
+void move_all_ents(char* array, int array_len);
 char* entTypeName(int type);
 int getEntSize(int type);
 int getFirstEnt(char* array, int array_len);

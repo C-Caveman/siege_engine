@@ -4,6 +4,7 @@
 #include "../graphics/graphics.h"
 #include "../audio/audio.h"
 extern float dt;
+struct eventsBuffer clientEvents;
 
 
 struct dialogActor actors[] = {
@@ -42,6 +43,11 @@ char (*menuPages[NUM_MENU_PAGES])[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN] = {
     MENU_PAGES_LIST(TO_MENU_LISTING_ADDRESS)
 };
 
+vec2i getTileAtCursor(struct client* c) {
+    if (c == 0) { printf("*** null client in getTileAtCursor!\n"); exit(-1); }
+    return v2fToIRoundUp(v2fScalarDiv(v2fAdd(c->camera_center,v2iToF(c->aim_pixel_pos)), RSIZE));
+}
+
 #define PLAYER_ACCELERATION 4000
 float DASH_ACCELERATION = PLAYER_ACCELERATION*3;
 float BONUS_DASH_ACCELERATION = PLAYER_ACCELERATION*2;
@@ -69,6 +75,32 @@ void clientUpdatePlayerEntity() {
         playerClient.player->vel = v2fScale(playerClient.player->vel, (1 - dt*25)); // Add friction when no direction is held.
     // Gun direction:
     playerClient.player->sprites[PLAYER_GUN].rotation = playerClient.aim_dir;
+    
+    if (playerClient.attacking && (curFrameStart - playerClient.lastAttackTime) > 300 && playerClient.player->heatTracker < 1) {
+        // Tell the server we are shooting:
+        CE(PlayerShoot, playerClient.player->h, playerClient.player->pos, playerClient.aim_dir);
+        // Show the shooting without waiting for the server:
+        //evPlayerShoot(&(struct dPlayerShoot) {eventPlayerShoot, playerClient.player->h, playerClient.player->pos, playerClient.aim_dir});
+    }
+    if (playerClient.building && (curFrameStart - playerClient.lastBuildTime) > 50) {
+        struct tile* timmy = worldGetTile(getTileAtCursor(&playerClient));
+        for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
+            if (timmy == 0)
+                break;
+            if (timmy->ents[i] != 0) {
+                entBasics* e = getEnt(timmy->ents[i], 0);
+                if (e->type == gib_type)
+                    despawnEnt(e);
+                else
+                    timmy = 0;
+            }
+        }
+        if (timmy != 0 && timmy->wall_height <= 0) {
+            playerClient.lastBuildTime = curFrameStart;
+            E(ChangeTile, .tileNumber=tileIndexToNumber(getTileAtCursor(&playerClient)), .floor=grass1Floor, .height=8, .wall=grass1Side, .wallSide=grass1Side);
+            playSound(thud);
+        }
+    }
 }
 
 void clientStartDialog(char* message) {

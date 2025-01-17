@@ -109,12 +109,12 @@ bool passedTimestamp(uint32_t t);
 typedef uint16_t handle; //-------------------- Entity handle.
 typedef struct { ENT_BASICS } entBasics; //----------------------------------- Generic entity.
 enum ent_flags {
-    NODRAW =      1,
+    NODRAW =       1,
     NO_ANIMATION = 2,
-    NOMOVE =      2*2,
-    NOFRICTION =  2*2*2,
-    NOCOLLISION = 2*2*2*2,
-    NOTHINK =     2*2*2*2*2,
+    NOMOVE =       2*2,
+    NOFRICTION =   2*2*2,
+    NOCOLLISION =  2*2*2*2,
+    NOTHINK =      2*2*2*2*2,
 };
 //============================================================================// SPRITES //
 enum sprite_flags {
@@ -224,10 +224,12 @@ struct eventsBuffer {
 };
 extern volatile uint32_t curFrameStart;
 extern struct eventsBuffer events;
+extern struct eventsBuffer clientEvents;
 void applyEvent(struct event* ev);
 void makeEvent(struct event e);
 void takeEvent();
-//#define EVENT(eventName, ...) makeEvent((struct event) { event##eventName, .details.d##eventName = { __VA_ARGS__ }})
+void sendEvents(struct eventsBuffer* eBuff);
+// Queue up a server event: (to be sent to the client)
 #define E(eventName, ...) {\
     if (events.count < EVENT_BUFFER_SIZE) { \
         events.buffer[events.count].data.det##eventName = (struct d##eventName) { event##eventName, __VA_ARGS__ }; \
@@ -236,6 +238,18 @@ void takeEvent();
     } \
     else { \
         printf("*** Too many events this frame!!\n"); \
+        exit(-1); \
+    } \
+}
+// Queue up a client event: (to be sent to the server)
+#define CE(eventName, ...) {\
+    if (clientEvents.count < EVENT_BUFFER_SIZE) { \
+        clientEvents.buffer[clientEvents.count].data.det##eventName = (struct d##eventName) { event##eventName, __VA_ARGS__ }; \
+        clientEvents.buffer[clientEvents.count].type = event##eventName;\
+        clientEvents.count++; \
+    } \
+    else { \
+        printf("*** Too many client events this frame!!\n"); \
         exit(-1); \
     } \
 }
