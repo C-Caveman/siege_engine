@@ -162,57 +162,14 @@ int main() {
         if (playingDemo && numDemoEventsRead >= numDemoEvents)
             break;
         
-        // Do clientside animations (zombies' per-frame rotation towards the player):
+        // Do clientside animations (zombies' per-frame rotation towards the player and rabbit wiggle):
         animateAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
         
         ////////////////////////////////////////////////////////////////////////
         // Rendering:
         ////////////////////////////////////////////////////////////////////////
         SDL_RenderClear(renderer);
-        playerClient.camera_pos = v2fSub(v2fAdd(p->pos, HW), v2fScale((vec2f){window_x,window_y}, (RSIZE/tileWidth/2)));
-        playerClient.camera_center = p->pos;
-        #define OFFSETS 9
-        vec2i order[OFFSETS] = {
-            {-1,1}, {1,1}, {-1,-1}, {1,-1}, //- Diagonally adjacent chunks.
-            {-1,0}, {0,1}, {1,0}, {0,-1}, //--- Directly adjacent chunks.
-            {0,0} //--------------------------- Current chunk.
-        };
-        for (int i=0; i<OFFSETS; i++) {
-            vec2i next_chunk = v2iAdd(p->chunk, order[i]);
-            if ( v2iInBounds(next_chunk, 0, WORLD_WIDTH-1) ) {                        //- Floor pass.
-                draw_chunk_floor(
-                    playerClient.camera_pos, playerClient.camera_center,
-                    &test_world.chunks[next_chunk.y][next_chunk.x],
-                    (vec2i){next_chunk.x, next_chunk.y});
-            }
-        }
-        for (int i=0; i<OFFSETS; i++) {
-            vec2i next_chunk = v2iAdd(p->chunk, order[i]);
-            if ( v2iInBounds(next_chunk, 0,WORLD_WIDTH-1) ) {                        //- Short entity pass.
-                chunkDrawShortEnts(
-                    playerClient.camera_pos, playerClient.camera_center,
-                    &test_world.chunks[next_chunk.y][next_chunk.x],
-                    (vec2i){next_chunk.x, next_chunk.y});
-            }
-        }
-        for (int i=0; i<OFFSETS; i++) {
-            vec2i next_chunk = v2iAdd(p->chunk, order[i]);
-            if ( v2iInBounds(next_chunk, 0,WORLD_WIDTH-1) ) {                        //- Tall entity pass.
-                chunkDrawTallEnts(
-                    playerClient.camera_pos, playerClient.camera_center,
-                    &test_world.chunks[next_chunk.y][next_chunk.x],
-                    (vec2i){next_chunk.x, next_chunk.y});
-            }
-        }
-        for (int i=0; i<OFFSETS; i++) {
-            vec2i next_chunk = v2iAdd(p->chunk, order[i]);
-            if ( v2iInBounds(next_chunk,0,WORLD_WIDTH-1) ) {                        //- Wall pass.
-                draw_chunk_walls(
-                    playerClient.camera_pos, playerClient.camera_center,
-                    &test_world.chunks[next_chunk.y][next_chunk.x],
-                    (vec2i){next_chunk.x, next_chunk.y});
-            }
-        }
+        drawWorld(&test_world);
         // DRAW A HUD!   
         drawInfo((char*)"fps", fps, 0);
         drawInfo((char*)"heat", (float)playerClient.player->heatTracker, 1);

@@ -50,6 +50,7 @@ void drawTextBox(char* text, int numCharsToPrint);
 void drawDialogBox(struct client* cl);
 void renderMenu(struct client* cl);
 void present_frame();
+void drawWorld(struct world* w);
 void cleanup_graphics();
 
 #endif
