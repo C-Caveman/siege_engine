@@ -10,10 +10,16 @@ int num_clients = 0;
 
 struct client playerClient;
 
-// each entity gets a unique ID number
-int id = 0;
-int new_id() {return ++id;}
 uint8_t anim_tick = 0;
+
+
+
+void gameTick() {
+    
+}
+
+
+
 
 int main() {
     applyConfig((char*)"config/config.txt");                                                           //===========// Initialize server. //
@@ -50,6 +56,7 @@ int main() {
         E(EntSpawn, .entType=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH+1), RSIZE*(CHUNK_WIDTH/2)});
         E(EntSpawn, .entType=rabbit_type, .pos=(vec2f){RSIZE*5, RSIZE*5});
         E(EntSpawn, .entType=scenery_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)});
+        E(EntSpawn, .entType=spawner_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/4-0.5), RSIZE*(CHUNK_WIDTH/4-0.5)});
     }
     playMusicLoop(spookyWind1);
     

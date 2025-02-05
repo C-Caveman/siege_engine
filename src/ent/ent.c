@@ -578,6 +578,24 @@ void gibAnim(struct ent_gib* e) {
         e->flags |= NO_ANIMATION;
     }
 }
+#define SPAWN_INTERVAL 1000
+#define MAX_SPAWNS 10
+void spawnerInit(struct ent_spawner* e) {
+    e->num_sprites = 1;
+    e->sprites[0].anim = spawner001;
+    e->sprites[0].flags |= LOOPING;
+    e->nextThink = curFrameStart + SPAWN_INTERVAL;
+}
+void spawnerThink(struct ent_spawner* e) {
+    e->nextThink = curFrameStart + SPAWN_INTERVAL;
+    E(EntSpawn, zombie_type, e->pos);
+    e->numSpawns += 1;
+    if (e->numSpawns >= MAX_SPAWNS) {
+        e->flags |= NOTHINK;
+        e->sprites[0].flags &= ~LOOPING;
+    }
+}
+void spawnerAnim(struct ent_spawner* e) {}
 
 //======================================================================================================================//
 //=====================================================// Entity management functions. (spawn, despawn, get_next, ect.) //

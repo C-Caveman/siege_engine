@@ -5,26 +5,7 @@
 #include "../defs.h"
 #include "../graphics/animations.h"
 #include <SDL2/SDL.h>
-/*
-//================================================================// ENTITY STRUCTURE //
-    1: ENT_BASICS
-    2: struct sprite sprites[NUM_SPRITES_THIS_ENT_HAS]
-    3: <your vars here>
 
-//====== ENTITY UPDATE CYCLE ====================================// ENTITY UPDATE CYCLE //
-    > Animate
-         Update the frame number of each sprite. Trigger think if on a special frame.
-    > Think
-        Entity-specific functions like pathfinding and shooting.
-    > Move
-        Apply velocity.
-    > Collide
-        Tweak position/velocity based on overlap with walls/entities.
-    > Draw
-        All of the entity's sprites.
-*/
-//==== HANDLES =========================================================================// HANDLES //
-//typedef int16_t handle; // Defined in defs.h already.
 struct handle_info {
     entBasics* ent; // Entity who owns this handle.
     uint16_t entType;
@@ -45,7 +26,8 @@ handle              uncopy_handle(handle i); //----------- Delete a handle to an
     f(projectile) \
     f(rabbit) \
     f(zombie) \
-    f(gib)
+    f(gib) \
+    f(spawner)
 #define TO_TYPE_ENUM(name) name##_type, 
 enum entity_types {
     ENTITY_TYPES_LIST(TO_TYPE_ENUM)
@@ -102,11 +84,16 @@ struct ent_zombie {
     uint32_t nextWalk;
 };
 enum gib_sprites {GIB_SPRITE_1, NUM_GIB_SPRITES};                            // GIB
-#define GIB_SPIN_SPEED 100
 struct ent_gib {
     ENT_BASICS
     struct sprite sprites[NUM_GIB_SPRITES];
     float spinMultiplier;
+};
+enum spawner_sprites {SPAWNER_SPRITE_1, NUM_SPAWNER_SPRITES};                // SPAWNER
+struct ent_spawner {
+    ENT_BASICS
+    struct sprite sprites[NUM_GIB_SPRITES];
+    uint32_t numSpawns;
 };
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 #define TO_INIT_PROTOTYPES(name) void name##Init(struct ent_##name* e); 

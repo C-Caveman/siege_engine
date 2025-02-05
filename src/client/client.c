@@ -97,7 +97,7 @@ void clientUpdatePlayerEntity() {
         }
         if (timmy != 0 && timmy->wall_height <= 0) {
             playerClient.lastBuildTime = curFrameStart;
-            E(ChangeTile, .tileNumber=tileIndexToNumber(getTileAtCursor(&playerClient)), .floor=grass1Floor, .height=8, .wall=grass1Side, .wallSide=grass1Side);
+            CE(ChangeTile, .tileNumber=tileIndexToNumber(getTileAtCursor(&playerClient)), .floor=grass1Floor, .height=8, .wall=grass1Side, .wallSide=grass1Side);
             playSound(thud);
         }
     }

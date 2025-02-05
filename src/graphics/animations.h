@@ -44,6 +44,7 @@
     f(rocket_tank) \
     f(sand) \
     f(solid_grey) \
+    f(spawner001) \
     f(stone) \
     f(stonedk) \
     f(stonedk02) \
