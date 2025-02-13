@@ -193,31 +193,55 @@ void playerInit(struct ent_player* e) {
 int numRabbitPets = 0;
 #define INTERACT_DIALOG_LEN 256
 char rabbitPetDialog[INTERACT_DIALOG_LEN];
-void playerInteract(entBasics* player, entBasics* useTarget) {
-    struct ent_player* user = (struct ent_player*)player;
-    if (useTarget && useTarget->type == scenery_type && user->cl && user->cl->interacting) {
-        printf("Used a scenery ent!\n");
-        user->cl->interacting = false;
-        E(TriggerDialog, .p=user->h, .fileName="test/piggy");
-    }
-    else if (useTarget && useTarget->type == rabbit_type) {
-        user->cl->interacting = false;
-        playSound(meow);
-        numRabbitPets++;
-        if (numRabbitPets == 1)
-            snprintf(playerClient.dialogPrintString, INTERACT_DIALOG_LEN, "You pet the rabbit 1 time.                      \n");
-        else
+void evUse(struct dUse* d) {
+    struct ent_player* u = (struct ent_player*)getEnt(d->user, player_type);
+    entBasics* t = getEnt(d->target, 0);
+    if (!u || !t)
+        return;
+    switch (t->type) {
+        case scenery_type:
+            u->cl->interacting = false;
+            evTriggerDialog(&(struct dTriggerDialog) {.p=u->h, .fileName="test/piggy"});
+            break;
+        case rabbit_type:
+            u->cl->interacting = false;
+            playSound(meow);
+            numRabbitPets++;
+            if (playerClient.dialogPrintString[0] != 'Y') {
+                memset(playerClient.dialogString, 0, sizeof(playerClient.dialogString)-1);
+                memset(playerClient.dialogPrintString, 0, sizeof(playerClient.dialogPrintString)-1);
+                clientStartDialog(playerClient.dialogString);
+                playerClient.dialogVisible = 0;
+                printf("trigger!\n");
+            }
+            if (numRabbitPets == 1)
+                snprintf(playerClient.dialogPrintString, INTERACT_DIALOG_LEN, "You pet the rabbit 1 time.                      \n");
+            else
             snprintf(playerClient.dialogPrintString, INTERACT_DIALOG_LEN, "You pet the rabbit %d times.                    \n", numRabbitPets);
-        if (!playerClient.dialogVisible) {
-            strcpy(playerClient.dialogAnnotation, (char*)"book");
-            clientChangeActor();
-            clientStartDialog(playerClient.dialogPrintString);
-        }
-        else if ((size_t)playerClient.dialogStringPos >= strlen(playerClient.dialogPrintString)-20) {
-            playerClient.dialogWaitTimer = 5000;
-        }
+            if (!playerClient.dialogVisible) {
+                strcpy(playerClient.dialogAnnotation, (char*)"book");
+                clientChangeActor();
+                clientStartDialog(playerClient.dialogPrintString);
+            }
+            if ((size_t)playerClient.dialogStringPos >= strlen(playerClient.dialogPrintString)-20) {
+                playerClient.dialogWaitTimer = 5000;
+            }
+            break;
+        case spawner_type:
+            u->cl->interacting = false;
+            snprintf(playerClient.dialogString, INTERACT_DIALOG_LEN, "<apig>%d spawned from here.<w10>  ", ((struct ent_spawner*)t)->numSpawns);
+            clientStartDialog(playerClient.dialogString);
+            
+            break;
     }
 }
+void playerInteract(entBasics* player, entBasics* useTarget) {
+    struct ent_player* user = (struct ent_player*)player;
+    if (!useTarget || !user->cl || !user->cl->interacting)
+        return;
+    E(Use, .user=user->h, .target=useTarget->h);
+}
+
 void windShieldSplatter(entBasics* attacker, entBasics* victim) {
     if (victim == 0 || attacker == 0)
         return;
@@ -490,6 +514,9 @@ void evInvalid(struct dInvalid* d) {}
 // Markers for the start/end of a server frame:
 void evFrameStart(struct dFrameStart* d) {}
 void evFrameEnd(struct dFrameEnd* d) {}
+void evPlaySound(struct dPlaySound* d) {
+    playSoundChannel(d->sound, d->channel);
+}
 #define GIB_SPEED 4000
 void evZombieDie(struct dZombieDie* d) {
     struct ent_zombie* e = (struct ent_zombie*)getEnt(d->h, zombie_type);
@@ -553,7 +580,9 @@ void zombieThink(struct ent_zombie* e) {
 void zombieAnim(struct ent_zombie* e) {
     // Face the player:
     entBasics* t = getEnt(e->target, player_type);
-    vec2f targetVector = v2fNormalized(v2fSub(v2fAdd(e->targetPos, v2fScale(t->vel, 0.15f)), e->pos));
+    if (!t)
+        return;
+    vec2f targetVector = v2fNormalized(v2fSub(v2fAdd(t->pos, v2fScale(t->vel, 0.15f)), e->pos));
     float angleToPlayer = vectorToAngle(targetVector) + 270;
     if (angleToPlayer > 360.f)
         angleToPlayer -= 360.f;
@@ -589,6 +618,7 @@ void spawnerInit(struct ent_spawner* e) {
 void spawnerThink(struct ent_spawner* e) {
     e->nextThink = curFrameStart + SPAWN_INTERVAL;
     E(EntSpawn, zombie_type, e->pos);
+    E(PlaySound, thump01, CHAN_WORLD);
     e->numSpawns += 1;
     if (e->numSpawns >= MAX_SPAWNS) {
         e->flags |= NOTHINK;

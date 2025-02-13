@@ -3,7 +3,6 @@
 
 #include "sfx.h"
 #include "music.h"
-#define NUM_UNUSED_SOUND_CHANNELS 2
 
 enum soundChannels {
     CHAN_EXPLOSION,
@@ -13,9 +12,8 @@ enum soundChannels {
     CHAN_STEAM,
     CHAN_MONSTER,
     CHAN_VOICE,
-    
-    CHAN_UNUSED_RANGE_START,
-    CHAN_UNUSED_RANGE_END=CHAN_UNUSED_RANGE_START+NUM_UNUSED_SOUND_CHANNELS,
+    CHAN_WORLD,
+    CHAN_AMBIENT,
     NUM_CHANNELS
 };
 
