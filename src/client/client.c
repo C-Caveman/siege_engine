@@ -103,6 +103,20 @@ void clientUpdatePlayerEntity() {
     }
 }
 
+void clientClearDialog() {
+    memset(playerClient.dialogString, 0, sizeof(playerClient.dialogString)-1);
+    memset(playerClient.dialogPrintString, 0, sizeof(playerClient.dialogPrintString)-1);
+    playerClient.dialogVisible = 0;
+    playerClient.dialogCharsPrinted = 0;
+    playerClient.dialogStringPos = 0;
+    playerClient.dialogWaitTimer = 0;
+    // Set to default actor.
+    playerClient.dialogActorIndex = 0;
+    playerClient.dialogActorFaceIndex = 0;
+    playerClient.dialogActorVoiceIndex = 0;
+    playerClient.dialogActorFrame = 0;
+}
+
 void clientStartDialog(char* message) {
     playerClient.dialogTick = anim_tick;
     strncpy(playerClient.dialogString, message, sizeof(playerClient.dialogString)-1);

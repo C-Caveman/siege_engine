@@ -207,24 +207,18 @@ void evUse(struct dUse* d) {
             u->cl->interacting = false;
             playSound(meow);
             numRabbitPets++;
+            // If another dialog is already playing, clear that out:
             if (playerClient.dialogPrintString[0] != 'Y') {
-                memset(playerClient.dialogString, 0, sizeof(playerClient.dialogString)-1);
-                memset(playerClient.dialogPrintString, 0, sizeof(playerClient.dialogPrintString)-1);
-                clientStartDialog(playerClient.dialogString);
-                playerClient.dialogVisible = 0;
-                printf("trigger!\n");
+                clientClearDialog();
             }
             if (numRabbitPets == 1)
-                snprintf(playerClient.dialogPrintString, INTERACT_DIALOG_LEN, "You pet the rabbit 1 time.                      \n");
+                snprintf(playerClient.dialogPrintString, INTERACT_DIALOG_LEN, "You pet the rabbit 1 time.<w50>   ");
             else
-            snprintf(playerClient.dialogPrintString, INTERACT_DIALOG_LEN, "You pet the rabbit %d times.                    \n", numRabbitPets);
+                snprintf(playerClient.dialogPrintString, INTERACT_DIALOG_LEN, "You pet the rabbit %d times.<w50>    ", numRabbitPets);
             if (!playerClient.dialogVisible) {
                 strcpy(playerClient.dialogAnnotation, (char*)"book");
                 clientChangeActor();
                 clientStartDialog(playerClient.dialogPrintString);
-            }
-            if ((size_t)playerClient.dialogStringPos >= strlen(playerClient.dialogPrintString)-20) {
-                playerClient.dialogWaitTimer = 5000;
             }
             break;
         case spawner_type:

@@ -120,6 +120,7 @@ struct client {
     int menuSelection[NUM_MENU_PAGES]; // Current selected menu item for each menu page.
 };
 void clientUpdatePlayerEntity();
+void clientClearDialog();
 void clientStartDialog(char* message);
 void clientUpdateDialogue();
 void clientShowDialog();
