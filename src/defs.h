@@ -218,9 +218,11 @@ struct event {
     } data;
 };
 #define EVENT_BUFFER_SIZE 8192*4
+// circular buffer for events (allows concurrent reading and writing)
 struct eventsBuffer {
     int count;
-    int index;
+    int readHead;
+    int writeHead;
     int sequenceNumber;
     struct event buffer[EVENT_BUFFER_SIZE];
 };
@@ -233,10 +235,13 @@ void takeEvent();
 void sendEvents(struct eventsBuffer* eBuff);
 // Queue up a server event: (to be sent to the client)
 #define E(eventName, ...) {\
-    if (events.count < EVENT_BUFFER_SIZE) { \
-        events.buffer[events.count].data.det##eventName = (struct d##eventName) { event##eventName, __VA_ARGS__ }; \
-        events.buffer[events.count].type = event##eventName;\
+    if (events.count < EVENT_BUFFER_SIZE-2) { \
+        events.buffer[events.writeHead].data.det##eventName = (struct d##eventName) { event##eventName, __VA_ARGS__ }; \
+        events.buffer[events.writeHead].type = event##eventName;\
         events.count++; \
+        events.writeHead++; \
+        if (events.writeHead >= EVENT_BUFFER_SIZE-1) \
+            events.writeHead = 0;\
     } \
     else { \
         printf("*** Too many events this frame!!\n"); \
@@ -245,10 +250,13 @@ void sendEvents(struct eventsBuffer* eBuff);
 }
 // Queue up a client event: (to be sent to the server)
 #define CE(eventName, ...) {\
-    if (clientEvents.count < EVENT_BUFFER_SIZE) { \
-        clientEvents.buffer[clientEvents.count].data.det##eventName = (struct d##eventName) { event##eventName, __VA_ARGS__ }; \
-        clientEvents.buffer[clientEvents.count].type = event##eventName;\
+    if (clientEvents.count < EVENT_BUFFER_SIZE-2) { \
+        clientEvents.buffer[clientEvents.writeHead].data.det##eventName = (struct d##eventName) { event##eventName, __VA_ARGS__ }; \
+        clientEvents.buffer[clientEvents.writeHead].type = event##eventName;\
         clientEvents.count++; \
+        clientEvents.writeHead++; \
+        if (clientEvents.writeHead >= EVENT_BUFFER_SIZE-1) \
+            clientEvents.writeHead = 0;\
     } \
     else { \
         printf("*** Too many client events this frame!!\n"); \

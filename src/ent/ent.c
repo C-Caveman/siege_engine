@@ -90,7 +90,7 @@ void nearbyEntInteractionBidirectional(entBasics* user, void (*fn)(entBasics*, e
         }
     }
 }
-struct eventsBuffer events;
+struct eventsBuffer events = {0};
 #define TO_EVENT_NAMES(name, detailsUnused) #name,
 char eventNames[NUM_EVENTS][64] = {
     EVENT_LIST(TO_EVENT_NAMES)
@@ -110,10 +110,13 @@ void applyEvent(struct event* ev) {
 void takeEvent() {
     if (events.count <= 0)
         return;
-    //printf("Event: %d '%s'\n", events.buffer[events.count-1].type, eventName(events.buffer[events.count-1].type));
-    applyEvent(&events.buffer[events.count-1]);
-    memset((void*)&events.buffer[events.count-1], 0, sizeof(events.buffer[0]));
+    //printf("Event: %d '%s'\n", events.buffer[events.readHead].type, eventName(events.buffer[events.readHead].type));
+    applyEvent(&events.buffer[events.readHead]);
+    memset((void*)&events.buffer[events.readHead], 0, sizeof(events.buffer[0]));
     events.count--;
+    events.readHead++;
+    if (events.readHead >= EVENT_BUFFER_SIZE-1)
+        events.readHead = 0;
 }
 void sendEvents(struct eventsBuffer* eBuff) {
     //TODO send the events!!!!

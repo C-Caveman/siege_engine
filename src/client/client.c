@@ -4,7 +4,7 @@
 #include "../graphics/graphics.h"
 #include "../audio/audio.h"
 extern float dt;
-struct eventsBuffer clientEvents;
+struct eventsBuffer clientEvents = {0};
 
 
 struct dialogActor actors[] = {

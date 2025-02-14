@@ -124,10 +124,18 @@ int main() {
             // Update the client's local copy of the player entity:
             clientUpdatePlayerEntity();
             // Send the client events to the server events buffer: (singleplayer version)
-            memcpy(&events.buffer[events.count], clientEvents.buffer, clientEvents.count*sizeof(clientEvents.buffer[0]));
-            events.count += clientEvents.count;
-            memset(clientEvents.buffer, 0, clientEvents.count*sizeof(clientEvents.buffer[0]));
-            clientEvents.count = 0;
+            while (clientEvents.count > 0 && events.count <= EVENT_BUFFER_SIZE-1) {
+                memcpy(&events.buffer[events.writeHead], &clientEvents.buffer[clientEvents.readHead], sizeof(clientEvents.buffer[0]));
+                memset(&clientEvents.buffer[clientEvents.readHead], 0, sizeof(clientEvents.buffer[0]));
+                clientEvents.readHead++;
+                events.writeHead++;
+                if (clientEvents.readHead >= EVENT_BUFFER_SIZE-1)
+                    clientEvents.readHead = 0;
+                if (events.writeHead >= EVENT_BUFFER_SIZE-1)
+                    events.writeHead = 0;
+                clientEvents.count--;
+                events.count++;
+            }
         }
         // Entity updates (server):
         if (!playingDemo)
