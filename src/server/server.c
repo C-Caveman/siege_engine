@@ -2,17 +2,27 @@
 // update the clients on what has happened (if multiplayer)
 
 #include "server.h"
-#include <unistd.h> // testing memory leaks with sleep()
-
-// entity and client data are in these arrays
-int num_entities = 0;
-int num_clients = 0;
+#include <unistd.h>
+#include <pthread.h>
 
 struct client playerClient;
-
 uint8_t anim_tick = 0;
 
 
+// Listen for events coming from the server:
+pthread_t listenThread;
+void* eventListener() {
+    printf("Listen thread enabled!\n");
+    while (1) {
+        // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< UDP recv goes here
+        sleep(1);
+        if (!running) {
+            printf("Listen thread exiting.\n");
+            break;
+        }
+    }
+    return 0;
+}
 
 void gameTick() {
     
@@ -91,6 +101,8 @@ int main() {
     int numDemoEvents = demoFileSize / sizeof(events.buffer[0]);
     int numDemoEventsRead = 0;
     uint32_t nextDemoFrameTime = 0;
+    
+    pthread_create(&listenThread, NULL, eventListener, 0); // a thread is born!
     
     #define TO_SIZE_PRINT(name, ...) printf("%32s: %3ld bytes long.\n", #name, sizeof(struct d##name));
     EVENT_LIST(TO_SIZE_PRINT)
@@ -197,5 +209,6 @@ int main() {
         fclose(demoFile);
     cleanup_graphics();
     cleanup_audio();
+    pthread_cancel(listenThread); // Stop listening for server packets.
     return 0;
 }
