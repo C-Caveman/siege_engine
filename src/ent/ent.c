@@ -113,7 +113,10 @@ void takeEvent() {
     //printf("Event: %d '%s'\n", events.buffer[events.readHead].type, eventName(events.buffer[events.readHead].type));
     applyEvent(&events.buffer[events.readHead]);
     memset((void*)&events.buffer[events.readHead], 0, sizeof(events.buffer[0]));
+    // Protect the events counter:
+    sem_wait(&eventCountMutex);
     events.count--;
+    sem_post(&eventCountMutex);
     events.readHead++;
     if (events.readHead >= EVENT_BUFFER_SIZE-1)
         events.readHead = 0;

@@ -8,6 +8,7 @@
 #define DEBUG_ENT_HANDLES 0
 #define DEBUG_GRAPHICS 0
 #define DEBUG_GRAPHICS_LOADING 0
+#define DEBUG_THREADS 1
 
 // Expansion macros: (X Macros)
 #define TO_ENUM(x) x, 
@@ -18,6 +19,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <semaphore.h>
 #define F_PI 3.14159
 //=================== Vectors =========================================// Vectors //
 typedef struct vec2f {
@@ -233,12 +235,15 @@ void applyEvent(struct event* ev);
 void makeEvent(struct event e);
 void takeEvent();
 void sendEvents(struct eventsBuffer* eBuff);
+extern sem_t eventCountMutex;
 // Queue up a server event: (to be sent to the client)
 #define E(eventName, ...) {\
     if (events.count < EVENT_BUFFER_SIZE-2) { \
         events.buffer[events.writeHead].data.det##eventName = (struct d##eventName) { event##eventName, __VA_ARGS__ }; \
         events.buffer[events.writeHead].type = event##eventName;\
+        sem_wait(&eventCountMutex); \
         events.count++; \
+        sem_post(&eventCountMutex); \
         events.writeHead++; \
         if (events.writeHead >= EVENT_BUFFER_SIZE-1) \
             events.writeHead = 0;\

@@ -24,7 +24,6 @@ SDL_Renderer* renderer;
 SDL_Window* window;
 SDL_Rect window_size; // Dimensions of the screen. Set in the init_graphics() method.
 SDL_Rect background;
-int running;
 volatile uint32_t lastFrameEnd, curFrameStart, frame_time, frame_count, last_sec, fps;
 float dt = 0;
 TTF_Font* font = 0;

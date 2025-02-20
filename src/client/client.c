@@ -3,7 +3,7 @@
 #include "client.h"
 #include "../graphics/graphics.h"
 #include "../audio/audio.h"
-extern float dt;
+extern volatile float clientDt;
 struct eventsBuffer clientEvents = {0};
 
 
@@ -62,17 +62,17 @@ void clientUpdatePlayerEntity() {
         playerClient.player->vel = 
             v2fAdd(
                 playerClient.player->vel, 
-                v2fScale(angleToVector(playerClient.aim_dir), ((DASH_ACCELERATION+BONUS_DASH_ACCELERATION*(playerClient.player->heatTracker == HEAT_MAX))*dt))
+                v2fScale(angleToVector(playerClient.aim_dir), ((DASH_ACCELERATION+BONUS_DASH_ACCELERATION*(playerClient.player->heatTracker == HEAT_MAX))*clientDt))
             );
     }
     else {
         playerClient.player->vel = v2fAdd(
             playerClient.player->vel, 
-            v2fScale(v2fNormalized(playerClient.accel_dir), ((PLAYER_ACCELERATION + playerClient.sprinting*PLAYER_ACCELERATION*1.25)*dt))
+            v2fScale(v2fNormalized(playerClient.accel_dir), ((PLAYER_ACCELERATION + playerClient.sprinting*PLAYER_ACCELERATION*1.25)*clientDt))
         );
     }
     if (v2fLen(playerClient.accel_dir) == 0 && !playerClient.dashing)
-        playerClient.player->vel = v2fScale(playerClient.player->vel, (1 - dt*25)); // Add friction when no direction is held.
+        playerClient.player->vel = v2fScale(playerClient.player->vel, (1 - clientDt*25)); // Add friction when no direction is held.
     // Gun direction:
     playerClient.player->sprites[PLAYER_GUN].rotation = playerClient.aim_dir;
     
