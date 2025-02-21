@@ -136,7 +136,7 @@ void evPlayerShoot(struct dPlayerShoot* d) {
     // Are we missing a player/client?
     if (!p || !p->cl)
         return;
-    p->cl->lastAttackTime = curFrameStart;
+    p->cl->lastAttackTime = tickStartTime;
     p->cl->player->sprites[PLAYER_GUN].frame = 0;;
     p->cl->player->sprites[PLAYER_GUN].flags &= ~PAUSED;
     //playSound(bam02);
@@ -357,7 +357,7 @@ void projectileInit(struct ent_projectile* e) {                           // PRO
     e->sprites[0].anim = grenade01Blink;
     e->sprites[0].flags |= LOOPING;
     e->flags = NOFRICTION | NOCOLLISION;
-    e->timeOut = curFrameStart + 2000;
+    e->timeOut = tickStartTime + 2000;
     e->isExploding = 0;
 }
 void projectileHitNearby(entBasics* attacker, entBasics* victim) {
@@ -367,7 +367,7 @@ void projectileHitNearby(entBasics* attacker, entBasics* victim) {
             return;
         }
         victim->health -= 1;
-        ((struct ent_projectile*)attacker)->timeOut = curFrameStart;
+        ((struct ent_projectile*)attacker)->timeOut = tickStartTime;
     }
 }
 void evChangeTile(struct dChangeTile* d) {
@@ -391,7 +391,7 @@ void projectileThink(struct ent_projectile* e) {
         e->sprites[0].frame = 0;
         e->sprites[0].flags &= ~LOOPING;
         //vel = (vec2f) {0,0};
-        e->timeOut = curFrameStart + 500;
+        e->timeOut = tickStartTime + 500;
     }
     if (curTile != 0 && curTile->wall_height > 0 && !e->isExploding) {
         e->isExploding = 1;
@@ -401,7 +401,7 @@ void projectileThink(struct ent_projectile* e) {
         e->sprites[0].frame = 3;
         e->sprites[0].flags &= ~LOOPING;
         e->vel = (vec2f) {0,0};
-        e->timeOut = curFrameStart + 500;
+        e->timeOut = tickStartTime + 500;
         E(ChangeTile, .tileNumber=tileIndexToNumber(v2fToI(v2fScalarDiv(p, RSIZE))), .floor=tileGold01, .height=0, .wall=tiledark, .wallSide=tiledark);
         return;
     }
@@ -423,7 +423,7 @@ void rabbitInit(struct ent_rabbit* e) {                               // RABBIT
 }
 #define RABBIT_IGNORE_DIST RSIZE*10
 void rabbitThink(struct ent_rabbit* e) {
-    e->nextThink = curFrameStart + 1500;
+    e->nextThink = tickStartTime + 1500;
     vec2f targetPos = e->pos;
     entBasics* t = getEnt(e->target, player_type);
     if (t)
@@ -457,16 +457,16 @@ void rabbitAnim(struct ent_rabbit* e) {
     entBasics* t = getEnt(e->target, player_type);
     if (t)
         targetPos = t->pos;
-    bool aboutToHop = (e->nextThink-curFrameStart) < 1000; // 1/3 of a second before hop.
+    bool aboutToHop = (e->nextThink-tickStartTime) < 1000; // 1/3 of a second before hop.
     // Wiggle before hop:
     if (aboutToHop)
-        e->sprites[0].rotation += sin(curFrameStart*0.02f)*150.f*dt;
+        e->sprites[0].rotation += sin(tickStartTime*0.02f)*150.f*dt;
     // Look at player:
     float a = vectorToAngle(v2fSub(targetPos, e->pos)) + 90;
     float b = e->sprites[0].rotation;
     if (t && v2fDist(targetPos, e->pos) < RABBIT_IGNORE_DIST) {
         e->sprites[0].rotation -= closestAngleDelta(a,b)*4.f*dt;
-        //e->sprites[0].rotation = lerpAngle(a, b, (float)(e->nextThink-curFrameStart)/1500.f);
+        //e->sprites[0].rotation = lerpAngle(a, b, (float)(e->nextThink-tickStartTime)/1500.f);
     }
     if (e->sprites[0].rotation > 360)
         e->sprites[0].rotation -= 360;
@@ -479,7 +479,7 @@ void zombieInit(struct ent_zombie* e) {                               // ZOMBIE
     e->wanderDir = (vec2f){1,0};
     e->speed = 150.f + 200.f*randf();
     e->num_sprites = 1;
-    e->nextWalk = curFrameStart;
+    e->nextWalk = tickStartTime;
     e->sprites[0].flags |= LOOPING;
     e->sprites[0].anim = zombie;
     e->target = findPlayer(); 
@@ -556,7 +556,7 @@ void evZombieWindShieldSplatter(struct dZombieWindShieldSplatter* d) {
     despawnEnt((entBasics*)e);
 }
 void zombieThink(struct ent_zombie* e) {
-    e->nextThink = curFrameStart + 40;
+    e->nextThink = tickStartTime + 40;
     if (e->health <= 0) {
         E(ZombieDie, e->h);
         return;
@@ -565,11 +565,11 @@ void zombieThink(struct ent_zombie* e) {
     bool attacking = (t != 0 && v2fDist(t->pos, e->pos) < RSIZE/2);
     if (attacking) {
         playSoundChannel(slice001, CHAN_MONSTER);
-        e->nextThink = curFrameStart + 500;
+        e->nextThink = tickStartTime + 500;
     }
     vec2f targetVector = v2fNormalized(v2fSub(v2fAdd(e->targetPos, v2fScale(t->vel, 0.15f)), e->pos));
     if (passedTimestamp(e->nextWalk)) { //e->walkDelay.count > 0) {
-        e->nextWalk = curFrameStart + 40;
+        e->nextWalk = tickStartTime + 40;
         e->wanderDir = targetVector;
         nearbyEntInteractionBidirectional((entBasics*)e, divertNearbyZombies);
         vec2f persuitVelocity = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), e->speed));
@@ -613,10 +613,10 @@ void spawnerInit(struct ent_spawner* e) {
     e->num_sprites = 1;
     e->sprites[0].anim = spawner001;
     e->sprites[0].flags |= LOOPING;
-    e->nextThink = curFrameStart + SPAWN_INTERVAL;
+    e->nextThink = tickStartTime + SPAWN_INTERVAL;
 }
 void spawnerThink(struct ent_spawner* e) {
-    e->nextThink = curFrameStart + SPAWN_INTERVAL;
+    e->nextThink = tickStartTime + SPAWN_INTERVAL;
     E(EntSpawn, zombie_type, e->pos);
     E(PlaySound, thump01, CHAN_WORLD);
     e->numSpawns += 1;
@@ -869,7 +869,7 @@ void thinkAllEnts(char* array, int array_len) {
         }
         // Run the correct think function for this entity:
         entBasics* e = (entBasics*)&array[i];
-        if (curFrameStart < e->nextThink || e->flags & NOTHINK)
+        if (tickStartTime < e->nextThink || e->flags & NOTHINK)
             continue;
         //printf("Thinking entity type: '%s' at index %d.\n", entTypeName(type), i);
         switch (e->type) {

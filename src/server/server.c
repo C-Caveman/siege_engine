@@ -10,6 +10,7 @@ struct world test_world = {0};
 struct client playerClient;
 uint8_t anim_tick = 0;
 uint32_t frameNumber = 0;
+uint32_t clientFrame = 0;
 
 #define logThread(...) {\
     if (DEBUG_THREADS) \
@@ -29,12 +30,11 @@ void* eventListener() {
 }
 
 // Server thread (simulate the world):
-#define TICKS_PER_SECOND 20
+volatile uint32_t tickStartTime = 0;
+#define TICKS_PER_SECOND 120
 pthread_t serverThread;
 void* serverLoop() {
     logThread("Server thread enabled!\n");
-    
-    
     mainWorld = &test_world;
     initMainWorld();
      // Place tiles:
@@ -61,24 +61,22 @@ void* serverLoop() {
     ((struct ent_player*)p)->cl = &playerClient;
     //printf("*Type name: '%s'\n", entTypeName(s->type));
     if (!playingDemo) {
+        E(FrameStart, curFrameStart, frameNumber++);
         E(EntSpawn, .entType=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/2), RSIZE*(CHUNK_WIDTH+1)});
         E(EntSpawn, .entType=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH+1), RSIZE*(CHUNK_WIDTH/2)});
         E(EntSpawn, .entType=rabbit_type, .pos=(vec2f){RSIZE*5, RSIZE*5});
         E(EntSpawn, .entType=scenery_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)});
         E(EntSpawn, .entType=spawner_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/4-0.5), RSIZE*(CHUNK_WIDTH/4-0.5)});
+        E(FrameEnd, curFrameStart, frameNumber);
     }
     playMusicLoop(spookyWind1);
     
-    
-    uint32_t tickStartTime = 0;
     while (running) {
-        printf("\rframeNumber: %d    ", frameNumber);
+        printf("\rtick: % 5d  frame: % 5d  ", frameNumber, clientFrame);
+        tickStartTime = SDL_GetTicks();
         //
         // Read client events, update the game state, and send server events:
         //
-        tickStartTime = SDL_GetTicks();
-
-
         if (!playingDemo) {
             E(FrameStart, curFrameStart, frameNumber++);
             // Entity updates:
@@ -111,12 +109,13 @@ void* serverLoop() {
 
 // Client thread (draw the screen, read inputs):
 volatile float clientDt = 0;
+volatile uint32_t frameStartTime = 0;
 pthread_t clientThread;
 void* clientLoop() {
     logThread("Client thread enabled!\n");
     init_graphics();
     init_audio();
-    uint32_t frameStartTime = SDL_GetTicks();
+    frameStartTime = SDL_GetTicks();
     while (running) {
         clientDt = ((float)SDL_GetTicks() - (float)frameStartTime) / 1000.f;
         if (clientDt < 0) {
@@ -175,6 +174,7 @@ void* clientLoop() {
             break;
         }
         SDL_Delay(sleepTime);
+        clientFrame++;
     }
     logThread("Client thread exiting.\n");
     return 0;

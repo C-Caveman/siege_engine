@@ -76,13 +76,13 @@ void clientUpdatePlayerEntity() {
     // Gun direction:
     playerClient.player->sprites[PLAYER_GUN].rotation = playerClient.aim_dir;
     
-    if (playerClient.attacking && (curFrameStart - playerClient.lastAttackTime) > 300 && playerClient.player->heatTracker < 1) {
+    if (playerClient.attacking && (frameStartTime - playerClient.lastAttackTime) > 300 && playerClient.player->heatTracker < 1) {
         // Tell the server we are shooting:
         CE(PlayerShoot, playerClient.player->h, playerClient.player->pos, playerClient.aim_dir);
         // Show the shooting without waiting for the server:
         //evPlayerShoot(&(struct dPlayerShoot) {eventPlayerShoot, playerClient.player->h, playerClient.player->pos, playerClient.aim_dir});
     }
-    if (playerClient.building && (curFrameStart - playerClient.lastBuildTime) > 50) {
+    if (playerClient.building && (frameStartTime - playerClient.lastBuildTime) > 50) {
         struct tile* timmy = worldGetTile(getTileAtCursor(&playerClient));
         for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
             if (timmy == 0)
@@ -96,7 +96,7 @@ void clientUpdatePlayerEntity() {
             }
         }
         if (timmy != 0 && timmy->wall_height <= 0) {
-            playerClient.lastBuildTime = curFrameStart;
+            playerClient.lastBuildTime = frameStartTime;
             CE(ChangeTile, .tileNumber=tileIndexToNumber(getTileAtCursor(&playerClient)), .floor=grass1Floor, .height=8, .wall=grass1Side, .wallSide=grass1Side);
             playSound(thud);
         }
