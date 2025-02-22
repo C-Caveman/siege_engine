@@ -4,7 +4,7 @@
 #include "../graphics/graphics.h"
 #include "../audio/audio.h"
 extern volatile float clientDt;
-struct eventsBuffer clientEvents = {0};
+struct eventsBuffer clientCmdEvents = {0};
 
 
 struct dialogActor actors[] = {
@@ -79,6 +79,7 @@ void clientUpdatePlayerEntity() {
     if (playerClient.attacking && (frameStartTime - playerClient.lastAttackTime) > 300 && playerClient.player->heatTracker < 1) {
         // Tell the server we are shooting:
         CE(PlayerShoot, playerClient.player->h, playerClient.player->pos, playerClient.aim_dir);
+        playerClient.lastAttackTime = frameStartTime;
         // Show the shooting without waiting for the server:
         //evPlayerShoot(&(struct dPlayerShoot) {eventPlayerShoot, playerClient.player->h, playerClient.player->pos, playerClient.aim_dir});
     }

@@ -9,6 +9,7 @@
 #define DEBUG_GRAPHICS 0
 #define DEBUG_GRAPHICS_LOADING 0
 #define DEBUG_THREADS 1
+#define DEBUG_CLIENT 1
 
 // Expansion macros: (X Macros)
 #define TO_ENUM(x) x, 
@@ -232,7 +233,7 @@ extern volatile uint32_t curFrameStart;
 extern volatile uint32_t tickStartTime;
 extern volatile uint32_t frameStartTime;
 extern struct eventsBuffer events;
-extern struct eventsBuffer clientEvents;
+extern struct eventsBuffer clientCmdEvents;
 void applyEvent(struct event* ev);
 void makeEvent(struct event e);
 void takeEvent();
@@ -257,13 +258,13 @@ extern sem_t eventCountMutex;
 }
 // Queue up a client event: (to be sent to the server)
 #define CE(eventName, ...) {\
-    if (clientEvents.count < EVENT_BUFFER_SIZE-2) { \
-        clientEvents.buffer[clientEvents.writeHead].data.det##eventName = (struct d##eventName) { event##eventName, __VA_ARGS__ }; \
-        clientEvents.buffer[clientEvents.writeHead].type = event##eventName;\
-        clientEvents.count++; \
-        clientEvents.writeHead++; \
-        if (clientEvents.writeHead >= EVENT_BUFFER_SIZE-1) \
-            clientEvents.writeHead = 0;\
+    if (clientCmdEvents.count < EVENT_BUFFER_SIZE-2) { \
+        clientCmdEvents.buffer[clientCmdEvents.writeHead].data.det##eventName = (struct d##eventName) { event##eventName, __VA_ARGS__ }; \
+        clientCmdEvents.buffer[clientCmdEvents.writeHead].type = event##eventName;\
+        clientCmdEvents.count++; \
+        clientCmdEvents.writeHead++; \
+        if (clientCmdEvents.writeHead >= EVENT_BUFFER_SIZE-1) \
+            clientCmdEvents.writeHead = 0;\
     } \
     else { \
         printf("*** Too many client events this frame!!\n"); \

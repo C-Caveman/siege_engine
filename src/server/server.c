@@ -31,7 +31,7 @@ void* eventListener() {
 
 // Server thread (simulate the world):
 volatile uint32_t tickStartTime = 0;
-#define TICKS_PER_SECOND 120
+#define TICKS_PER_SECOND 32
 pthread_t serverThread;
 void* serverLoop() {
     logThread("Server thread enabled!\n");
@@ -72,7 +72,7 @@ void* serverLoop() {
     playMusicLoop(spookyWind1);
     
     while (running) {
-        printf("\rtick: % 5d  frame: % 5d  ", frameNumber, clientFrame);
+        //printf("\rtick: % 5d  frame: % 5d  ", frameNumber, clientFrame);
         tickStartTime = SDL_GetTicks();
         //
         // Read client events, update the game state, and send server events:
@@ -107,11 +107,16 @@ void* serverLoop() {
     return 0;
 }
 
+#define logClient(...) {\
+    if (DEBUG_CLIENT) \
+        printf( __VA_ARGS__ );\
+}
 // Client thread (draw the screen, read inputs):
 volatile float clientDt = 0;
 volatile uint32_t frameStartTime = 0;
 pthread_t clientThread;
 void* clientLoop() {
+    vec2f clientPos = {0,0};
     logThread("Client thread enabled!\n");
     init_graphics();
     init_audio();
@@ -129,22 +134,26 @@ void* clientLoop() {
         client_input(&playerClient);
         // Update the client's local copy of the player entity:
         clientUpdatePlayerEntity();
+        //HACK to smooth client movement
+        if (playerClient.player)
+            clientPos = playerClient.player->pos;
         // Send the client events to the server events buffer: (singleplayer version)
-        while (clientEvents.count > 0 && events.count <= EVENT_BUFFER_SIZE-1) {
-            memcpy(&events.buffer[events.writeHead], &clientEvents.buffer[clientEvents.readHead], sizeof(clientEvents.buffer[0]));
-            memset(&clientEvents.buffer[clientEvents.readHead], 0, sizeof(clientEvents.buffer[0]));
-            clientEvents.readHead++;
+        int cmdEventsSent = 0;
+        while (clientCmdEvents.count > 0 && events.count <= EVENT_BUFFER_SIZE-1) {
+            memcpy(&events.buffer[events.writeHead], &clientCmdEvents.buffer[clientCmdEvents.readHead], sizeof(clientCmdEvents.buffer[0]));
+            memset(&clientCmdEvents.buffer[clientCmdEvents.readHead], 0, sizeof(clientCmdEvents.buffer[0]));
+            clientCmdEvents.readHead++;
             events.writeHead++;
-            if (clientEvents.readHead >= EVENT_BUFFER_SIZE-1)
-                clientEvents.readHead = 0;
+            if (clientCmdEvents.readHead >= EVENT_BUFFER_SIZE-1)
+                clientCmdEvents.readHead = 0;
             if (events.writeHead >= EVENT_BUFFER_SIZE-1)
                 events.writeHead = 0;
-            clientEvents.count--;
-            // Protect the events counter:
-            sem_wait(&eventCountMutex);
-            events.count++;
-            sem_post(&eventCountMutex);
+            clientCmdEvents.count--;
+            cmdEventsSent++;
         }
+        sem_wait(&eventCountMutex);
+        events.count += cmdEventsSent;
+        sem_post(&eventCountMutex);
         //
         // Send client events, read server events, and draw the screen:
         //
@@ -152,6 +161,7 @@ void* clientLoop() {
         if (!playerClient.paused) {
             // Clientside animations:
             animateAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+            playerClient.player->pos = clientPos; // HACK due to stinky shared memory
             drawWorld(&test_world);
             // DRAW A HUD!
             drawInfo((char*)"fps", fps, 0);
@@ -169,9 +179,10 @@ void* clientLoop() {
         uint32_t frameEndTime = SDL_GetTicks();
         uint32_t frameTimeElapsed = frameEndTime - frameStartTime;
         uint32_t sleepTime = (1000 / fps_cap) - frameTimeElapsed; // millis to sleep
-        if (sleepTime < 0) {
-            printf("wow\n");
-            break;
+        #define MAX_SLEEP_TIME (1000 / 30)
+        if (sleepTime < 0 || sleepTime > MAX_SLEEP_TIME) {
+            sleepTime = (1000 / fps_cap);
+            printf("Abnormal sleepTime: %d\n", sleepTime);
         }
         SDL_Delay(sleepTime);
         clientFrame++;
@@ -225,11 +236,10 @@ int main() {
     
     // Begin listening for server events:
     pthread_create(&listenThread, NULL, eventListener, 0); // a thread is born!
-    // Begin accepting inputs and rendering the screen:
-    pthread_create(&clientThread, NULL, clientLoop, 0);
     // Begin updating the game state:
     pthread_create(&serverThread, NULL, serverLoop, 0);
-    
+    // Begin accepting inputs and rendering the screen:
+    pthread_create(&clientThread, NULL, clientLoop, 0);
     
     #define TO_SIZE_PRINT(name, ...) printf("%32s: %3ld bytes long.\n", #name, sizeof(struct d##name));
     EVENT_LIST(TO_SIZE_PRINT)
@@ -292,7 +302,8 @@ int main() {
         present_frame(); // Put the frame on the screen:
         */
         SDL_Delay(100);
-        if (SDL_GetTicks()/1000 > 10) {
+        int killTime = 30; //seconds
+        if (SDL_GetTicks()/1000 > killTime) {
             printf("Timer shutdown.\n");
             exit(0);
         }
@@ -304,6 +315,7 @@ int main() {
     cleanup_audio();
     pthread_join(listenThread, 0);
     pthread_join(clientThread, 0);
+    pthread_join(serverThread, 0);
     //pthread_cancel(listenThread); // Stop listening for server packets.
     return 0;
 }
