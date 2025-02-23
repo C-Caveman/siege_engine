@@ -10,6 +10,7 @@
 #define DEBUG_GRAPHICS_LOADING 0
 #define DEBUG_THREADS 1
 #define DEBUG_CLIENT 1
+#define DEBUG_SERVER 1
 
 // Expansion macros: (X Macros)
 #define TO_ENUM(x) x, 

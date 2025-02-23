@@ -30,8 +30,12 @@ void* eventListener() {
 }
 
 // Server thread (simulate the world):
+#define logServer(...) {\
+    if (DEBUG_SERVER) \
+        printf( __VA_ARGS__ );\
+}
 volatile uint32_t tickStartTime = 0;
-#define TICKS_PER_SECOND 32
+#define TICKS_PER_SECOND 128
 pthread_t serverThread;
 void* serverLoop() {
     logThread("Server thread enabled!\n");
@@ -98,9 +102,16 @@ void* serverLoop() {
         uint32_t tickEndTime = SDL_GetTicks();
         uint32_t tickTimeElapsed = tickEndTime - tickStartTime;
         uint32_t sleepTime = (1000 / TICKS_PER_SECOND) - tickTimeElapsed; // millis to sleep
+        #define MAX_SERVER_SLEEP_TIME (1000 / 30)
         dt = ((float)tickTimeElapsed) / 1000.f;
         if (dt > 0.1f) // Cap the delta time.
             dt = 0.05f;
+        if (sleepTime < 0) {
+            sleepTime = 0;
+        }
+        if (sleepTime > MAX_SERVER_SLEEP_TIME) {
+            sleepTime = (1000 / fps_cap);
+        }
         SDL_Delay(sleepTime);
     }
     logThread("Server thread exiting.\n");
@@ -116,7 +127,6 @@ volatile float clientDt = 0;
 volatile uint32_t frameStartTime = 0;
 pthread_t clientThread;
 void* clientLoop() {
-    vec2f clientPos = {0,0};
     logThread("Client thread enabled!\n");
     init_graphics();
     init_audio();
@@ -134,9 +144,6 @@ void* clientLoop() {
         client_input(&playerClient);
         // Update the client's local copy of the player entity:
         clientUpdatePlayerEntity();
-        //HACK to smooth client movement
-        if (playerClient.player)
-            clientPos = playerClient.player->pos;
         // Send the client events to the server events buffer: (singleplayer version)
         int cmdEventsSent = 0;
         while (clientCmdEvents.count > 0 && events.count <= EVENT_BUFFER_SIZE-1) {
@@ -161,7 +168,6 @@ void* clientLoop() {
         if (!playerClient.paused) {
             // Clientside animations:
             animateAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-            playerClient.player->pos = clientPos; // HACK due to stinky shared memory
             drawWorld(&test_world);
             // DRAW A HUD!
             drawInfo((char*)"fps", fps, 0);
@@ -179,10 +185,12 @@ void* clientLoop() {
         uint32_t frameEndTime = SDL_GetTicks();
         uint32_t frameTimeElapsed = frameEndTime - frameStartTime;
         uint32_t sleepTime = (1000 / fps_cap) - frameTimeElapsed; // millis to sleep
-        #define MAX_SLEEP_TIME (1000 / 30)
-        if (sleepTime < 0 || sleepTime > MAX_SLEEP_TIME) {
+        #define MAX_CLIENT_SLEEP_TIME (1000 / 30)
+        if (sleepTime < 0) {
+            sleepTime = 0;
+        }
+        if (sleepTime > MAX_CLIENT_SLEEP_TIME) {
             sleepTime = (1000 / fps_cap);
-            printf("Abnormal sleepTime: %d\n", sleepTime);
         }
         SDL_Delay(sleepTime);
         clientFrame++;
@@ -302,11 +310,6 @@ int main() {
         present_frame(); // Put the frame on the screen:
         */
         SDL_Delay(100);
-        int killTime = 30; //seconds
-        if (SDL_GetTicks()/1000 > killTime) {
-            printf("Timer shutdown.\n");
-            exit(0);
-        }
     }
     printf("Server was running for %d seconds.\n", SDL_GetTicks() / 1000);
     if (demoFile)
