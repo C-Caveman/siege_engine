@@ -233,6 +233,8 @@ struct eventsBuffer {
 extern volatile uint32_t curFrameStart;
 extern volatile uint32_t tickStartTime;
 extern volatile uint32_t frameStartTime;
+extern volatile float clientDt;
+extern volatile float serverDt;
 extern struct eventsBuffer events;
 extern struct eventsBuffer clientCmdEvents;
 void applyEvent(struct event* ev);

@@ -25,7 +25,6 @@ SDL_Window* window;
 SDL_Rect window_size; // Dimensions of the screen. Set in the init_graphics() method.
 SDL_Rect background;
 volatile uint32_t lastFrameEnd, curFrameStart, frame_time, frame_count, last_sec, fps;
-float dt = 0;
 TTF_Font* font = 0;
 
 #define MAX_ANIM_NAME_LEN 64

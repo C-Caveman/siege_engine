@@ -35,6 +35,7 @@ void* eventListener() {
         printf( __VA_ARGS__ );\
 }
 volatile uint32_t tickStartTime = 0;
+volatile float serverDt = 0;
 #define TICKS_PER_SECOND 128
 pthread_t serverThread;
 void* serverLoop() {
@@ -82,7 +83,7 @@ void* serverLoop() {
         // Read client events, update the game state, and send server events:
         //
         if (!playingDemo) {
-            E(FrameStart, curFrameStart, frameNumber++);
+            E(FrameStart, tickStartTime, frameNumber++);
             // Entity updates:
             thinkAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
             move_all_ents(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
@@ -91,7 +92,7 @@ void* serverLoop() {
             // Record the player's movement for the demo:
             E(PlayerMove, .p=playerClient.player->h, .pos=playerClient.player->pos, .vel=playerClient.player->vel);
             E(SpriteRotate, .h=playerClient.player->h, .index=PLAYER_GUN, .angle=playerClient.aim_dir);
-            E(FrameEnd, curFrameStart, frameNumber);
+            E(FrameEnd, SDL_GetTicks(), frameNumber);
         }
         // Update gamestate from the server's packets:
         while (events.count > 0) {
@@ -103,15 +104,9 @@ void* serverLoop() {
         uint32_t tickTimeElapsed = tickEndTime - tickStartTime;
         uint32_t sleepTime = (1000 / TICKS_PER_SECOND) - tickTimeElapsed; // millis to sleep
         #define MAX_SERVER_SLEEP_TIME (1000 / 30)
-        dt = ((float)tickTimeElapsed) / 1000.f;
-        if (dt > 0.1f) // Cap the delta time.
-            dt = 0.05f;
-        if (sleepTime < 0) {
-            sleepTime = 0;
-        }
-        if (sleepTime > MAX_SERVER_SLEEP_TIME) {
-            sleepTime = (1000 / fps_cap);
-        }
+        serverDt = ((float)tickTimeElapsed) / 1000.f;
+        serverDt = fclamp(serverDt, 0.f, 0.05f);
+        sleepTime = fclamp(sleepTime, 0, MAX_SERVER_SLEEP_TIME);
         SDL_Delay(sleepTime);
     }
     logThread("Server thread exiting.\n");
@@ -134,7 +129,7 @@ void* clientLoop() {
     while (running) {
         clientDt = ((float)SDL_GetTicks() - (float)frameStartTime) / 1000.f;
         if (clientDt < 0) {
-            printf("clientDt: %f\n", clientDt);
+            printf("clientDt was negatiev!!!!: %f\n", clientDt);
             exit(0);
         }
         frameStartTime = SDL_GetTicks();
@@ -186,12 +181,7 @@ void* clientLoop() {
         uint32_t frameTimeElapsed = frameEndTime - frameStartTime;
         uint32_t sleepTime = (1000 / fps_cap) - frameTimeElapsed; // millis to sleep
         #define MAX_CLIENT_SLEEP_TIME (1000 / 30)
-        if (sleepTime < 0) {
-            sleepTime = 0;
-        }
-        if (sleepTime > MAX_CLIENT_SLEEP_TIME) {
-            sleepTime = (1000 / fps_cap);
-        }
+        sleepTime = fclamp(sleepTime, 0, MAX_CLIENT_SLEEP_TIME);
         SDL_Delay(sleepTime);
         clientFrame++;
     }
@@ -242,6 +232,14 @@ int main() {
     int numDemoEventsRead = 0;
     uint32_t nextDemoFrameTime = 0;
     
+    #define DEBUG_EVENT_SIZES 0
+    #define TO_SIZE_PRINT(name, ...) printf("%32s: %3ld bytes long.\n", #name, sizeof(struct d##name));
+    if (DEBUG_EVENT_SIZES) {
+        printf("Event packet sizes:\n");
+        EVENT_LIST(TO_SIZE_PRINT)
+        printf("\n");
+    }
+    
     // Begin listening for server events:
     pthread_create(&listenThread, NULL, eventListener, 0); // a thread is born!
     // Begin updating the game state:
@@ -249,8 +247,6 @@ int main() {
     // Begin accepting inputs and rendering the screen:
     pthread_create(&clientThread, NULL, clientLoop, 0);
     
-    #define TO_SIZE_PRINT(name, ...) printf("%32s: %3ld bytes long.\n", #name, sizeof(struct d##name));
-    EVENT_LIST(TO_SIZE_PRINT)
     
     if (timeScale < 0.01)
         timeScale = 1;
@@ -294,21 +290,6 @@ int main() {
         if (playingDemo && numDemoEventsRead >= numDemoEvents)
             break;
         
-        
-        
-        ////////////////////////////////////////////////////////////////////////
-        // Rendering:
-        ////////////////////////////////////////////////////////////////////////
-        /*
-        SDL_RenderClear(renderer);
-        drawWorld(&test_world);
-        // DRAW A HUD!   
-        drawInfo((char*)"fps", fps, 0);
-        drawInfo((char*)"heat", (float)playerClient.player->heatTracker, 1);
-        drawInfo((char*)"zombies", (float)mainWorld->numZombies, 2);
-        clientShowDialog();
-        present_frame(); // Put the frame on the screen:
-        */
         SDL_Delay(100);
     }
     printf("Server was running for %d seconds.\n", SDL_GetTicks() / 1000);
@@ -319,6 +300,6 @@ int main() {
     pthread_join(listenThread, 0);
     pthread_join(clientThread, 0);
     pthread_join(serverThread, 0);
-    //pthread_cancel(listenThread); // Stop listening for server packets.
+    //pthread_cancel(listenThread); // Could use pthread_cancel() for a timer-based emergency thread killing system failsafe.
     return 0;
 }

@@ -6,7 +6,6 @@
 extern volatile float mouse_angle; // Direction the mouse is pointed in.
 extern volatile int mouse_x;
 extern volatile int mouse_y;
-extern float dt; // Delta time.
 extern struct anim_info anim_data[];
 
 struct handle_info handles[NUM_HANDLES] = { //=================================// ENTITY HANDLES //
@@ -460,12 +459,12 @@ void rabbitAnim(struct ent_rabbit* e) {
     bool aboutToHop = (e->nextThink-tickStartTime) < 1000; // 1/3 of a second before hop.
     // Wiggle before hop:
     if (aboutToHop)
-        e->sprites[0].rotation += sin(tickStartTime*0.02f)*150.f*dt;
+        e->sprites[0].rotation += sin(tickStartTime*0.02f)*150.f*clientDt;
     // Look at player:
     float a = vectorToAngle(v2fSub(targetPos, e->pos)) + 90;
     float b = e->sprites[0].rotation;
     if (t && v2fDist(targetPos, e->pos) < RABBIT_IGNORE_DIST) {
-        e->sprites[0].rotation -= closestAngleDelta(a,b)*4.f*dt;
+        e->sprites[0].rotation -= closestAngleDelta(a,b)*4.f*clientDt;
         //e->sprites[0].rotation = lerpAngle(a, b, (float)(e->nextThink-tickStartTime)/1500.f);
     }
     if (e->sprites[0].rotation > 360)
@@ -492,8 +491,8 @@ void pushNearbyEnts(entBasics* me, entBasics* them) {
     vec2f posDelta = v2fSub(me->pos, them->pos);
     float d = v2fLen(posDelta);
     if (d < RSIZE) {
-        me->vel = v2fAdd(me->vel, v2fScale(posDelta, PUSH_FORCE*dt));
-        them->vel = v2fSub(them->vel, v2fScale(posDelta, PUSH_FORCE*dt));
+        me->vel = v2fAdd(me->vel, v2fScale(posDelta, PUSH_FORCE*serverDt));
+        them->vel = v2fSub(them->vel, v2fScale(posDelta, PUSH_FORCE*serverDt));
     }
 }
 #define DIVERSION_STRENGTH 64
@@ -505,8 +504,8 @@ void divertNearbyZombies(entBasics* me, entBasics* them) {
     vec2f posDelta = v2fSub(thisZombie->pos, thatZombie->pos);
     float d = v2fLen(posDelta)*2;
     if (d < RSIZE*2.5) {
-        thisZombie->wanderDir = v2fAdd(thisZombie->wanderDir, v2fScale(posDelta, (DIVERSION_STRENGTH/(d+1))*DIVERSION_STRENGTH*dt));
-        thatZombie->wanderDir = v2fSub(thatZombie->wanderDir, v2fScale(posDelta, (DIVERSION_STRENGTH/(d+1))*DIVERSION_STRENGTH*dt));
+        thisZombie->wanderDir = v2fAdd(thisZombie->wanderDir, v2fScale(posDelta, (DIVERSION_STRENGTH/(d+1))*DIVERSION_STRENGTH*serverDt));
+        thatZombie->wanderDir = v2fSub(thatZombie->wanderDir, v2fScale(posDelta, (DIVERSION_STRENGTH/(d+1))*DIVERSION_STRENGTH*serverDt));
     }
 }
 // A blank event (type zero):
@@ -602,7 +601,7 @@ void gibThink(struct ent_gib* e) {}
 void gibAnim(struct ent_gib* e) {
     float spinRate = v2fLen(e->vel) * e->spinMultiplier;
     //float spinDir = 1 - 2*((e->h & 1) == 0);
-    e->sprites[0].rotation += (float)(spinRate*dt);
+    e->sprites[0].rotation += (float)(spinRate*serverDt);
     if (v2fLen(e->vel) < 10.f) {
         e->flags |= NO_ANIMATION;
     }
@@ -960,10 +959,10 @@ void move_all_ents(char* array, int array_len) {
     }
 }
 void moveEnt(entBasics* e) { //------------ Update an ent's position based on its velocity:
-    e->pos = v2fAdd(e->pos, v2fScale(e->vel, dt));
+    e->pos = v2fAdd(e->pos, v2fScale(e->vel, serverDt));
     // Apply friction:
     float speed = v2fLen(e->vel);
-    float friction = speed*8*dt;
+    float friction = speed*8*serverDt;
     int hasFriction = (e->flags & NOFRICTION) == 0;
     e->vel = v2fSub(e->vel, v2fScale(v2fNormalized(e->vel), friction*hasFriction));
     if (v2fLen(e->vel) < 5) { e->vel = (vec2f){0,0}; } // Minimum vel.
