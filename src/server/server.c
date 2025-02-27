@@ -129,7 +129,7 @@ void* clientLoop() {
     while (running) {
         clientDt = ((float)SDL_GetTicks() - (float)frameStartTime) / 1000.f;
         if (clientDt < 0) {
-            printf("clientDt was negatiev!!!!: %f\n", clientDt);
+            printf("clientDt was negative!!!!: %f\n", clientDt);
             exit(0);
         }
         frameStartTime = SDL_GetTicks();

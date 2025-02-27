@@ -97,8 +97,8 @@ struct client {
     //
     // Current dialog state:
     //
-    int  dialogWaitTimer; // Pause time set by the <wait> annotation.
-    int  dialogTick;
+    int  waitTime;
+    struct timer waitTimer; // Delay between printing letters set by the <wait> annotation.
     int  dialogVisible;
     int  dialogCharsPrinted;
     int  dialogStringPos;

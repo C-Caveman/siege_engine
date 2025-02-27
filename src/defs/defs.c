@@ -176,19 +176,19 @@ bool v2iInBounds(vec2i v, int min, int max) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Utility primitives:
 void timerStart(struct timer* t) {
-    t->start = curFrameStart;
+    t->start = frameStartTime;
     t->count = 0;
 }
 void timerUpdate(struct timer* t, uint32_t intervalMillis) {
-    uint32_t elapsedMillis = ( (curFrameStart < t->start)*((uint32_t)0xffff) + curFrameStart ) - t->start; // Account for overflow in SDL_GetTicks() value.
+    uint32_t elapsedMillis = ( (frameStartTime < t->start)*((uint32_t)0xffff) + frameStartTime ) - t->start; // Account for overflow in SDL_GetTicks() value.
     t->count = elapsedMillis / intervalMillis;
 }
 void timerUpdate30FPS(struct timer* t) {
-    uint32_t elapsedMillis = ( (curFrameStart < t->start)*((uint32_t)0xffff) + curFrameStart ) - t->start; // Account for overflow in SDL_GetTicks() value.
+    uint32_t elapsedMillis = ( (frameStartTime < t->start)*((uint32_t)0xffff) + frameStartTime ) - t->start; // Account for overflow in SDL_GetTicks() value.
     t->count = elapsedMillis >> 5; // Divide by 32 via bit shifting.
 }
 bool passedTimestamp(uint32_t t) {
-    uint32_t elapsedMillis = ( (curFrameStart < t)*((uint32_t)0xffff) + curFrameStart ) - t; // Account for overflow in SDL_GetTicks() value.
+    uint32_t elapsedMillis = ( (frameStartTime < t)*((uint32_t)0xffff) + frameStartTime ) - t; // Account for overflow in SDL_GetTicks() value.
     return elapsedMillis < ((uint32_t)0xffff / 2); // Returns correct value if time delta less than 20 days.
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

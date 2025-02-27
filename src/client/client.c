@@ -5,7 +5,7 @@
 #include "../audio/audio.h"
 extern volatile float clientDt;
 struct eventsBuffer clientCmdEvents = {0};
-
+#define logDialog(...) if (DEBUG_DIALOG) { printf(__VA_ARGS__); }
 
 struct dialogActor actors[] = {
     {".", {typewriterA01, voiceThudA3}, {black, black} },
@@ -110,7 +110,6 @@ void clientClearDialog() {
     playerClient.dialogVisible = 0;
     playerClient.dialogCharsPrinted = 0;
     playerClient.dialogStringPos = 0;
-    playerClient.dialogWaitTimer = 0;
     // Set to default actor.
     playerClient.dialogActorIndex = 0;
     playerClient.dialogActorFaceIndex = 0;
@@ -118,14 +117,16 @@ void clientClearDialog() {
     playerClient.dialogActorFrame = 0;
 }
 
+#define DEFAULT_WAIT_TIME 75
 void clientStartDialog(char* message) {
-    playerClient.dialogTick = anim_tick;
+    logDialog("dialog starting!\n");
+    playerClient.waitTime = DEFAULT_WAIT_TIME;
+    timerStart(&playerClient.waitTimer);
     strncpy(playerClient.dialogString, message, sizeof(playerClient.dialogString)-1);
     memset(playerClient.dialogPrintString, 0, sizeof(playerClient.dialogPrintString)-1);
     playerClient.dialogVisible = 1;
     playerClient.dialogCharsPrinted = 0;
     playerClient.dialogStringPos = 0;
-    playerClient.dialogWaitTimer = 0;
     playerClient.dialogActorFrame = 0;
 }
 
@@ -154,12 +155,11 @@ void clientChangeActor() {
 void clientUpdateDialogue() { // Animate the dialog box.
     if (playerClient.dialogVisible == 0)
         return;
-    int msSinceTextBoxUpdate = anim_tick - playerClient.dialogTick + (anim_tick < playerClient.dialogTick)*256;
-    if (playerClient.dialogWaitTimer > 0) {
-        playerClient.dialogWaitTimer -= msSinceTextBoxUpdate;
-        playerClient.dialogTick = anim_tick;
-        msSinceTextBoxUpdate = 0;
-        return;
+    timerUpdate(&playerClient.waitTimer, playerClient.waitTime);
+    bool timeToPrint = false;
+    if (playerClient.waitTimer.count > 0) {
+        timeToPrint = true;
+        timerStart(&playerClient.waitTimer);
     }
     int numTextBoxChars = strlen(playerClient.dialogString);
     //char prevChar = playerClient.dialogPrintString[(playerClient.dialogCharsPrinted > 0) ? playerClient.dialogCharsPrinted-1 : 0];
@@ -212,7 +212,7 @@ void clientUpdateDialogue() { // Animate the dialog box.
                 memset(playerClient.dialogPrintString, 0, sizeof(playerClient.dialogPrintString)-1);
                 break;
             case waitDialog:
-                playerClient.dialogWaitTimer = atoi(playerClient.dialogAnnotation) * 100;
+                playerClient.waitTime = atoi(playerClient.dialogAnnotation);
                 break;
             default:
                 break;
@@ -220,12 +220,10 @@ void clientUpdateDialogue() { // Animate the dialog box.
         playerClient.dialogStringPos++;
         c = playerClient.dialogString[playerClient.dialogStringPos];
     }
-    int isPunctuation = (c == '.' || c == '!' || c == '?');
+    //int isPunctuation = (c == '.' || c == '!' || c == '?');
     int isSpace = isspace(c);
-    int timeToAddChar = (msSinceTextBoxUpdate > 70) && (playerClient.dialogWaitTimer <= 0);
-    int waitedForPunct = !(isSpace && msSinceTextBoxUpdate < 140) && !(isPunctuation && msSinceTextBoxUpdate < 200);
-    if (timeToAddChar && waitedForPunct && playerClient.dialogCharsPrinted < numTextBoxChars) {
-        playerClient.dialogTick = anim_tick;
+    //int waitedForPunct = !(isSpace && !passedTimestamp(playerClient.waitTimer.start + 140)) && !(isPunctuation && !passedTimestamp(playerClient.waitTimer.start + 200));
+    if (timeToPrint && playerClient.dialogCharsPrinted < numTextBoxChars) {
         playerClient.dialogPrintString[playerClient.dialogCharsPrinted] = c;
         playerClient.dialogPrintString[playerClient.dialogCharsPrinted+1] = 0;
         playerClient.dialogCharsPrinted++;
@@ -234,26 +232,9 @@ void clientUpdateDialogue() { // Animate the dialog box.
             playSoundChannel(actors[playerClient.dialogActorIndex].voices[playerClient.dialogActorVoiceIndex], CHAN_VOICE);
             playerClient.dialogActorFrame++;
         }
-        /*
-        if (isPunctuation && rand() > RAND_MAX/2)
-            playSoundChannel(typewriterAPunct2, 5);
-        else if (isPunctuation && rand() > RAND_MAX/4)
-            playSoundChannel(typewriterAPunct3, 5);
-        else if (isPunctuation)
-            playSoundChannel(typewriterAPunct1, 5);
-        else if (c != ' ' && rand() > RAND_MAX/2)
-            playSoundChannel(typewriterARattle1, rand() % 4);
-        else if (c != ' ' && prevChar == ' ')
-            playSoundChannel(typewriterARattle2, 4);
-        else if (c != ' ' && rand() < RAND_MAX/1.1 && prevChar == ' ')
-            playSoundChannel(typewriterARattle1, rand() % 4);
-        else if (c != ' ')
-            playSoundChannel(typewriterARattle2, rand() % 4);
-        */
     }
     if (playerClient.dialogStringPos == numTextBoxChars) {
-        playerClient.dialogCharsPrinted = 0;
-        playerClient.dialogVisible = 0;
+        clientClearDialog();
         return;
     }
 }
