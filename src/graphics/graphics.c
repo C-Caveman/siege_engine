@@ -24,7 +24,7 @@ SDL_Renderer* renderer;
 SDL_Window* window;
 SDL_Rect window_size; // Dimensions of the screen. Set in the init_graphics() method.
 SDL_Rect background;
-volatile uint32_t lastFrameEnd, curFrameStart, frame_time, frame_count, last_sec, fps;
+volatile uint32_t curFrameStart, frame_time, frame_count, last_sec, fps;
 TTF_Font* font = 0;
 
 #define MAX_ANIM_NAME_LEN 64
@@ -171,7 +171,7 @@ void init_graphics() {
     background.w = window_x;
     background.h = window_x;
     // init some helpful variables
-    lastFrameEnd = frame_time = frame_count = last_sec = fps = 0;
+    frame_time = frame_count = last_sec = fps = 0;
     
     // turn the images in the graphics folder into GPU-usable textures
     load_animations();
@@ -197,13 +197,14 @@ void goWindowed() {
     setTileWidth();
 }
 
-void track_fps() {
-    if (lastFrameEnd > (last_sec + 1000)) {
-        last_sec = lastFrameEnd;
-        fps = frame_count * timeScale;
-        frame_count = 0;
-        //std::cout << "One second has passed, fps = " << fps << "\n";
-        //std::cout << "Delta time was: " << dt << "\n";
+uint32_t lastFpsUpdateTime = 0;
+uint32_t framesSinceFpsUpdate = 0;
+void trackFps() {
+    framesSinceFpsUpdate++;
+    if (frameStartTime > (lastFpsUpdateTime + 1000)) {
+        lastFpsUpdateTime = frameStartTime;
+        fps = framesSinceFpsUpdate;
+        framesSinceFpsUpdate = 0;
     }
 }
 // Animate and draw all sprites possesed by an entity. ;;
@@ -280,21 +281,6 @@ void draw_all_ents(vec2f camera_pos, char* array, int array_len) { // ;;
     }
 }
 
-void present_frame() {
-    //
-    // finished rendering a frame, 
-    // now make sure we don't exceed the fps cap
-    //
-    frame_time = SDL_GetTicks() - lastFrameEnd;
-    if (frame_time < min_frame_time) {
-        SDL_Delay(min_frame_time - frame_time);
-    }
-    frame_count++;
-    //
-    // push the finished frame to the window
-    //
-    SDL_RenderPresent(renderer);
-}
 
 void draw_tile_floor(struct tile (*tiles)[CHUNK_WIDTH], int x, int y, vec2f camera_pos) {
     if (x < 0 || x > CHUNK_WIDTH-1 || y < 0 || y > CHUNK_WIDTH-1)

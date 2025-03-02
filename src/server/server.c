@@ -10,7 +10,6 @@ struct world test_world = {0};
 struct client playerClient;
 uint8_t anim_tick = 0;
 uint32_t frameNumber = 0;
-uint32_t clientFrame = 0;
 
 #define logThread(...) {\
     if (DEBUG_THREADS) \
@@ -28,6 +27,10 @@ void* eventListener() {
     logThread("Listen thread exiting.\n");
     return 0;
 }
+
+// Client loop implemented in client.c
+void* clientLoop();
+pthread_t clientThread;
 
 // Server thread (simulate the world):
 #define logServer(...) {\
@@ -66,18 +69,17 @@ void* serverLoop() {
     ((struct ent_player*)p)->cl = &playerClient;
     //printf("*Type name: '%s'\n", entTypeName(s->type));
     if (!playingDemo) {
-        E(FrameStart, curFrameStart, frameNumber++);
+        E(FrameStart, SDL_GetTicks(), frameNumber++);
         E(EntSpawn, .entType=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/2), RSIZE*(CHUNK_WIDTH+1)});
         E(EntSpawn, .entType=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH+1), RSIZE*(CHUNK_WIDTH/2)});
         E(EntSpawn, .entType=rabbit_type, .pos=(vec2f){RSIZE*5, RSIZE*5});
         E(EntSpawn, .entType=scenery_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)});
         E(EntSpawn, .entType=spawner_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/4-0.5), RSIZE*(CHUNK_WIDTH/4-0.5)});
-        E(FrameEnd, curFrameStart, frameNumber);
+        E(FrameEnd, SDL_GetTicks(), frameNumber);
     }
     playMusicLoop(spookyWind1);
     
     while (running) {
-        //printf("\rtick: % 5d  frame: % 5d  ", frameNumber, clientFrame);
         tickStartTime = SDL_GetTicks();
         //
         // Read client events, update the game state, and send server events:
@@ -95,7 +97,7 @@ void* serverLoop() {
             E(FrameEnd, SDL_GetTicks(), frameNumber);
         }
         // Update gamestate from the server's packets:
-        while (events.count > 0) {
+        while (serverEvents.count > 0) {
             takeEvent();
         }
         
@@ -112,84 +114,6 @@ void* serverLoop() {
     logThread("Server thread exiting.\n");
     return 0;
 }
-
-#define logClient(...) {\
-    if (DEBUG_CLIENT) \
-        printf( __VA_ARGS__ );\
-}
-// Client thread (draw the screen, read inputs):
-volatile float clientDt = 0;
-volatile uint32_t frameStartTime = 0;
-pthread_t clientThread;
-void* clientLoop() {
-    logThread("Client thread enabled!\n");
-    init_graphics();
-    init_audio();
-    frameStartTime = SDL_GetTicks();
-    while (running) {
-        clientDt = ((float)SDL_GetTicks() - (float)frameStartTime) / 1000.f;
-        if (clientDt < 0) {
-            printf("clientDt was negative!!!!: %f\n", clientDt);
-            exit(0);
-        }
-        frameStartTime = SDL_GetTicks();
-        //
-        // Player input:
-        //
-        client_input(&playerClient);
-        // Update the client's local copy of the player entity:
-        clientUpdatePlayerEntity();
-        // Send the client events to the server events buffer: (singleplayer version)
-        int cmdEventsSent = 0;
-        while (clientCmdEvents.count > 0 && events.count <= EVENT_BUFFER_SIZE-1) {
-            memcpy(&events.buffer[events.writeHead], &clientCmdEvents.buffer[clientCmdEvents.readHead], sizeof(clientCmdEvents.buffer[0]));
-            memset(&clientCmdEvents.buffer[clientCmdEvents.readHead], 0, sizeof(clientCmdEvents.buffer[0]));
-            clientCmdEvents.readHead++;
-            events.writeHead++;
-            if (clientCmdEvents.readHead >= EVENT_BUFFER_SIZE-1)
-                clientCmdEvents.readHead = 0;
-            if (events.writeHead >= EVENT_BUFFER_SIZE-1)
-                events.writeHead = 0;
-            clientCmdEvents.count--;
-            cmdEventsSent++;
-        }
-        sem_wait(&eventCountMutex);
-        events.count += cmdEventsSent;
-        sem_post(&eventCountMutex);
-        //
-        // Send client events, read server events, and draw the screen:
-        //
-        SDL_RenderClear(renderer);
-        if (!playerClient.paused) {
-            // Clientside animations:
-            animateAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-            drawWorld(&test_world);
-            // DRAW A HUD!
-            drawInfo((char*)"fps", fps, 0);
-            drawInfo((char*)"heat", (float)playerClient.player->heatTracker, 1);
-            drawInfo((char*)"zombies", (float)mainWorld->numZombies, 2);
-            clientShowDialog();
-        }
-        else {
-            renderMenu(&playerClient);
-        }
-        SDL_RenderPresent(renderer);
-        frame_count++;
-        
-        // Screen and inputs updated, now sleep until it's time for the next frame:
-        uint32_t frameEndTime = SDL_GetTicks();
-        uint32_t frameTimeElapsed = frameEndTime - frameStartTime;
-        uint32_t sleepTime = (1000 / fps_cap) - frameTimeElapsed; // millis to sleep
-        #define MAX_CLIENT_SLEEP_TIME (1000 / 30)
-        sleepTime = fclamp(sleepTime, 0, MAX_CLIENT_SLEEP_TIME);
-        SDL_Delay(sleepTime);
-        clientFrame++;
-    }
-    logThread("Client thread exiting.\n");
-    return 0;
-}
-
-
 
 int main() {
     //
@@ -228,7 +152,7 @@ int main() {
         demoFileSize = ftell(demoFile);
         fseek(demoFile, 0, SEEK_SET);
     }
-    int numDemoEvents = demoFileSize / sizeof(events.buffer[0]);
+    int numDemoEvents = demoFileSize / sizeof(serverEvents.buffer[0]);
     int numDemoEventsRead = 0;
     uint32_t nextDemoFrameTime = 0;
     
@@ -240,7 +164,7 @@ int main() {
         printf("\n");
     }
     
-    // Begin listening for server events:
+    // Begin listening for server serverEvents:
     pthread_create(&listenThread, NULL, eventListener, 0); // a thread is born!
     // Begin updating the game state:
     pthread_create(&serverThread, NULL, serverLoop, 0);
@@ -254,31 +178,20 @@ int main() {
     //;;; GAME LOOP:
     //
     while (running) {
-        curFrameStart = SDL_GetTicks()*timeScale;
-        /*
-        dt = ((float)curFrameStart - (float)lastFrameEnd) / 1000.f;
-        if (dt > 0.1f) // Cap the delta time.
-            dt = 0.05f;
-        */
-        anim_tick = SDL_GetTicks() % 256; //- 8-bit timestamp for animations.
-        lastFrameEnd = SDL_GetTicks()*timeScale;
-        track_fps();
-        
-        
         // Record demo:
-        if (recordingDemo && demoFile && events.count > 0) {
-            fwrite(events.buffer, sizeof(events.buffer[0]), events.count, demoFile);
+        if (recordingDemo && demoFile && serverEvents.count > 0) {
+            fwrite(serverEvents.buffer, sizeof(serverEvents.buffer[0]), serverEvents.count, demoFile);
         }
         // Play demo:
         if (playingDemo && demoFile) {
             playerClient.player->sprites[PLAYER_CROSSHAIR].flags |= INVISIBLE;
-            while (nextDemoFrameTime < curFrameStart && numDemoEventsRead < numDemoEvents && events.count < EVENT_BUFFER_SIZE-2 && !feof(demoFile)) {
+            while (nextDemoFrameTime < curFrameStart && numDemoEventsRead < numDemoEvents && serverEvents.count < EVENT_BUFFER_SIZE-2 && !feof(demoFile)) {
                 // peek at the next event's FrameStart time
-                int gotAnEvent = fread(&events.buffer[events.count], sizeof(events.buffer[0]), 1, demoFile);
-                if (gotAnEvent == 1 && events.buffer[events.count].type == eventFrameStart) {
-                    nextDemoFrameTime = events.buffer[events.count].data.detFrameStart.time;
+                int gotAnEvent = fread(&serverEvents.buffer[serverEvents.count], sizeof(serverEvents.buffer[0]), 1, demoFile);
+                if (gotAnEvent == 1 && serverEvents.buffer[serverEvents.count].type == eventFrameStart) {
+                    nextDemoFrameTime = serverEvents.buffer[serverEvents.count].data.detFrameStart.time;
                 }
-                events.count += (gotAnEvent == 1);
+                serverEvents.count += (gotAnEvent == 1);
                 numDemoEventsRead += 1;
             }
             if (numDemoEventsRead >= numDemoEvents) {

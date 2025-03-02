@@ -11,7 +11,7 @@
 #define DEBUG_THREADS 1
 #define DEBUG_CLIENT 1
 #define DEBUG_SERVER 1
-#define DEBUG_DIALOG 1
+#define DEBUG_DIALOG 0
 
 // Expansion macros: (X Macros)
 #define TO_ENUM(x) x, 
@@ -236,8 +236,9 @@ extern volatile uint32_t tickStartTime;
 extern volatile uint32_t frameStartTime;
 extern volatile float clientDt;
 extern volatile float serverDt;
-extern struct eventsBuffer events;
+extern struct eventsBuffer serverEvents;
 extern struct eventsBuffer clientCmdEvents;
+extern struct eventsBuffer clientEvents;
 void applyEvent(struct event* ev);
 void makeEvent(struct event e);
 void takeEvent();
@@ -245,18 +246,18 @@ void sendEvents(struct eventsBuffer* eBuff);
 extern sem_t eventCountMutex;
 // Queue up a server event: (to be sent to the client)
 #define E(eventName, ...) {\
-    if (events.count < EVENT_BUFFER_SIZE-2) { \
-        events.buffer[events.writeHead].data.det##eventName = (struct d##eventName) { event##eventName, __VA_ARGS__ }; \
-        events.buffer[events.writeHead].type = event##eventName;\
+    if (serverEvents.count < EVENT_BUFFER_SIZE-2) { \
+        serverEvents.buffer[serverEvents.writeHead].data.det##eventName = (struct d##eventName) { event##eventName, __VA_ARGS__ }; \
+        serverEvents.buffer[serverEvents.writeHead].type = event##eventName;\
         sem_wait(&eventCountMutex); \
-        events.count++; \
+        serverEvents.count++; \
         sem_post(&eventCountMutex); \
-        events.writeHead++; \
-        if (events.writeHead >= EVENT_BUFFER_SIZE-1) \
-            events.writeHead = 0;\
+        serverEvents.writeHead++; \
+        if (serverEvents.writeHead >= EVENT_BUFFER_SIZE-1) \
+            serverEvents.writeHead = 0;\
     } \
     else { \
-        printf("*** Too many events this frame!!\n"); \
+        printf("*** Too many serverEvents this frame!!\n"); \
         exit(-1); \
     } \
 }
@@ -271,7 +272,7 @@ extern sem_t eventCountMutex;
             clientCmdEvents.writeHead = 0;\
     } \
     else { \
-        printf("*** Too many client events this frame!!\n"); \
+        printf("*** Too many client serverEvents this frame!!\n"); \
         exit(-1); \
     } \
 }

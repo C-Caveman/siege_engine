@@ -89,7 +89,7 @@ void nearbyEntInteractionBidirectional(entBasics* user, void (*fn)(entBasics*, e
         }
     }
 }
-struct eventsBuffer events = {0};
+struct eventsBuffer serverEvents = {0};
 #define TO_EVENT_NAMES(name, detailsUnused) #name,
 char eventNames[NUM_EVENTS][64] = {
     EVENT_LIST(TO_EVENT_NAMES)
@@ -107,18 +107,18 @@ void applyEvent(struct event* ev) {
     };
 }
 void takeEvent() {
-    if (events.count <= 0)
+    if (serverEvents.count <= 0)
         return;
-    //printf("Event: %d '%s'\n", events.buffer[events.readHead].type, eventName(events.buffer[events.readHead].type));
-    applyEvent(&events.buffer[events.readHead]);
-    memset((void*)&events.buffer[events.readHead], 0, sizeof(events.buffer[0]));
-    // Protect the events counter:
+    //printf("Event: %d '%s'\n", serverEvents.buffer[serverEvents.readHead].type, eventName(serverEvents.buffer[serverEvents.readHead].type));
+    applyEvent(&serverEvents.buffer[serverEvents.readHead]);
+    memset((void*)&serverEvents.buffer[serverEvents.readHead], 0, sizeof(serverEvents.buffer[0]));
+    // Protect the serverEvents counter:
     sem_wait(&eventCountMutex);
-    events.count--;
+    serverEvents.count--;
     sem_post(&eventCountMutex);
-    events.readHead++;
-    if (events.readHead >= EVENT_BUFFER_SIZE-1)
-        events.readHead = 0;
+    serverEvents.readHead++;
+    if (serverEvents.readHead >= EVENT_BUFFER_SIZE-1)
+        serverEvents.readHead = 0;
 }
 void sendEvents(struct eventsBuffer* eBuff) {
     //TODO send the events!!!!

@@ -5,6 +5,7 @@
 #include "../audio/audio.h"
 extern volatile float clientDt;
 struct eventsBuffer clientCmdEvents = {0};
+struct eventsBuffer clientEvents = {0};
 #define logDialog(...) if (DEBUG_DIALOG) { printf(__VA_ARGS__); }
 
 struct dialogActor actors[] = {
@@ -24,6 +25,91 @@ char* nameOfAnnotationType(int t) {
     else
         return (char*)&dialogAnnotationTypeNames[invalidAnnotation];
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////// Loop ;;
+#define logThread(...) {\
+    if (DEBUG_THREADS) \
+        printf( __VA_ARGS__ );\
+}
+#define logClient(...) {\
+    if (DEBUG_CLIENT) \
+        printf( __VA_ARGS__ );\
+}
+void client_input(struct client* c);
+// Client thread (draw the screen, read inputs):
+uint32_t clientFrame = 0;
+volatile float clientDt = 0;
+volatile uint32_t frameStartTime = 0;
+
+void* clientLoop() {
+    logThread("Client thread enabled!\n");
+    init_graphics();
+    init_audio();
+    frameStartTime = SDL_GetTicks();
+    while (running) {
+        anim_tick = SDL_GetTicks() % 256; //- 8-bit timestamp for animations.
+        clientDt = ((float)SDL_GetTicks() - (float)frameStartTime) / 1000.f;
+        if (clientDt < 0) {
+            printf("clientDt was negative!!!!: %f\n", clientDt);
+            exit(0);
+        }
+        frameStartTime = SDL_GetTicks();
+        //
+        // Player input:
+        //
+        client_input(&playerClient);
+        // Update the client's local copy of the player entity:
+        clientUpdatePlayerEntity();
+        // Send the client events to the server events buffer: (singleplayer version)
+        int cmdEventsSent = 0;
+        while (clientCmdEvents.count > 0 && serverEvents.count <= EVENT_BUFFER_SIZE-1) {
+            memcpy(&serverEvents.buffer[serverEvents.writeHead], &clientCmdEvents.buffer[clientCmdEvents.readHead], sizeof(clientCmdEvents.buffer[0]));
+            memset(&clientCmdEvents.buffer[clientCmdEvents.readHead], 0, sizeof(clientCmdEvents.buffer[0]));
+            clientCmdEvents.readHead++;
+            serverEvents.writeHead++;
+            if (clientCmdEvents.readHead >= EVENT_BUFFER_SIZE-1)
+                clientCmdEvents.readHead = 0;
+            if (serverEvents.writeHead >= EVENT_BUFFER_SIZE-1)
+                serverEvents.writeHead = 0;
+            clientCmdEvents.count--;
+            cmdEventsSent++;
+        }
+        sem_wait(&eventCountMutex);
+        serverEvents.count += cmdEventsSent;
+        sem_post(&eventCountMutex);
+        //
+        // Send client events, read server events, and draw the screen:
+        //
+        SDL_RenderClear(renderer);
+        if (!playerClient.paused) {
+            // Clientside animations:
+            animateAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+            drawWorld(mainWorld);
+            // DRAW A HUD!
+            drawInfo((char*)"fps", fps, 0);
+            drawInfo((char*)"heat", (float)playerClient.player->heatTracker, 1);
+            drawInfo((char*)"zombies", (float)mainWorld->numZombies, 2);
+            clientShowDialog();
+        }
+        else {
+            renderMenu(&playerClient);
+        }
+        SDL_RenderPresent(renderer);
+        trackFps();
+        
+        // Screen and inputs updated, now sleep until it's time for the next frame:
+        uint32_t frameEndTime = SDL_GetTicks();
+        uint32_t frameTimeElapsed = frameEndTime - frameStartTime;
+        uint32_t sleepTime = (1000 / fps_cap) - frameTimeElapsed; // millis to sleep
+        #define MAX_CLIENT_SLEEP_TIME (1000 / 30)
+        sleepTime = fclamp(sleepTime, 0, MAX_CLIENT_SLEEP_TIME);
+        SDL_Delay(sleepTime);
+        clientFrame++;
+    }
+    logThread("Client thread exiting.\n");
+    return 0;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////// Menus ;;
 int menuSizes[NUM_MENU_PAGES] = {
