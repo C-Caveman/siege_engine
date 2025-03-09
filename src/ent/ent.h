@@ -107,14 +107,15 @@ void* spawn(int type, vec2f pos);
 void despawnEnt(entBasics* ent);
 void thinkAllEnts(char* array, int array_len);
 void animateAllEnts(char* array, int array_len);
-void move_all_ents(char* array, int array_len);
+void moveOneEnt(entBasics* e, float deltaTime);
+void moveAllEnts(char* array, int array_len);
 char* entTypeName(int type);
 int getEntSize(int type);
 int getFirstEnt(char* array, int array_len);
 int getNextEnt(int i, char* array, int array_len);
 void moveEnt(entBasics* ent);
 char* entTypeName(int type);
-void collide_wall(entBasics* e);
+void collideWall(entBasics* e);
 void wallCollision(char* array, int array_len);
 void defragEntArray();
 

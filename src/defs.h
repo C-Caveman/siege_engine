@@ -12,6 +12,8 @@
 #define DEBUG_CLIENT 1
 #define DEBUG_SERVER 1
 #define DEBUG_DIALOG 0
+// Temporary hack for singleplayer movement smoothness:
+#define SINGLEPLAYER_HACK 1
 
 // Expansion macros: (X Macros)
 #define TO_ENUM(x) x, 

@@ -88,7 +88,7 @@ void* serverLoop() {
             E(FrameStart, tickStartTime, frameNumber++);
             // Entity updates:
             thinkAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-            move_all_ents(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+            moveAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
             wallCollision(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
             defragEntArray();
             // Record the player's movement for the demo:

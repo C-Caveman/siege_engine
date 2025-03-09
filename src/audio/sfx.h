@@ -7,6 +7,7 @@
     f(arcLamp1) \
     f(bam01) \
     f(bam02) \
+    f(boomHow) \
     f(boop01) \
     f(chow) \
     f(chuh01) \

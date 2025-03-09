@@ -80,6 +80,15 @@ void* clientLoop() {
         //
         // Send client events, read server events, and draw the screen:
         //
+        
+        
+        /* TODO events go here!!!!!!!!!!!!!!!
+        while (clientEvents.count > 0) {
+            takeClientEvent();
+        }
+        // TODO use client data for rendering, not the server data!!
+        */
+        
         SDL_RenderClear(renderer);
         if (!playerClient.paused) {
             // Clientside animations:
@@ -187,6 +196,11 @@ void clientUpdatePlayerEntity() {
             CE(ChangeTile, .tileNumber=tileIndexToNumber(getTileAtCursor(&playerClient)), .floor=grass1Floor, .height=8, .wall=grass1Side, .wallSide=grass1Side);
             playSound(thud);
         }
+    }
+    // Predict movement:
+    if (SINGLEPLAYER_HACK) {
+        moveOneEnt((entBasics*)playerClient.player, clientDt);
+        collideWall((entBasics*)playerClient.player);
     }
 }
 

@@ -617,7 +617,7 @@ void spawnerInit(struct ent_spawner* e) {
 void spawnerThink(struct ent_spawner* e) {
     e->nextThink = tickStartTime + SPAWN_INTERVAL;
     E(EntSpawn, zombie_type, e->pos);
-    E(PlaySound, thump01, CHAN_WORLD);
+    E(PlaySound, boomHow, CHAN_WORLD);
     e->numSpawns += 1;
     if (e->numSpawns >= MAX_SPAWNS) {
         e->flags |= NOTHINK;
@@ -909,53 +909,59 @@ void animateAllEnts(char* array, int array_len) {
 > Check if we entered a new chunk.
     > Update our chunk.
 */
-void move_all_ents(char* array, int array_len) {
+void moveOneEnt(entBasics* e, float deltaTime) {
+    vec2i old_tile = e->tile;                                                   //- Old tile.
+    vec2i old_chunk = e->chunk;                                                 //- Old chunk.
+    moveEnt(e);
+    e->chunk = v2fToI(v2fScalarDiv( v2fAdd(e->pos,(vec2f){RSIZE/2,RSIZE/2}), (RSIZE*CHUNK_WIDTH) ));
+    vec2f floored = v2fSub(e->pos, v2iToF(v2iScale(e->chunk, RSIZE*CHUNK_WIDTH)));
+    e->tile = v2fToI(v2fAdd(v2fScalarDiv(floored, RSIZE), (vec2f){0.5,0.5}));
+    bool changed_tile = !v2iIsEq(e->tile, old_tile);                                  //- New tile?
+    bool old_tile_was_valid = v2iInBounds(old_tile, 0, CHUNK_WIDTH);
+    bool new_tile_was_valid = v2iInBounds(e->tile, 0, CHUNK_WIDTH);
+    bool old_chunk_was_valid = v2iInBounds(old_chunk, 0, WORLD_WIDTH) && old_tile_was_valid;
+    bool new_chunk_was_valid = v2iInBounds(e->chunk, 0, WORLD_WIDTH) && new_tile_was_valid;
+    struct tile* old_tile_ptr = &mainWorld->chunks[old_chunk.y][old_chunk.x].tiles[old_tile.y][old_tile.x];
+    struct tile* new_tile_ptr = &mainWorld->chunks[e->chunk.y][e->chunk.x].tiles[e->tile.y][e->tile.x];
+    if (!changed_tile)
+        return;
+    if (old_chunk_was_valid)
+    for (int i=0; i<MAX_ENTS_PER_TILE; i++) {                               //- Remove handle from old tile.
+        if (old_tile_ptr->ents[i] == e->h)
+            old_tile_ptr->ents[i] = 0; /* old_tile_ptr->floor_anim = stonedk; */
+    }
+    int numGibsInTile = 0;
+    if (new_chunk_was_valid)
+        for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
+            entBasics* tileEnt = getEnt(new_tile_ptr->ents[i], 0);
+            numGibsInTile += (tileEnt && tileEnt->type == gib_type);
+        }
+    bool tooManyGibs = (numGibsInTile > MAX_ENTS_PER_TILE*3/4);
+    if (new_chunk_was_valid) {
+        entBasics* firstTileEnt = getEnt(new_tile_ptr->ents[0], 0);
+        if (e->type != gib_type && firstTileEnt && firstTileEnt->type == gib_type && numGibsInTile > 0) {
+            new_tile_ptr->ents[0] = e->h;
+        }
+    }
+    if (new_chunk_was_valid) {
+        for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------------------------------------ Store handle in new tile.
+            entBasics* tileEnt = getEnt(new_tile_ptr->ents[i], 0);
+            if (tileEnt == 0 || (i == MAX_ENTS_PER_TILE-1 && tileEnt && e->type != gib_type && tileEnt->type == gib_type && tooManyGibs)) {
+                new_tile_ptr->ents[i] = e->h;
+                break;
+            }
+        } //----- NOTE: copy_handle() isn't used on e->h here. Use it for sharing e->h with other ents.
+    }
+}
+void moveAllEnts(char* array, int array_len) {
     entBasics* e;
     for (int i=getFirstEnt(array, array_len); i != -1; i=getNextEnt(i, array, array_len)) {
-        if (array[i] != HEADER_BYTE) { printf("*** Invalid index given by getNextEnt() in move_all_ents()\n"); exit(-1); }
+        if (array[i] != HEADER_BYTE) { printf("*** Invalid index given by getNextEnt() in moveAllEnts()\n"); exit(-1); }
                                                                                     //- move the entity, record its position in the chunk
         e = (entBasics*)&array[i];
-        vec2i old_tile = e->tile;                                                   //- Old tile.
-        vec2i old_chunk = e->chunk;                                                 //- Old chunk.
-        moveEnt(e);
-        e->chunk = v2fToI(v2fScalarDiv( v2fAdd(e->pos,(vec2f){RSIZE/2,RSIZE/2}), (RSIZE*CHUNK_WIDTH) ));
-        vec2f floored = v2fSub(e->pos, v2iToF(v2iScale(e->chunk, RSIZE*CHUNK_WIDTH)));
-        e->tile = v2fToI(v2fAdd(v2fScalarDiv(floored, RSIZE), (vec2f){0.5,0.5}));
-        bool changed_tile = !v2iIsEq(e->tile, old_tile);                                  //- New tile?
-        bool old_tile_was_valid = v2iInBounds(old_tile, 0, CHUNK_WIDTH);
-        bool new_tile_was_valid = v2iInBounds(e->tile, 0, CHUNK_WIDTH);
-        bool old_chunk_was_valid = v2iInBounds(old_chunk, 0, WORLD_WIDTH) && old_tile_was_valid;
-        bool new_chunk_was_valid = v2iInBounds(e->chunk, 0, WORLD_WIDTH) && new_tile_was_valid;
-        struct tile* old_tile_ptr = &mainWorld->chunks[old_chunk.y][old_chunk.x].tiles[old_tile.y][old_tile.x];
-        struct tile* new_tile_ptr = &mainWorld->chunks[e->chunk.y][e->chunk.x].tiles[e->tile.y][e->tile.x];
-        if (changed_tile) {
-            if (old_chunk_was_valid)
-            for (int i=0; i<MAX_ENTS_PER_TILE; i++) {                               //- Remove handle from old tile.
-                if (old_tile_ptr->ents[i] == e->h)
-                    old_tile_ptr->ents[i] = 0; /* old_tile_ptr->floor_anim = stonedk; */
-            }
-            int numGibsInTile = 0;
-            if (new_chunk_was_valid)
-                for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
-                    entBasics* tileEnt = getEnt(new_tile_ptr->ents[i], 0);
-                    numGibsInTile += (tileEnt && tileEnt->type == gib_type);
-                }
-            bool tooManyGibs = (numGibsInTile > MAX_ENTS_PER_TILE*3/4);
-            if (new_chunk_was_valid) {
-                entBasics* firstTileEnt = getEnt(new_tile_ptr->ents[0], 0);
-                if (e->type != gib_type && firstTileEnt && firstTileEnt->type == gib_type && numGibsInTile > 0) {
-                    new_tile_ptr->ents[0] = e->h;
-                }
-            }
-            if (new_chunk_was_valid)
-                for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------------------------------------ Store handle in new tile.
-                    entBasics* tileEnt = getEnt(new_tile_ptr->ents[i], 0);
-                    if (tileEnt == 0 || (i == MAX_ENTS_PER_TILE-1 && tileEnt && e->type != gib_type && tileEnt->type == gib_type && tooManyGibs)) {
-                        new_tile_ptr->ents[i] = e->h;
-                        break;
-                    }
-                } //----- NOTE: copy_handle() isn't used on e->h here. Use it for sharing e->h with other ents.
-        }
+        if (SINGLEPLAYER_HACK && e->type == player_type)
+            continue;
+        moveOneEnt(e, serverDt);
     }
 }
 void moveEnt(entBasics* e) { //------------ Update an ent's position based on its velocity:
@@ -969,7 +975,7 @@ void moveEnt(entBasics* e) { //------------ Update an ent's position based on it
 }
 
 float MIN_SQUARE_DISTANCE = RSIZE;
-void collide_wall(entBasics* e) {
+void collideWall(entBasics* e) {
     vec2f* position = &e->pos;
     vec2f centered_position = v2fAdd(e->pos, (vec2f){RSIZE/2, RSIZE/2});
     vec2f nearest_corner = centered_position;
@@ -1037,8 +1043,10 @@ void wallCollision(char* array, int array_len) {
             break;
         }
         entBasics* e = ((entBasics*)&array[i]);
+        if (SINGLEPLAYER_HACK && e->type == player_type)
+            continue;
         if ((e->flags & NOCOLLISION) != NOCOLLISION)
-            collide_wall(e);
+            collideWall(e);
     }
 }
 void defragEntArray() {
