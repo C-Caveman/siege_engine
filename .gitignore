@@ -1,16 +1,18 @@
-#=========================================// Don't track .o files or executables. //
-o/*.o 
+# Don't track object files (and other build artifacts).
+o
+!o/includes/_what_is_this.txt
+# Don't track the executable.
 ex
-#=========================================// Don't track game assets. //
+# Don't track game assets.
 assets
-#=========================================// Don't track demos. //
+# Don't track demos.
 demos/*.bin 
-#=========================================// Don't track logs. //
+# Don't track logs.
 sup.log
 sup_list.supp
 valgrind_log.txt
 
-#=========================================// Ignore environment-workaround cruft. //
+# Ignore environment-workaround cruft.
 env
 env.nix
 o/includes/*.h
