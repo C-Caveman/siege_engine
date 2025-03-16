@@ -216,10 +216,14 @@ void evUse(struct dUse* d) {
             if (playerClient.dialogPrintString[0] != 'Y') {
                 clientClearDialog();
             }
+            else if (playerClient.dialogCharsPrinted >= 35) {
+                playerClient.dialogCharsPrinted = 35;
+                playerClient.waitTime = 5000;
+            }
             if (numRabbitPets == 1)
-                snprintf(playerClient.dialogPrintString, INTERACT_DIALOG_LEN, "You pet the rabbit 1 time.<w50>   ");
+                snprintf(playerClient.dialogPrintString, INTERACT_DIALOG_LEN, "You pet the rabbit 1 time.              <w50>");
             else
-                snprintf(playerClient.dialogPrintString, INTERACT_DIALOG_LEN, "You pet the rabbit %d times.<w50>    ", numRabbitPets);
+                snprintf(playerClient.dialogPrintString, INTERACT_DIALOG_LEN, "You pet the rabbit %d times.            <w50>", numRabbitPets);
             if (!playerClient.dialogVisible) {
                 strcpy(playerClient.dialogAnnotation, (char*)"book");
                 clientChangeActor();
