@@ -30,7 +30,7 @@ bool just_clicked = false;
 bool mouse_moved = false;
 
 
-void client_input(struct client* client) {
+void clientInput(struct client* client) {
     SDL_Event event;
     // Make sure we have a real client!
     if (!client)

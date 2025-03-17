@@ -17,7 +17,7 @@ extern struct inputKeybindings inputs[NUM_INPUTS];
 void setBinding(int inputIndex, int keyCode);
 int  getBinding(int inputIndex);
 
-void client_input(struct client* client);
+void clientInput(struct client* client);
 
 
 // TODO replace old ent system TODO

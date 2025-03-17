@@ -35,11 +35,30 @@ char* nameOfAnnotationType(int t) {
     if (DEBUG_CLIENT) \
         printf( __VA_ARGS__ );\
 }
-void client_input(struct client* c);
+void clientInput(struct client* c);
 // Client thread (draw the screen, read inputs):
 uint32_t clientFrame = 0;
 volatile float clientDt = 0;
 volatile uint32_t frameStartTime = 0;
+
+void sendCommandsToServer() {
+    int cmdEventsSent = 0;
+    while (clientCmdEvents.count > 0 && serverEvents.count <= EVENT_BUFFER_SIZE-1) {
+        memcpy(&serverEvents.buffer[serverEvents.writeHead], &clientCmdEvents.buffer[clientCmdEvents.readHead], sizeof(clientCmdEvents.buffer[0]));
+        memset(&clientCmdEvents.buffer[clientCmdEvents.readHead], 0, sizeof(clientCmdEvents.buffer[0]));
+        clientCmdEvents.readHead++;
+        serverEvents.writeHead++;
+        if (clientCmdEvents.readHead >= EVENT_BUFFER_SIZE-1)
+            clientCmdEvents.readHead = 0;
+        if (serverEvents.writeHead >= EVENT_BUFFER_SIZE-1)
+            serverEvents.writeHead = 0;
+        clientCmdEvents.count--;
+        cmdEventsSent++;
+    }
+    sem_wait(&eventCountMutex);
+    serverEvents.count += cmdEventsSent;
+    sem_post(&eventCountMutex);
+}
 
 void* clientLoop() {
     logThread("Client thread enabled!\n");
@@ -57,29 +76,9 @@ void* clientLoop() {
         //
         // Player input:
         //
-        client_input(&playerClient);
-        // Update the client's local copy of the player entity:
+        clientInput(&playerClient);
         clientUpdatePlayerEntity();
-        // Send the client events to the server events buffer: (singleplayer version)
-        int cmdEventsSent = 0;
-        while (clientCmdEvents.count > 0 && serverEvents.count <= EVENT_BUFFER_SIZE-1) {
-            memcpy(&serverEvents.buffer[serverEvents.writeHead], &clientCmdEvents.buffer[clientCmdEvents.readHead], sizeof(clientCmdEvents.buffer[0]));
-            memset(&clientCmdEvents.buffer[clientCmdEvents.readHead], 0, sizeof(clientCmdEvents.buffer[0]));
-            clientCmdEvents.readHead++;
-            serverEvents.writeHead++;
-            if (clientCmdEvents.readHead >= EVENT_BUFFER_SIZE-1)
-                clientCmdEvents.readHead = 0;
-            if (serverEvents.writeHead >= EVENT_BUFFER_SIZE-1)
-                serverEvents.writeHead = 0;
-            clientCmdEvents.count--;
-            cmdEventsSent++;
-        }
-        sem_wait(&eventCountMutex);
-        serverEvents.count += cmdEventsSent;
-        sem_post(&eventCountMutex);
-        //
-        // Send client events, read server events, and draw the screen:
-        //
+        sendCommandsToServer();
         
         
         /* TODO events go here!!!!!!!!!!!!!!!

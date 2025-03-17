@@ -30,7 +30,7 @@ Flow of Information
 --------------------------
 
 Player Movement:
-client_input -> input_state -> entity_state
+clientInput -> input_state -> entity_state
 
 Animation:
 entity_state -> animation_frame
