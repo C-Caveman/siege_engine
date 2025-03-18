@@ -68,6 +68,9 @@ extern char PAUSE_MENU_ITEMS[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN];
 extern char SETTINGS_MENU_ITEMS[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN];
 
 struct client {
+    // General info:
+    uint32_t id;
+    uint32_t address;
     // Player entity:
     struct ent_player* player;
     //

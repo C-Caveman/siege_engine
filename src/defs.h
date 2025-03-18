@@ -186,6 +186,8 @@ extern struct client playerClient; //-------------------------- Player client.
     f(Invalid, int foobarScoobar;) \
     f(FrameStart, uint32_t time; uint32_t frameNumber;) \
     f(FrameEnd, uint32_t time; uint32_t frameNumber;) \
+    f(ClientHello, uint32_t clientID; uint32_t clientAddress;) \
+    f(ConnectClient, uint32_t clientID; handle playerHandle;) \
     f(PlaySound, uint32_t sound; uint32_t channel;) \
     f(Use, handle user; handle target;) \
     f(ZombieDie, handle h;) \

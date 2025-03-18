@@ -41,7 +41,7 @@ uint32_t clientFrame = 0;
 volatile float clientDt = 0;
 volatile uint32_t frameStartTime = 0;
 
-void sendCommandsToServer() {
+void sendCommandsToServer() { //TODO ADD MULTIPLAYER PATH HERE!!! TODO
     int cmdEventsSent = 0;
     while (clientCmdEvents.count > 0 && serverEvents.count <= EVENT_BUFFER_SIZE-1) {
         memcpy(&serverEvents.buffer[serverEvents.writeHead], &clientCmdEvents.buffer[clientCmdEvents.readHead], sizeof(clientCmdEvents.buffer[0]));
@@ -64,6 +64,12 @@ void* clientLoop() {
     logThread("Client thread enabled!\n");
     init_graphics();
     init_audio();
+    // Connect to the server:
+    playerClient.id = 101;
+    playerClient.address = 10101010;
+    CE(ClientHello, playerClient.id, playerClient.address);
+    sendCommandsToServer();
+    // Input and rendering loop:
     frameStartTime = SDL_GetTicks();
     while (running) {
         anim_tick = SDL_GetTicks() % 256; //- 8-bit timestamp for animations.

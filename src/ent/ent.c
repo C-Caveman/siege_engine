@@ -517,6 +517,14 @@ void evInvalid(struct dInvalid* d) {}
 // Markers for the start/end of a server frame:
 void evFrameStart(struct dFrameStart* d) {}
 void evFrameEnd(struct dFrameEnd* d) {}
+// Sent by client to server. Requests to be put into the game.
+void evClientHello(struct dClientHello* d) {
+    printf("Server got a ClientHello: id=%d, ip=%d\n", d->clientID, d->clientAddress);
+    //TODO SPAWN A PLAYER IN THE ENTITY BUFFER, RETURN THE HANDLE TO IT VIA A ConnectClient event!
+}
+void evConnectClient(struct dConnectClient* d) {
+    printf("Connecting client %d to player entity with handle %d.\n", d->clientID, d->playerHandle);
+}
 void evPlaySound(struct dPlaySound* d) {
     playSoundChannel(d->sound, d->channel);
 }
