@@ -76,8 +76,29 @@ void* serverLoop() {
         E(EntSpawn, .entType=scenery_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)});
         E(EntSpawn, .entType=spawner_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/4-0.5), RSIZE*(CHUNK_WIDTH/4-0.5)});
         E(FrameEnd, SDL_GetTicks(), frameNumber);
+        // Set the initial gamestate via the above events:
+        while (serverEvents.count > 0) {
+            takeEvent();
+        }
     }
     playMusicLoop(spookyWind1);
+    
+    bool playerConnected = false;
+    int deciSecondsToWait = 100;
+    while (!playerConnected) {
+        struct event* e = &serverEvents.buffer[serverEvents.readHead];
+        if (e->type == eventClientHello) {
+            struct dClientHello* hello = &e->data.detClientHello;
+            E(ConnectClient, hello->clientID, 0);
+            break;
+        }
+        SDL_Delay(100);
+        deciSecondsToWait--;
+        if (deciSecondsToWait <= 0) {
+            printf("*** Waited too long for client to connect!\n");
+            exit(1);
+        }
+    }
     
     while (running) {
         tickStartTime = SDL_GetTicks();

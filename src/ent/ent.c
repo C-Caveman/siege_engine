@@ -361,16 +361,21 @@ void projectileInit(struct ent_projectile* e) {                           // PRO
     e->sprites[0].flags |= LOOPING;
     e->flags = NOFRICTION | NOCOLLISION;
     e->timeOut = tickStartTime + 2000;
-    e->isExploding = 0;
 }
-void projectileHitNearby(entBasics* attacker, entBasics* victim) {
-    if (victim && victim->type == zombie_type && victim->health > 0) {
-        float victimDistance = v2fDist(attacker->pos, victim->pos);
+// Damage an entity if its SHOOTABLE flag is set:
+void projectileHitNearby(entBasics* projectile, entBasics* victim) {
+    if (projectile == victim || !projectile || !victim)
+        return;
+    if ((victim->flags & SHOOTABLE) != 0 && victim->health > 0) {
+        float victimDistance = v2fDist(projectile->pos, victim->pos);
         if (victimDistance > RSIZE*0.8) {
             return;
         }
         victim->health -= 1;
-        ((struct ent_projectile*)attacker)->timeOut = tickStartTime;
+        // Wake the target up so they can die already:
+        if (victim->health <= 0)
+            victim->nextThink = tickStartTime;
+        ((struct ent_projectile*)projectile)->timeOut = tickStartTime;
     }
 }
 void evChangeTile(struct dChangeTile* d) {
@@ -387,16 +392,16 @@ void projectileThink(struct ent_projectile* e) {
     vec2f p = v2fAdd(e->pos, HW);
     nearbyEntInteractionBidirectional((entBasics*)e, projectileHitNearby);
     curTile = worldTileFromPos(p);
-    if (passedTimestamp(e->timeOut) && !e->isExploding) {
-        e->isExploding = 1;
-        playSound(explosion01);
-        e->sprites[0].anim = grenade01Explode;
-        e->sprites[0].frame = 0;
-        e->sprites[0].flags &= ~LOOPING;
-        //vel = (vec2f) {0,0};
-        e->timeOut = tickStartTime + 500;
+    bool hitWall = (curTile != 0 && curTile->wall_height > 0);
+    if (hitWall) {
+        E(ChangeTile, .tileNumber=tileIndexToNumber(v2fToI(v2fScalarDiv(p, RSIZE))), .floor=tileGold01, .height=0, .wall=tiledark, .wallSide=tiledark);
     }
-    if (curTile != 0 && curTile->wall_height > 0 && !e->isExploding) {
+    if (passedTimestamp(e->timeOut) || hitWall) {
+        E(Explode, e->h);
+        return;
+    }
+    /*
+    if (curTile != 0 && curTile->wall_height > 0) {
         e->isExploding = 1;
         playSoundChannel(explosion01, CHAN_EXPLOSION);
         //playSound(chow);
@@ -411,8 +416,22 @@ void projectileThink(struct ent_projectile* e) {
     if (passedTimestamp(e->timeOut) || e->sprites[0].frame >= anim_data[grenade01Explode].len-1) {
         despawnEnt((entBasics*)e);
     }
+    */
 }
 void projectileAnim(struct ent_projectile* e) {}
+void explosionInit(struct ent_explosion* e) {                               // EXPLOSION
+    e->num_sprites = 1;
+    // Despawn in 2 seconds.
+    e->nextThink = tickStartTime + 2000;
+    e->sprites[0].anim = kaboom01;
+}
+void evDespawn(struct dDespawn* d) {
+    despawnEnt(getEnt(d->h, 0));
+}
+void explosionThink(struct ent_explosion* e) {
+    E(Despawn, e->h);
+}
+void explosionAnim(struct ent_explosion* e) {}
 
 void rabbitInit(struct ent_rabbit* e) {                               // RABBIT
     e->num_sprites = 1;
@@ -479,6 +498,7 @@ void rabbitAnim(struct ent_rabbit* e) {
 
 void zombieInit(struct ent_zombie* e) {                               // ZOMBIE
     e->health = 1;
+    e->flags |= SHOOTABLE;
     e->wanderDir = (vec2f){1,0};
     e->speed = 150.f + 200.f*randf();
     e->num_sprites = 1;
@@ -520,6 +540,9 @@ void evFrameEnd(struct dFrameEnd* d) {}
 // Sent by client to server. Requests to be put into the game.
 void evClientHello(struct dClientHello* d) {
     printf("Server got a ClientHello: id=%d, ip=%d\n", d->clientID, d->clientAddress);
+    //TODO trigger an evSpawnPlayer() if there is room for a new player
+}
+void evSpawnPlayer(struct dSpawnPlayer* d) {
     //TODO SPAWN A PLAYER IN THE ENTITY BUFFER, RETURN THE HANDLE TO IT VIA A ConnectClient event!
 }
 void evConnectClient(struct dConnectClient* d) {
@@ -584,7 +607,7 @@ void zombieThink(struct ent_zombie* e) {
         e->wanderDir = targetVector;
         nearbyEntInteractionBidirectional((entBasics*)e, divertNearbyZombies);
         vec2f persuitVelocity = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), e->speed));
-        E(EntMove, .h=e->h, .pos=e->pos, .vel=persuitVelocity);;;
+        E(EntMove, .h=e->h, .pos=e->pos, .vel=persuitVelocity);
         e->targetPos = t->pos;
     }
 }
@@ -622,12 +645,28 @@ void gibAnim(struct ent_gib* e) {
 #define MAX_SPAWNS 10
 void spawnerInit(struct ent_spawner* e) {
     e->num_sprites = 1;
+    e->health = 1;
+    e->flags |= SHOOTABLE;
     e->sprites[0].anim = spawner001;
     e->sprites[0].flags |= LOOPING;
     e->nextThink = tickStartTime + SPAWN_INTERVAL;
 }
+void evExplode(struct dExplode* d) {
+    entBasics* e = getEnt(d->h, 0);
+    if (!e)
+        return;
+    // Spawn an explosion, despawn the entitiy.
+    E(EntSpawn, .entType=explosion_type, .pos=e->pos);
+    playSoundChannel(explosion01, CHAN_WORLD);
+    despawnEnt(e);
+}
 void spawnerThink(struct ent_spawner* e) {
     e->nextThink = tickStartTime + SPAWN_INTERVAL;
+    if (e->health <= 0) {
+        playSoundChannel(explosion03, CHAN_EXPLOSION);
+        E(Explode, e->h);
+        return;
+    }
     E(EntSpawn, zombie_type, e->pos);
     E(PlaySound, boomHow, CHAN_WORLD);
     e->numSpawns += 1;
@@ -749,11 +788,12 @@ void updateEntCount(uint16_t entType, int n) {
             break;
     }
 }
-//TODO make a forceSpawn() function for the client to delete anything occupying the assigned byte array space
+// Spawn an entity with a handle that has memory already assigned to it in the entity buffer.
 entBasics* spawnEnt(int entType, vec2f pos, handle h) {
+    printf("Called spawnEnt()!!!\n");
     // Reserve a handle first (so the server can tell the clients where to store their entity):
     if (!h || h >= NUM_HANDLES-1) {
-        printf("*** Null handle to spawn '%s' in spawnEnt()\n", entTypeName(entType));
+        printf("*** Attempted to spawn '%s' with invalid handle %d in spawnEnt()\n", entTypeName(entType), h);
         return 0;
     }
     if (handles[h].claimed && handles[h].entType != entType) {
@@ -858,6 +898,8 @@ void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
 }
 // Remove an entity from an entity segment array. TODO ent-specific cleanup TODO
 void despawnEnt(entBasics* e) {
+    if (!e)
+        return;
     struct tile* old_tile = &mainWorld->chunks[e->chunk.y][e->chunk.x].tiles[e->tile.y][e->tile.x];
     // Make sure the old_tile is in bounds:
     bool old_tile_was_valid = v2iInBounds(e->tile, 0, CHUNK_WIDTH) && v2iInBounds(e->chunk, 0, WORLD_WIDTH);

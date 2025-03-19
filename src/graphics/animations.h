@@ -32,6 +32,7 @@
     f(gunGrenadeRetract) \
     f(gun_plasma) \
     f(gun_railgun) \
+    f(kaboom01) \
     f(knight_1) \
     f(menuItemBackground) \
     f(menuSelector) \

@@ -116,12 +116,13 @@ bool passedTimestamp(uint32_t t);
 typedef uint16_t handle; //-------------------- Entity handle.
 typedef struct { ENT_BASICS } entBasics; //----------------------------------- Generic entity.
 enum ent_flags {
-    NODRAW =       1,
-    NO_ANIMATION = 2,
-    NOMOVE =       2*2,
-    NOFRICTION =   2*2*2,
-    NOCOLLISION =  2*2*2*2,
-    NOTHINK =      2*2*2*2*2,
+    NODRAW =       1<<0,
+    NO_ANIMATION = 1<<1,
+    NOMOVE =       1<<2,
+    NOFRICTION =   1<<3,
+    NOCOLLISION =  1<<4,
+    NOTHINK =      1<<5,
+    SHOOTABLE =    1<<6,
 };
 //============================================================================// SPRITES //
 enum sprite_flags {
@@ -187,9 +188,11 @@ extern struct client playerClient; //-------------------------- Player client.
     f(FrameStart, uint32_t time; uint32_t frameNumber;) \
     f(FrameEnd, uint32_t time; uint32_t frameNumber;) \
     f(ClientHello, uint32_t clientID; uint32_t clientAddress;) \
+    f(SpawnPlayer, uint32_t clientID; handle playerHandle;) \
     f(ConnectClient, uint32_t clientID; handle playerHandle;) \
     f(PlaySound, uint32_t sound; uint32_t channel;) \
     f(Use, handle user; handle target;) \
+    f(Explode, handle h;) \
     f(ZombieDie, handle h;) \
     f(ZombieWindShieldSplatter, handle h;) \
     f(PlayerMove, handle p; vec2f pos; vec2f vel;) \
@@ -197,6 +200,7 @@ extern struct client playerClient; //-------------------------- Player client.
     f(ChangeTile, uint32_t tileNumber; uint32_t wall; uint32_t wallSide; uint32_t height; uint32_t floor;) \
     f(EntMove, handle h; vec2f pos; vec2f vel;) \
     f(EntSpawn, int entType; vec2f pos;) \
+    f(Despawn, handle h;) \
     f(TriggerDialog, handle p; char fileName[16];) \
     f(SpriteRotate, handle h; int index; float angle;) \
 

@@ -24,6 +24,7 @@ handle              uncopy_handle(handle i); //----------- Delete a handle to an
     f(player) \
     f(scenery) \
     f(projectile) \
+    f(explosion) \
     f(rabbit) \
     f(zombie) \
     f(gib) \
@@ -64,7 +65,11 @@ struct ent_projectile {
     struct sprite sprites[NUM_PLAYER_SPRITES];
     handle parent;
     uint32_t timeOut;
-    char isExploding;
+};
+enum explosion_sprites {EXPLOSION_SPRITE_1, NUM_EXPLOSION_SPRITES};                              // EXPLOSION
+struct ent_explosion {
+    ENT_BASICS
+    struct sprite sprites[NUM_EXPLOSION_SPRITES];
 };
 enum rabbit_sprites {RABBIT_SPRITE_1, NUM_RABBIT_SPRITES};                      // RABBIT
 struct ent_rabbit {
