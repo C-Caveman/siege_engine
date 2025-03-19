@@ -63,28 +63,26 @@ void* serverLoop() {
         chunkSetWall(chunk_0, x,CHUNK_WIDTH-1, wall_steel,wall_steel_side,16);
     }
     // Spawn entities:
-    struct ent_player* p = (struct ent_player*)spawn(player_type, (vec2f){0,0});
-    p->pos = (vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)};
-    playerClient.player = (struct ent_player*)p;
-    ((struct ent_player*)p)->cl = &playerClient;
-    //printf("*Type name: '%s'\n", entTypeName(s->type));
+    
+    struct ent_player* p = 0;//(struct ent_player*)spawn(player_type, (vec2f){0,0});
     if (!playingDemo) {
         E(FrameStart, SDL_GetTicks(), frameNumber++);
+        handle playerHandle = 0;
+        SPAWN(player_type, &playerHandle, (vec2f){RSIZE*(CHUNK_WIDTH/2+1), RSIZE*(CHUNK_WIDTH/2+1)});
         SPAWN(zombie_type, 0, (vec2f){RSIZE*(CHUNK_WIDTH/2), RSIZE*(CHUNK_WIDTH+1)});
         SPAWN(zombie_type, 0, (vec2f){RSIZE*(CHUNK_WIDTH+1), RSIZE*(CHUNK_WIDTH/2)});
         SPAWN(rabbit_type, 0, (vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)});
         SPAWN(scenery_type, 0, (vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)});
         SPAWN(spawner_type, 0, (vec2f){RSIZE*(CHUNK_WIDTH/4-0.5), RSIZE*(CHUNK_WIDTH/4-0.5)});
-        //E(EntSpawn, .entType=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/2), RSIZE*(CHUNK_WIDTH+1)});
-        //E(EntSpawn, .entType=zombie_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH+1), RSIZE*(CHUNK_WIDTH/2)});
-        //E(EntSpawn, .entType=rabbit_type, .pos=(vec2f){RSIZE*5, RSIZE*5});
-        //E(EntSpawn, .entType=scenery_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)});
-        //E(EntSpawn, .entType=spawner_type, .pos=(vec2f){RSIZE*(CHUNK_WIDTH/4-0.5), RSIZE*(CHUNK_WIDTH/4-0.5)});
         E(FrameEnd, SDL_GetTicks(), frameNumber);
         // Set the initial gamestate via the above events:
         while (serverEvents.count > 0) {
             takeEvent();
         }
+        p = (struct ent_player*)getEnt(playerHandle, player_type);
+        p->pos = (vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)};
+        playerClient.player = (struct ent_player*)p;
+        ((struct ent_player*)p)->cl = &playerClient;
     }
     playMusicLoop(spookyWind1);
     

@@ -273,7 +273,7 @@ void playerThink(struct ent_player* e) {                              // PLAYER
     // Debug commands:
     if (playerClient.zombieSpawning && mainWorld->entArraySpace > ENTITY_BYTES_ARRAY_LEN/8 && countRemainingHandles() > 10) {
         vec2f spawnPos = v2fAdd(playerClient.camera_center, v2iToF(playerClient.aim_pixel_pos));
-        E(EntSpawn, zombie_type, spawnPos);
+        SPAWN(zombie_type, 0, spawnPos);
         //spawn(zombie_type, v2fAdd(playerClient.camera_center, v2iToF(playerClient.aim_pixel_pos)));
     }
     if (playerClient.explodingEverything) {
@@ -657,7 +657,7 @@ void evExplode(struct dExplode* d) {
     if (!e)
         return;
     // Spawn an explosion, despawn the entitiy.
-    E(EntSpawn, .entType=explosion_type, .pos=e->pos);
+    SPAWN(explosion_type, 0, e->pos);
     playSoundChannel(explosion01, CHAN_WORLD);
     despawnEnt(e);
 }
@@ -668,7 +668,6 @@ void spawnerThink(struct ent_spawner* e) {
         E(Explode, e->h);
         return;
     }
-    //E(EntSpawn, zombie_type, e->pos);
     SPAWN(zombie_type, 0, e->pos);
     E(PlaySound, boomHow, CHAN_WORLD);
     e->numSpawns += 1;
