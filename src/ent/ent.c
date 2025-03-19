@@ -32,6 +32,19 @@ handle claim_handle(entBasics* e, uint16_t entType) { //-------- Bind a handle t
     //printf("Handle %d claimed by a '%s' ent.\n", h, entTypeName(handles[h].ent->type));
     return h;
 }
+handle reserveHandle(uint16_t entType) { //-------- Set aside a handle to be assigned an entity later.
+    handle h = -1;
+    for (int i=0; i<NUM_HANDLES; i++) {
+        if (handles[i].copies == 0) {h=i; break;}
+    }
+    if (h == -1) { printf("\n*** Ran out of handles!!!\n"); exit(-1); }
+    handles[h].copies = 1;
+    handles[h].ent = 0;
+    handles[h].claimed = 1;
+    handles[h].entType = entType;
+    //printf("Handle %d claimed by a '%s' ent.\n", h, entTypeName(handles[h].ent->type));
+    return h;
+}
 void unclaim_handle(handle i) { //-------------------- Unbind a handle (not a copy of one).
     if (i != 0) { //Null handle.
         handles[i].claimed = 0;
@@ -172,6 +185,9 @@ void evSpriteRotate(struct dSpriteRotate* d) {
 }
 void evEntSpawn(struct dEntSpawn* d) {
     spawn(d->entType, d->pos);
+}
+void evForceSpawn(struct dForceSpawn* d) {
+    forceSpawn(d->entType, d->pos, d->h);
 }
 handle findPlayer() { // first entity handle should be the player TODO add a player_type ent search for reliability! TODO
     return 1;
@@ -373,8 +389,10 @@ void projectileHitNearby(entBasics* projectile, entBasics* victim) {
         }
         victim->health -= 1;
         // Wake the target up so they can die already:
-        if (victim->health <= 0)
+        if (victim->health <= 0) {
             victim->nextThink = tickStartTime;
+            victim->flags &= ~NOTHINK;
+        }
         ((struct ent_projectile*)projectile)->timeOut = tickStartTime;
     }
 }
@@ -400,23 +418,6 @@ void projectileThink(struct ent_projectile* e) {
         E(Explode, e->h);
         return;
     }
-    /*
-    if (curTile != 0 && curTile->wall_height > 0) {
-        e->isExploding = 1;
-        playSoundChannel(explosion01, CHAN_EXPLOSION);
-        //playSound(chow);
-        e->sprites[0].anim = grenade01Explode;
-        e->sprites[0].frame = 3;
-        e->sprites[0].flags &= ~LOOPING;
-        e->vel = (vec2f) {0,0};
-        e->timeOut = tickStartTime + 500;
-        E(ChangeTile, .tileNumber=tileIndexToNumber(v2fToI(v2fScalarDiv(p, RSIZE))), .floor=tileGold01, .height=0, .wall=tiledark, .wallSide=tiledark);
-        return;
-    }
-    if (passedTimestamp(e->timeOut) || e->sprites[0].frame >= anim_data[grenade01Explode].len-1) {
-        despawnEnt((entBasics*)e);
-    }
-    */
 }
 void projectileAnim(struct ent_projectile* e) {}
 void explosionInit(struct ent_explosion* e) {                               // EXPLOSION
@@ -667,7 +668,8 @@ void spawnerThink(struct ent_spawner* e) {
         E(Explode, e->h);
         return;
     }
-    E(EntSpawn, zombie_type, e->pos);
+    //E(EntSpawn, zombie_type, e->pos);
+    SPAWN(zombie_type, 0, e->pos);
     E(PlaySound, boomHow, CHAN_WORLD);
     e->numSpawns += 1;
     if (e->numSpawns >= MAX_SPAWNS) {
@@ -790,7 +792,6 @@ void updateEntCount(uint16_t entType, int n) {
 }
 // Spawn an entity with a handle that has memory already assigned to it in the entity buffer.
 entBasics* spawnEnt(int entType, vec2f pos, handle h) {
-    printf("Called spawnEnt()!!!\n");
     // Reserve a handle first (so the server can tell the clients where to store their entity):
     if (!h || h >= NUM_HANDLES-1) {
         printf("*** Attempted to spawn '%s' with invalid handle %d in spawnEnt()\n", entTypeName(entType), h);
@@ -859,12 +860,17 @@ entBasics* findEntSpace(uint16_t entType) {
 // Clientside ent spawning:
 void forceSpawn(uint16_t entType, vec2f pos, handle h) {
     // If this handle is taken by another type of ent, kill it.
-    if (handles[h].claimed && handles[h].entType != entType) {
+    if (handles[h].claimed && handles[h].ent != 0 && handles[h].entType != entType) {
         despawnEnt(handles[h].ent);
         handles[h].claimed = true;
         handles[h].entType = entType;
-        spawnEnt(entType, pos, h);
     }
+    else {
+        // Get memory for the entity!
+        handles[h].ent = findEntSpace(entType);
+    }
+    
+    spawnEnt(entType, pos, h);
 }
 void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
     entBasics* entData = findEntSpace(type);

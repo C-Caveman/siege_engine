@@ -200,6 +200,7 @@ extern struct client playerClient; //-------------------------- Player client.
     f(ChangeTile, uint32_t tileNumber; uint32_t wall; uint32_t wallSide; uint32_t height; uint32_t floor;) \
     f(EntMove, handle h; vec2f pos; vec2f vel;) \
     f(EntSpawn, int entType; vec2f pos;) \
+    f(ForceSpawn, int entType; vec2f pos; handle h;) \
     f(Despawn, handle h;) \
     f(TriggerDialog, handle p; char fileName[16];) \
     f(SpriteRotate, handle h; int index; float angle;) \
@@ -283,6 +284,15 @@ extern sem_t eventCountMutex;
         printf("*** Too many client serverEvents this frame!!\n"); \
         exit(-1); \
     } \
+}
+handle reserveHandle(uint16_t entType); //-------- Set aside a handle to be assigned an entity later.
+// Spawn an entity (only to be called by the server)
+#define SPAWN(typeOfEntity, handleRef, ...) {\
+    handle h = reserveHandle(typeOfEntity); \
+    if (handleRef != 0) {\
+        *((handle*)handleRef) = h;\
+    }\
+    E(ForceSpawn, .entType=typeOfEntity, .pos=__VA_ARGS__, .h=h);\
 }
 
 //////////////////////////////////////////////////////////////////////////////////// ;;

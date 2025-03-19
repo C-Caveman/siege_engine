@@ -109,6 +109,7 @@ ENTITY_TYPES_LIST(TO_THINK_PROTOTYPES)
 ENTITY_TYPES_LIST(TO_ANIMATE_PROTOTYPES)
 //======================================================================// Generic entity functions. //
 void* spawn(int type, vec2f pos);
+void forceSpawn(uint16_t entType, vec2f pos, handle h);
 void despawnEnt(entBasics* ent);
 void thinkAllEnts(char* array, int array_len);
 void animateAllEnts(char* array, int array_len);
