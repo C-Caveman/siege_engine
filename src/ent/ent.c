@@ -183,9 +183,6 @@ void evSpriteRotate(struct dSpriteRotate* d) {
     struct sprite* sprites = (struct sprite*)( (char*)e+sizeof(entBasics) );
     sprites[d->index].rotation = d->angle;
 }
-void evEntSpawn(struct dEntSpawn* d) {
-    spawn(d->entType, d->pos);
-}
 void evForceSpawn(struct dForceSpawn* d) {
     forceSpawn(d->entType, d->pos, d->h);
 }
@@ -359,7 +356,7 @@ void playerAnim(struct ent_player* e) {}
 void sceneryInit(struct ent_scenery* e) {                              // SCENERY
     if (DEBUG_ENTS)
         printf("Scenery ent initializing!\n");
-    e->flags |= NOTHINK;
+    e->flags |= NOTHINK | HEIGHT_LOWEST;
     e->num_sprites = NUM_SCENERY_SPRITES;
     e->sprites[SCENERY_SPRITE_1].anim = rocket_tank;
 }
@@ -436,6 +433,7 @@ void explosionAnim(struct ent_explosion* e) {}
 
 void rabbitInit(struct ent_rabbit* e) {                               // RABBIT
     e->num_sprites = 1;
+    e->flags |= HEIGHT_LOW;
     e->health = 1;
     e->wanderDir = (vec2f){1,0};
     //sprites[0].flags |= LOOPING;
@@ -446,7 +444,7 @@ void rabbitInit(struct ent_rabbit* e) {                               // RABBIT
 }
 #define RABBIT_IGNORE_DIST RSIZE*10
 void rabbitThink(struct ent_rabbit* e) {
-    e->nextThink = tickStartTime + 1500;
+    e->nextThink = tickStartTime + 3000;
     vec2f targetPos = e->pos;
     entBasics* t = getEnt(e->target, player_type);
     if (t)
@@ -626,7 +624,7 @@ void zombieAnim(struct ent_zombie* e) {
 
 void gibInit(struct ent_gib* e) {
     e->num_sprites = 1;
-    e->flags |= NOTHINK;
+    e->flags |= NOTHINK | HEIGHT_LOW;
     if (e->h % 8 == 0)
         e->vel = v2fScale(e->vel, 4.f); // 1/8 chance to quadruple velocity!
     e->spinMultiplier = randf() * randfn() * 20;
@@ -647,7 +645,7 @@ void gibAnim(struct ent_gib* e) {
 void spawnerInit(struct ent_spawner* e) {
     e->num_sprites = 1;
     e->health = 1;
-    e->flags |= SHOOTABLE;
+    e->flags |= SHOOTABLE | HEIGHT_LOWEST;
     e->sprites[0].anim = spawner001;
     e->sprites[0].flags |= LOOPING;
     e->nextThink = tickStartTime + SPAWN_INTERVAL;

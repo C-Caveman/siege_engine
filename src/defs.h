@@ -123,6 +123,9 @@ enum ent_flags {
     NOCOLLISION =  1<<4,
     NOTHINK =      1<<5,
     SHOOTABLE =    1<<6,
+    HEIGHT_LOWEST =1<<7,
+    HEIGHT_LOW =   1<<8,
+    HEIGHT_HIGH =  1<<9,
 };
 //============================================================================// SPRITES //
 enum sprite_flags {
@@ -199,7 +202,6 @@ extern struct client playerClient; //-------------------------- Player client.
     f(PlayerShoot, handle p; vec2f shootPos; float shootDir;) \
     f(ChangeTile, uint32_t tileNumber; uint32_t wall; uint32_t wallSide; uint32_t height; uint32_t floor;) \
     f(EntMove, handle h; vec2f pos; vec2f vel;) \
-    f(EntSpawn, int entType; vec2f pos;) \
     f(ForceSpawn, int entType; vec2f pos; handle h;) \
     f(Despawn, handle h;) \
     f(TriggerDialog, handle p; char fileName[16];) \

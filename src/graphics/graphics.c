@@ -397,13 +397,13 @@ void chunkDrawTallEnts(vec2f camera_pos, vec2f camera_center, struct chunk* chun
             if (v2iInBounds(left, 0, CHUNK_WIDTH)) {
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------- Draw left side entities.
                         entBasics* e = getEnt(chunk->tiles[left.y][left.x].ents[i], 0);
-                        if (e != 0 && e->type != gib_type) { draw_ent_sprites(old_camera, e); }
+                        if (e != 0 && (e->flags & HEIGHT_LOWEST) == 0 && (e->flags & HEIGHT_LOW) == 0) { draw_ent_sprites(old_camera, e); }
                 }
             }
             if (v2iInBounds(right, 0, CHUNK_WIDTH)) {
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------- Draw right side entities.
                         entBasics* e = getEnt(chunk->tiles[right.y][right.x].ents[i], 0);
-                        if (e != 0 && e->type != gib_type) { draw_ent_sprites(old_camera, e); }
+                        if (e != 0 && (e->flags & HEIGHT_LOWEST) == 0 && (e->flags & HEIGHT_LOW) == 0) { draw_ent_sprites(old_camera, e); }
                 }
             }
             if (row < middle_y) //----- Diverge before reaching the middle row.
@@ -413,7 +413,7 @@ void chunkDrawTallEnts(vec2f camera_pos, vec2f camera_center, struct chunk* chun
         }
     }
 }
-void chunkDrawShortEnts(vec2f camera_pos, vec2f camera_center, struct chunk* chunk, vec2i chunk_index) {
+void chunkDrawEntsOfHeight(uint16_t heightFlag, vec2f camera_pos, vec2f camera_center, struct chunk* chunk, vec2i chunk_index) {
     vec2i chunk_pos = v2fToI( v2fAdd(v2fScalarDiv(camera_center,RSIZE), (vec2f){0.5,0.5}) );
     vec2f old_camera = camera_pos;
     camera_pos = v2fSub(camera_pos, v2fScale(v2iToF(chunk_index), RSIZE*CHUNK_WIDTH)); //------ Offset by chunk index.
@@ -433,13 +433,13 @@ void chunkDrawShortEnts(vec2f camera_pos, vec2f camera_center, struct chunk* chu
             if (v2iInBounds(left, 0, CHUNK_WIDTH)) {
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------- Draw left side entities.
                         entBasics* e = getEnt(chunk->tiles[left.y][left.x].ents[i], 0);
-                        if (e != 0 && e->type == gib_type) { draw_ent_sprites(old_camera, e); }
+                        if (e != 0 && (e->flags & heightFlag) != 0) { draw_ent_sprites(old_camera, e); }
                 }
             }
             if (v2iInBounds(right, 0, CHUNK_WIDTH)) {
                 for (int i=0; i<MAX_ENTS_PER_TILE; i++) { //------------------------------- Draw right side entities.
                         entBasics* e = getEnt(chunk->tiles[right.y][right.x].ents[i], 0);
-                        if (e != 0 && e->type == gib_type) { draw_ent_sprites(old_camera, e); }
+                        if (e != 0 && (e->flags & heightFlag) != 0) { draw_ent_sprites(old_camera, e); }
                 }
             }
             if (row < middle_y) //----- Diverge before reaching the middle row.
@@ -701,8 +701,19 @@ void drawWorld(struct world* w) {
     }
     for (int i=0; i<OFFSETS; i++) {
         vec2i next_chunk = v2iAdd(playerClient.player->chunk, order[i]);
+        if ( v2iInBounds(next_chunk, 0,WORLD_WIDTH-1) ) {                        //- Shortest entity pass.
+            chunkDrawEntsOfHeight(
+                HEIGHT_LOWEST,
+                playerClient.camera_pos, playerClient.camera_center,
+                &w->chunks[next_chunk.y][next_chunk.x],
+                (vec2i){next_chunk.x, next_chunk.y});
+        }
+    }
+    for (int i=0; i<OFFSETS; i++) {
+        vec2i next_chunk = v2iAdd(playerClient.player->chunk, order[i]);
         if ( v2iInBounds(next_chunk, 0,WORLD_WIDTH-1) ) {                        //- Short entity pass.
-            chunkDrawShortEnts(
+            chunkDrawEntsOfHeight(
+                HEIGHT_LOW,
                 playerClient.camera_pos, playerClient.camera_center,
                 &w->chunks[next_chunk.y][next_chunk.x],
                 (vec2i){next_chunk.x, next_chunk.y});

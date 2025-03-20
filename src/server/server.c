@@ -71,7 +71,7 @@ void* serverLoop() {
         SPAWN(player_type, &playerHandle, (vec2f){RSIZE*(CHUNK_WIDTH/2+1), RSIZE*(CHUNK_WIDTH/2+1)});
         SPAWN(zombie_type, 0, (vec2f){RSIZE*(CHUNK_WIDTH/2), RSIZE*(CHUNK_WIDTH+1)});
         SPAWN(zombie_type, 0, (vec2f){RSIZE*(CHUNK_WIDTH+1), RSIZE*(CHUNK_WIDTH/2)});
-        SPAWN(rabbit_type, 0, (vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)});
+        SPAWN(rabbit_type, 0, (vec2f){RSIZE*(CHUNK_WIDTH-1), RSIZE*(1)});
         SPAWN(scenery_type, 0, (vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)});
         SPAWN(spawner_type, 0, (vec2f){RSIZE*(CHUNK_WIDTH/4-0.5), RSIZE*(CHUNK_WIDTH/4-0.5)});
         E(FrameEnd, SDL_GetTicks(), frameNumber);
