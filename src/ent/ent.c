@@ -971,7 +971,7 @@ void animateAllEnts(char* array, int array_len) {
 void moveOneEnt(entBasics* e, float deltaTime) {
     vec2i old_tile = e->tile;                                                   //- Old tile.
     vec2i old_chunk = e->chunk;                                                 //- Old chunk.
-    moveEnt(e);
+    moveEnt(e, deltaTime);
     e->chunk = v2fToI(v2fScalarDiv( v2fAdd(e->pos,(vec2f){RSIZE/2,RSIZE/2}), (RSIZE*CHUNK_WIDTH) ));
     vec2f floored = v2fSub(e->pos, v2iToF(v2iScale(e->chunk, RSIZE*CHUNK_WIDTH)));
     e->tile = v2fToI(v2fAdd(v2fScalarDiv(floored, RSIZE), (vec2f){0.5,0.5}));
@@ -1023,11 +1023,11 @@ void moveAllEnts(char* array, int array_len) {
         moveOneEnt(e, serverDt);
     }
 }
-void moveEnt(entBasics* e) { //------------ Update an ent's position based on its velocity:
-    e->pos = v2fAdd(e->pos, v2fScale(e->vel, serverDt));
+void moveEnt(entBasics* e, float deltaTime) { //------------ Update an ent's position based on its velocity:
+    e->pos = v2fAdd(e->pos, v2fScale(e->vel, deltaTime));
     // Apply friction:
     float speed = v2fLen(e->vel);
-    float friction = speed*8*serverDt;
+    float friction = speed*8*deltaTime;
     int hasFriction = (e->flags & NOFRICTION) == 0;
     e->vel = v2fSub(e->vel, v2fScale(v2fNormalized(e->vel), friction*hasFriction));
     if (v2fLen(e->vel) < 5) { e->vel = (vec2f){0,0}; } // Minimum vel.

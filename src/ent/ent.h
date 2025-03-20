@@ -119,7 +119,7 @@ char* entTypeName(int type);
 int getEntSize(int type);
 int getFirstEnt(char* array, int array_len);
 int getNextEnt(int i, char* array, int array_len);
-void moveEnt(entBasics* ent);
+void moveEnt(entBasics* ent, float deltaTime);
 char* entTypeName(int type);
 void collideWall(entBasics* e);
 void wallCollision(char* array, int array_len);
