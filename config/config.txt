@@ -37,6 +37,7 @@ inputAttack SPACE
 
 aimSpeedA 200.0
 aimSpeedB 200.0
+aimSpeedD 400.0
 #inputAimSpeed UP
 inputAimReverse UP
 inputAimLeft LEFT

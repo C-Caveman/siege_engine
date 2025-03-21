@@ -1,6 +1,6 @@
 #!/bin/bash
 # Generate music X-Macro:
-musicEnumFile='src/audio/music.h'
+musicEnumFile='src/client/music.h'
 printf '#ifndef MUSIC
 #define MUSIC
 #include "../defs.h" 

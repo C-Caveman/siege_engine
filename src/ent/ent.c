@@ -1,6 +1,6 @@
 // Implementations of entity functions.
 #include "ent.h"
-#include "../audio/audio.h"
+#include "../client/audio.h"
 #include "../client/client.h"
 
 extern volatile float mouse_angle; // Direction the mouse is pointed in.

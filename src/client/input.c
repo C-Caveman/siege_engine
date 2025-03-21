@@ -1,6 +1,6 @@
 #include "input.h"
-#include "../graphics/graphics.h"
-#include "../audio/audio.h"
+#include "../client/graphics.h"
+#include "../client/audio.h"
 
 struct inputKeybindings inputs[NUM_INPUTS] = {0};
 // Get the index of the input associated with a given key.
@@ -307,15 +307,22 @@ void clientInput(struct client* client) {
     // Default keyboard aim sensitivity.
     if (aimSpeedA == 0)
         aimSpeedA = 2;
-    if (aimSpeedA == 0)
-        aimSpeedA = 4;
+    if (aimSpeedB == 0)
+        aimSpeedB = 4;
+    if (aimSpeedD == 0)
+        aimSpeedD = 7;
+    float turnRate = 1;
+    if (client->dashing == true)
+        turnRate = aimSpeedD;
+    else
+        turnRate = client->aimSpeed;
     if (client->aimSpeed == 0)
         client->aimSpeed = aimSpeedA;
     // send the rotation to the gun
     if (client->aim_dir_rotation < 0)
-        client->aim_dir -= client->aimSpeed * clientDt * ((client->dashing) ? 1.5f : 1.f);
+        client->aim_dir -= turnRate * clientDt;
     if (client->aim_dir_rotation > 0)
-        client->aim_dir += client->aimSpeed * clientDt * ((client->dashing) ? 1.5f : 1.f);
+        client->aim_dir += turnRate * clientDt;
     // only override keyboard aim if mouse is moving
     SDL_GetMouseState(&client->aim_pixel_pos.x, &client->aim_pixel_pos.y);
     client->aim_pixel_pos.x = (client->aim_pixel_pos.x*(RSIZE/tileWidth) - window_x/2*(RSIZE/tileWidth));

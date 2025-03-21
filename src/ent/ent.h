@@ -3,7 +3,7 @@
 #define ENT
 
 #include "../defs.h"
-#include "../graphics/animations.h"
+#include "../client/animations.h"
 #include <SDL2/SDL.h>
 
 struct handle_info {

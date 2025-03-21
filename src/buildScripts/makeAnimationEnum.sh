@@ -1,6 +1,6 @@
 #!/bin/bash
 # Generate animation X-Macro:
-animationEnumFile='src/graphics/animations.h'
+animationEnumFile='src/client/animations.h'
 printf '#ifndef ANIMATIONS
 #define ANIMATIONS 
 

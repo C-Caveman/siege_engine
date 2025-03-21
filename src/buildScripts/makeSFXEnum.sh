@@ -1,6 +1,6 @@
 #!/bin/bash
 # Generate sfx X-Macro:
-sfxEnumFile='src/audio/sfx.h'
+sfxEnumFile='src/client/sfx.h'
 printf '#ifndef SFX
 #define SFX
 #include "../defs.h" 

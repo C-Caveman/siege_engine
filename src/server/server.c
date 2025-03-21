@@ -84,7 +84,6 @@ void* serverLoop() {
         playerClient.player = (struct ent_player*)p;
         ((struct ent_player*)p)->cl = &playerClient;
     }
-    playMusicLoop(spookyWind1);
     
     bool playerConnected = false;
     int deciSecondsToWait = 100;

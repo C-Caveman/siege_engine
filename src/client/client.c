@@ -1,8 +1,8 @@
 // store all player-related information
 
 #include "client.h"
-#include "../graphics/graphics.h"
-#include "../audio/audio.h"
+#include "../client/graphics.h"
+#include "../client/audio.h"
 extern volatile float clientDt;
 struct eventsBuffer clientCmdEvents = {0};
 struct eventsBuffer clientEvents = {0};

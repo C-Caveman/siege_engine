@@ -30,6 +30,7 @@ void print_vars();
     f(timeScale) \
     f(aimSpeedA) \
     f(aimSpeedB) \
+    f(aimSpeedD) \
     f(musicVolume) \
     f(sfxVolume)
 

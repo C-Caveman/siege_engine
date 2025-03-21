@@ -3,9 +3,9 @@
 #define SERVER
 
 #include "../defs.h"
-#include "../audio/audio.h"
-#include "../graphics/graphics.h"
-#include "../input/input.h"
+#include "../client/audio.h"
+#include "../client/graphics.h"
+#include "../client/input.h"
 #include "../client/client.h"
 #include "server_constants.h"
 

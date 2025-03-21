@@ -101,7 +101,8 @@ void playMusic(int index) {
 void playMusicLoop(int index) {
     if (index < 0 || index >= NUM_SFX)
         index = placeholderMusic;
-     Mix_PlayMusic(musics[index], -1);
+    Mix_PlayMusic(musics[index], -1);
+    printf("hmm\n");
 }
 void pauseMusic() {
     Mix_PauseMusic();
