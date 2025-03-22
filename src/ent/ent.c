@@ -2,6 +2,7 @@
 #include "ent.h"
 #include "../client/audio.h"
 #include "../client/client.h"
+#include <time.h>
 
 extern volatile float mouse_angle; // Direction the mouse is pointed in.
 extern volatile int mouse_x;
@@ -153,11 +154,12 @@ void evPlayerShoot(struct dPlayerShoot* d) {
     p->cl->player->sprites[PLAYER_GUN].flags &= ~PAUSED;
     //playSound(bam02);
     playSoundChannel(bam02, CHAN_WEAPON);
-    void* e = spawn(projectile_type, (vec2f){0,0});
     vec2f aimDir = angleToVector(d->shootDir);
-    ((entBasics*)e)->pos = v2fAdd(d->shootPos, v2fScale(aimDir, RSIZE/2));
-    ((entBasics*)e)->tile = v2iScalarDiv(v2fToI(((entBasics*)e)->pos), RSIZE);
-    ((entBasics*)e)->vel = v2fScale(aimDir, 800);
+    handle h = 0;
+    vec2f spawnPos = v2fAdd(d->shootPos, v2fScale(aimDir, RSIZE/2));
+    vec2f spawnVel = v2fScale(aimDir, 800);
+    SPAWN(projectile_type, &h, spawnPos);
+    E(EntMove, .h=h, .pos=spawnPos, .vel=spawnVel);
 }
 void evEntMove(struct dEntMove* d) {
     entBasics* e = getEnt(d->h, 0);
@@ -182,6 +184,14 @@ void evSpriteRotate(struct dSpriteRotate* d) {
         return;
     struct sprite* sprites = (struct sprite*)( (char*)e+sizeof(entBasics) );
     sprites[d->index].rotation = d->angle;
+}
+void evSpriteSetAnim(struct dSpriteSetAnim* d) {
+    entBasics* e = getEnt(d->h, 0);
+    if (!e || e->num_sprites <= d->index || d->index < 0)
+        return;
+    struct sprite* sprites = (struct sprite*)( (char*)e+sizeof(entBasics) );
+    sprites[d->index].anim = d->anim;
+    sprites[d->index].frame = d->frame;
 }
 void evForceSpawn(struct dForceSpawn* d) {
     forceSpawn(d->entType, d->pos, d->h);
@@ -271,7 +281,6 @@ void playerThink(struct ent_player* e) {                              // PLAYER
     if (playerClient.zombieSpawning && mainWorld->entArraySpace > ENTITY_BYTES_ARRAY_LEN/8 && countRemainingHandles() > 10) {
         vec2f spawnPos = v2fAdd(playerClient.camera_center, v2iToF(playerClient.aim_pixel_pos));
         SPAWN(zombie_type, 0, spawnPos);
-        //spawn(zombie_type, v2fAdd(playerClient.camera_center, v2iToF(playerClient.aim_pixel_pos)));
     }
     if (playerClient.explodingEverything) {
         playerClient.explodingEverything = false;
@@ -499,7 +508,9 @@ void zombieInit(struct ent_zombie* e) {                               // ZOMBIE
     e->health = 1;
     e->flags |= SHOOTABLE;
     e->wanderDir = (vec2f){1,0};
-    e->speed = 150.f + 200.f*randf();
+    e->speed = 100.f + 100.f*randf();
+    srand(time(0));
+    e->nextThink = tickStartTime + 200*randf();
     e->num_sprites = 1;
     e->nextWalk = tickStartTime;
     e->sprites[0].flags |= LOOPING;
@@ -556,15 +567,15 @@ void evZombieDie(struct dZombieDie* d) {
     if (!e)
         return;
     playSoundChannel(zombieDie01, CHAN_MONSTER);
-    int numGibs = anim_data[zombieGibs].len;
+    int numGibs = anim_data[zombieGibs].len; //TODO make this loop its own function/event
     for (int i=0; i<numGibs; i++) {
-        entBasics* newGib = (entBasics*)spawn(gib_type, e->pos);
-        if (newGib) {
-            ((struct ent_gib*)newGib)->sprites[0].rotation = e->sprites[0].rotation;
-            ((struct ent_gib*)newGib)->sprites[0].anim = zombieGibs;
-            ((struct ent_gib*)newGib)->sprites[0].frame = i;
-            ((struct ent_gib*)newGib)->vel = (vec2f){randfn()*randfn()*GIB_SPEED,randfn()*randfn()*GIB_SPEED}; //TODO ensure handles are not desynced in client/server!
-        }
+        handle h = 0;
+        SPAWN(gib_type, &h, e->pos);
+        if (!h)
+            break;
+        E(EntMove, .h=h, .pos=e->pos, .vel=(vec2f){randfn()*randfn()*GIB_SPEED,randfn()*randfn()*GIB_SPEED});
+        E(SpriteRotate, .h=h, .index=i, .angle=e->sprites[0].rotation);
+        E(SpriteSetAnim, .h=h, .anim=zombieGibs, .frame=i);
     }
     despawnEnt((entBasics*)e);
 }
@@ -578,13 +589,13 @@ void evZombieWindShieldSplatter(struct dZombieWindShieldSplatter* d) {
     int numGibs = anim_data[zombieGibs].len;
     vec2f splatterDir = v2fNormalized(v2fAdd(v2fScale(v2fNormalized(playerClient.player->vel),-1), (vec2f){randfn()*SCATTER_FORCE,randfn()*SCATTER_FORCE}));
     for (int i=0; i<numGibs; i++) {
-        entBasics* newGib = (entBasics*)spawn(gib_type, e->pos);
-        if (newGib) {
-            ((struct ent_gib*)newGib)->sprites[0].rotation = e->sprites[0].rotation;
-            ((struct ent_gib*)newGib)->sprites[0].anim = zombieGibs;
-            ((struct ent_gib*)newGib)->sprites[0].frame = i;
-            ((struct ent_gib*)newGib)->vel = v2fAdd(v2fScale(splatterDir, SPLATTER_FORCE*(randfns()+0.25f)), playerClient.player->vel);
-        }
+        handle h = 0;
+        SPAWN(gib_type, &h, e->pos);
+        if (!h)
+            break;
+        E(EntMove, .h=h, .pos=e->pos, .vel=v2fAdd(v2fScale(splatterDir, SPLATTER_FORCE*(randfns()+0.25f)), playerClient.player->vel));
+        E(SpriteRotate, .h=h, .index=i, .angle=e->sprites[0].rotation);
+        E(SpriteSetAnim, .h=h, .anim=zombieGibs, .frame=i);
     }
     despawnEnt((entBasics*)e);
 }
@@ -600,15 +611,47 @@ void zombieThink(struct ent_zombie* e) {
         playSoundChannel(slice001, CHAN_MONSTER);
         e->nextThink = tickStartTime + 500;
     }
-    vec2f targetVector = v2fNormalized(v2fSub(v2fAdd(e->targetPos, v2fScale(t->vel, 0.15f)), e->pos));
-    if (passedTimestamp(e->nextWalk)) { //e->walkDelay.count > 0) {
+    vec2f rawTargetVector = v2fSub(v2fAdd(e->targetPos, v2fScale(t->vel, 0.15f)), e->pos);
+    vec2f targetVector = v2fNormalized(rawTargetVector);
+    float distToTarget = v2fLen(rawTargetVector);
+    if (true || passedTimestamp(e->nextWalk)) { //e->walkDelay.count > 0) {
         e->nextWalk = tickStartTime + 40;
         e->wanderDir = targetVector;
-        nearbyEntInteractionBidirectional((entBasics*)e, divertNearbyZombies);
-        vec2f persuitVelocity = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), e->speed));
-        E(EntMove, .h=e->h, .pos=e->pos, .vel=persuitVelocity);
+        //nearbyEntInteractionBidirectional((entBasics*)e, divertNearbyZombies);
+        //if (distToTarget < RSIZE*5)
+        //    nearbyEntInteractionBidirectional((entBasics*)e, pushNearbyEnts);
+        int numTouchingEnts = 0;
+        struct tile* curTile = worldTileFromPos(e->pos);
+        if (curTile) {
+            for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
+                if (curTile->ents[i] != 0)
+                    numTouchingEnts++;
+            }
+        }
+        float bonusSpeed = 0;
+        if (numTouchingEnts > 1) {
+            float entSpecificRandomX =  sin(((float)tickStartTime)*0.001f + ((float)e->h));
+            float entSpecificRandomY =  sin(((float)tickStartTime)*0.001f + ((float)e->h)*5.f);
+            //vec2f offsetFromTileCenter = v2fNormalized(v2fSub(v2fFloor(v2fScalarDiv(v2fAdd(e->pos,HW), RSIZE)), v2fScalarDiv(e->pos,RSIZE)));
+            vec2f randomDir = (vec2f) {entSpecificRandomX, entSpecificRandomY};
+            //e->vel = v2fAdd(e->vel, v2fScale(randomDir, 40000.f*numTouchingEnts*serverDt));
+            e->wanderDir = v2fAdd(e->wanderDir, randomDir);
+        }
+        else {
+            bonusSpeed = 100;
+        }
+        vec2f persuitVelocity = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), e->speed+bonusSpeed));
+        if (distToTarget < RSIZE*10 || randf() > 0.1)
+            E(EntMove, .h=e->h, .pos=e->pos, .vel=persuitVelocity);
         e->targetPos = t->pos;
     }
+    /*
+    //bool shouldSleepMore = ( (mainWorld->numZombies/16) * (distToTarget*5) * randf() ) > 0.5;
+    bool shouldSleepMore = (distToTarget > RSIZE*5);
+    if (shouldSleepMore) {
+        e->nextThink += mainWorld->numZombies * 5;
+    }
+    */
 }
 void zombieAnim(struct ent_zombie* e) {
     // Face the player:
@@ -868,36 +911,6 @@ void forceSpawn(uint16_t entType, vec2f pos, handle h) {
     }
     
     spawnEnt(entType, pos, h);
-}
-void* spawn(int type, vec2f pos) { // Spawn an ent in the default entity array.
-    entBasics* entData = findEntSpace(type);
-    int remainingHandles = countRemainingHandles();
-    if (remainingHandles == 0) {
-        printf("***\n*** No entity handles left!!!\n***\n");
-        return 0;
-    }
-    else if (remainingHandles < 10 && type == gib_type) {
-        printf("!!! Only %d handles left!!! Skipping gib spawn.\n", remainingHandles);
-        return 0;
-    }
-    // Initialize the entity's header info:
-    entBasics* new_entity = entData;
-    new_entity->header_byte = HEADER_BYTE;
-    new_entity->type = type;
-    new_entity->size = getEntSize(type);
-    new_entity->h = claim_handle(entData, (uint16_t)type);
-    new_entity->pos = pos;
-    // Initialize the entity.
-    switch (type) {
-        #define ENT_INIT_CASES(name) case name##_type:  name##Init((struct ent_##name *)(entData)); break; //--- Init the entity.
-        ENTITY_TYPES_LIST(ENT_INIT_CASES)
-        default:
-            printf("*** spawn_ent() error: invalid entity type: %d", type);
-            exit(-1);
-    }
-    //printf("Spawning a '%s' at index %d.\n", entTypeName(type), i);
-    updateEntCount(type, +1);
-    return entData;
 }
 // Remove an entity from an entity segment array. TODO ent-specific cleanup TODO
 void despawnEnt(entBasics* e) {

@@ -8,8 +8,10 @@
 volatile int running = 0;
 struct world test_world = {0};
 struct client playerClient;
+struct client clients[MAX_CLIENTS] = {0};
 uint8_t anim_tick = 0;
 uint32_t frameNumber = 0;
+
 
 #define logThread(...) {\
     if (DEBUG_THREADS) \
@@ -28,9 +30,26 @@ void* eventListener() {
     return 0;
 }
 
-// Client loop implemented in client.c
-void* clientLoop();
-pthread_t clientThread;
+#define EVENT_COUNT_BUFFER_SIZE 60
+int countBuffer[EVENT_COUNT_BUFFER_SIZE] = {0};
+int countBufferPos = 0;
+void trackEventCount() {
+    if (serverEvents.count > EVENT_BUFFER_SIZE-2) {
+        fprintf(stderr, "*** serverEvents buffer overflowing!\n");
+    }
+    countBuffer[countBufferPos++] = serverEvents.count;
+    if (countBufferPos >= EVENT_COUNT_BUFFER_SIZE)
+        countBufferPos = 0;
+    if (frameNumber < EVENT_COUNT_BUFFER_SIZE) {
+        return;
+    }
+    int average = 0;
+    for (int i=0; i<EVENT_COUNT_BUFFER_SIZE; i++) {
+        average += countBuffer[i];
+    }
+    average /= EVENT_COUNT_BUFFER_SIZE;
+    //printf("Average events for the last %d frames: %5d\r", EVENT_COUNT_BUFFER_SIZE, average);
+}
 
 // Server thread (simulate the world):
 #define logServer(...) {\
@@ -114,11 +133,9 @@ void* serverLoop() {
             moveAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
             wallCollision(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
             defragEntArray();
-            // Record the player's movement for the demo:
-            E(PlayerMove, .p=playerClient.player->h, .pos=playerClient.player->pos, .vel=playerClient.player->vel);
-            E(SpriteRotate, .h=playerClient.player->h, .index=PLAYER_GUN, .angle=playerClient.aim_dir);
             E(FrameEnd, SDL_GetTicks(), frameNumber);
         }
+        trackEventCount();
         // Update gamestate from the server's packets:
         while (serverEvents.count > 0) {
             takeEvent();
@@ -137,6 +154,10 @@ void* serverLoop() {
     logThread("Server thread exiting.\n");
     return 0;
 }
+
+// Client loop implemented in client.c
+void* clientLoop();
+pthread_t clientThread;
 
 int main() {
     //

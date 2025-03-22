@@ -16,3 +16,6 @@ valgrind_log.txt
 env
 env.nix
 o/includes/*.h
+
+# Ignore the devLog folder.
+devLog

@@ -1,4 +1,4 @@
-// store all player-related information
+// Handle player inputs, draw the screen, and accept server events.
 
 #include "client.h"
 #include "../client/graphics.h"
@@ -207,6 +207,9 @@ void clientUpdatePlayerEntity() {
         moveOneEnt((entBasics*)playerClient.player, clientDt);
         collideWall((entBasics*)playerClient.player);
     }
+    // Tell the server how we've moved:
+    //CE(PlayerMove, .p=playerClient.player->h, .pos=playerClient.player->pos, .vel=playerClient.player->vel);
+    //CE(SpriteRotate, .h=playerClient.player->h, .index=PLAYER_GUN, .angle=playerClient.aim_dir);
 }
 
 void clientClearDialog() {

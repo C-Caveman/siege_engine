@@ -206,6 +206,7 @@ extern struct client playerClient; //-------------------------- Player client.
     f(Despawn, handle h;) \
     f(TriggerDialog, handle p; char fileName[16];) \
     f(SpriteRotate, handle h; int index; float angle;) \
+    f(SpriteSetAnim, handle h; int index; uint16_t anim; uint16_t frame;) \
 
 #define TO_EVENT_PREFIXED_ENUM(name, detailsUnused) event##name, 
 enum EVENT_ENUM {
@@ -290,11 +291,11 @@ extern sem_t eventCountMutex;
 handle reserveHandle(uint16_t entType); //-------- Set aside a handle to be assigned an entity later.
 // Spawn an entity (only to be called by the server)
 #define SPAWN(typeOfEntity, handleRef, ...) {\
-    handle h = reserveHandle(typeOfEntity); \
+    handle newHandle = reserveHandle(typeOfEntity); \
     if (handleRef != 0) {\
-        *((handle*)handleRef) = h;\
+        *((handle*)handleRef) = newHandle;\
     }\
-    E(ForceSpawn, .entType=typeOfEntity, .pos=__VA_ARGS__, .h=h);\
+    E(ForceSpawn, .entType=typeOfEntity, .pos=__VA_ARGS__, .h=newHandle);\
 }
 
 //////////////////////////////////////////////////////////////////////////////////// ;;
