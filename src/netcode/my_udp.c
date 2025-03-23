@@ -10,8 +10,8 @@
 
 struct sockaddr_in my_address;
 struct sockaddr_in their_address;
-int my_address_len;
-int their_address_len;
+unsigned int my_address_len;
+unsigned int their_address_len;
 struct in_addr my_temp_address;
 int my_ip;
 
@@ -65,7 +65,7 @@ void selectLocalAddress() {
     bool indexWasValid = false;
     int selectedIndex = -1;
     while (!indexWasValid && i > 0) {
-        fgets(indexString, sizeof(indexString), stdin) != 0;
+        fgets(indexString, sizeof(indexString), stdin);
         selectedIndex = atoi(indexString); // atoi() returns 0 on invalid input
         indexWasValid = (selectedIndex > 0) && (selectedIndex <= i);
         if (!indexWasValid)
@@ -81,7 +81,7 @@ void selectLocalAddress() {
             if (i == selectedIndex) {
                 char ipNumberString[100];
                 getnameinfo(address->ifa_addr, sizeof(struct sockaddr_in), ipNumberString, sizeof(ipNumberString), 0, 0, NI_NUMERICHOST);
-                bool myIpStringValid = inet_aton(ipNumberString, &my_address.sin_addr);
+                //bool myIpStringValid = inet_aton(ipNumberString, &my_address.sin_addr);
                 printf("Network interface selected: %s, %s\n", address->ifa_name, ipNumberString);
                 break;
             }

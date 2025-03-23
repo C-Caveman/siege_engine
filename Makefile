@@ -14,7 +14,7 @@
 
 
 CC = gcc
-CFLAGS = -g -Wall -Werror -Wpedantic -std=c99
+CFLAGS = -g -Wall -Werror -Wpedantic -std=gnu99
 INCLUDES=-Io/includes
 LIBS = -lm -lSDL2 -lSDL2_ttf -lSDL2_mixer -lpthread
 OBJECTS = o/vars.o o/server.o o/audio.o o/graphics.o o/input.o o/world.o o/chunk.o o/ent.o o/defs.o o/client.o o/keyEnum.o

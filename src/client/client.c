@@ -185,15 +185,19 @@ void clientUpdatePlayerEntity() {
     }
     if (playerClient.building && (frameStartTime - playerClient.lastBuildTime) > 50) {
         struct tile* timmy = worldGetTile(getTileAtCursor(&playerClient));
-        for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
-            if (timmy == 0)
-                break;
-            if (timmy->ents[i] != 0) {
-                entBasics* e = getEnt(timmy->ents[i], 0);
-                if (e->type == gib_type)
-                    despawnEnt(e);
-                else
-                    timmy = 0;
+        if (timmy != 0) {
+            for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
+                if (timmy && timmy->ents[i] != 0) {
+                    entBasics* e = getEnt(timmy->ents[i], 0);
+                    if (!e)
+                        continue;
+                    if (e->type == gib_type) {
+                        despawnEnt(e);
+                    }
+                    else if (e) {
+                        timmy = 0;
+                    }
+                }
             }
         }
         if (timmy != 0 && timmy->wall_height <= 0) {

@@ -71,6 +71,7 @@ struct client {
     // General info:
     uint32_t id;
     uint32_t address;
+    uint16_t flags;
     // Player entity:
     struct ent_player* player;
     //

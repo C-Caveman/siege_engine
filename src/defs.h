@@ -162,7 +162,7 @@ void chunkSetWall(struct chunk* c, int x, int y, int wall_top_anim, int wall_sid
 #define WORLD_DIAMETER (CHUNK_DIAMETER * WORLD_WIDTH)
 #define MAX_WORLD_NAME_LEN 64
 #define MAX_ENTS 2048 //  temp value
-#define MAX_CLIENTS 1 // temp value
+#define MAX_CLIENTS 32 // temp value
 #define ENTITY_BYTES_ARRAY_LEN 2000000
 #define MAX_DRAW_DISTANCE 32
 #define MAX_GIBS 512
@@ -182,7 +182,7 @@ vec2i tileNumberToIndex(uint32_t tileNumber);
 uint32_t tileIndexToNumber(vec2i tileIndex);
 extern struct world* mainWorld; //---------------------------- Main world.
 extern uint8_t anim_tick; //----------------------------------- Frame counter for animations.
-extern struct client playerClient; //-------------------------- Player client.
+extern struct client playerClient; //-------------------------- Player client (for the client side).
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////// ;;
 // Events: (defined in ent.cpp)

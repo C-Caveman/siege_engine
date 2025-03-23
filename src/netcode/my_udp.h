@@ -18,8 +18,8 @@
 
 extern struct sockaddr_in my_address;
 extern struct sockaddr_in their_address;
-extern int my_address_len;
-extern int their_address_len;
+extern unsigned int my_address_len;
+extern unsigned int their_address_len;
 //int socket_file_descriptor;
 extern int my_ip;
 

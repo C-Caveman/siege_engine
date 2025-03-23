@@ -8,6 +8,7 @@ extern volatile float mouse_angle; // Direction the mouse is pointed in.
 extern volatile int mouse_x;
 extern volatile int mouse_y;
 extern struct anim_info anim_data[];
+extern struct client clients[MAX_CLIENTS]; //------------------ Server's list of player clients.
 
 struct handle_info handles[NUM_HANDLES] = { //=================================// ENTITY HANDLES //
     {0,1,true}, // Handle 0 is the Null handle.
@@ -137,6 +138,31 @@ void takeEvent() {
 void sendEvents(struct eventsBuffer* eBuff) {
     //TODO send the events!!!!
 }
+// Add a client to the server's clients list:
+void addClient(uint32_t id, uint16_t flags) {
+    bool clientAlreadyConnected = false;
+    for (int i=0; i<MAX_CLIENTS; i++) {
+        if (clients[i].id == id) {
+            clientAlreadyConnected = true;
+            break;
+        }
+    }
+    if (clientAlreadyConnected) {
+        printf("Client %d already connected.\n", id);;;;
+        return;
+    }
+    // Connect the new client:
+    for (int i=0; i<MAX_CLIENTS; i++) {
+        // Find an empty slot:
+        if (clients[i].id == 0) {
+            printf("Connecting new client %d to client slot %d.\n", id, i);
+            memset(&clients[i], 0, sizeof(clients[0]));
+            clients[i].id = id;
+            clients[i].flags = flags;
+            break;
+        }
+    }
+}
 void evPlayerMove(struct dPlayerMove* d) {
     struct ent_player* p = (struct ent_player*)getEnt(d->p, player_type);
     if (p == 0)
@@ -150,7 +176,7 @@ void evPlayerShoot(struct dPlayerShoot* d) {
     if (!p || !p->cl)
         return;
     p->cl->lastAttackTime = tickStartTime;
-    p->cl->player->sprites[PLAYER_GUN].frame = 0;;
+    p->cl->player->sprites[PLAYER_GUN].frame = 0;
     p->cl->player->sprites[PLAYER_GUN].flags &= ~PAUSED;
     //playSound(bam02);
     playSoundChannel(bam02, CHAN_WEAPON);
@@ -429,7 +455,7 @@ void projectileAnim(struct ent_projectile* e) {}
 void explosionInit(struct ent_explosion* e) {                               // EXPLOSION
     e->num_sprites = 1;
     // Despawn in 2 seconds.
-    e->nextThink = tickStartTime + 2000;
+    e->nextThink = tickStartTime + 200;
     e->sprites[0].anim = kaboom01;
 }
 void evDespawn(struct dDespawn* d) {
@@ -678,7 +704,7 @@ void gibThink(struct ent_gib* e) {}
 void gibAnim(struct ent_gib* e) {
     float spinRate = v2fLen(e->vel) * e->spinMultiplier;
     //float spinDir = 1 - 2*((e->h & 1) == 0);
-    e->sprites[0].rotation += (float)(spinRate*serverDt);
+    e->sprites[0].rotation += (float)(spinRate*clientDt);
     if (v2fLen(e->vel) < 10.f) {
         e->flags |= NO_ANIMATION;
     }
