@@ -19,9 +19,9 @@ uint32_t frameNumber = 0;
 }
 sem_t eventCountMutex;
 // Listen for events coming from the server:
-pthread_t listenThread;
-void* eventListener() {
-    logThread("Listen thread enabled!\n");
+pthread_t serverListenerThread;
+void* serverListener() {
+    logThread("Server listener thread enabled!\n");
     while (running) {
         // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< UDP recv goes here
         SDL_Delay(100);
@@ -84,10 +84,10 @@ void* serverLoop() {
     // Spawn entities:
     
     struct ent_player* p = 0;//(struct ent_player*)spawn(player_type, (vec2f){0,0});
+    handle playerHandle = 0;
     if (!playingDemo) {
         E(FrameStart, SDL_GetTicks(), frameNumber++);
-        handle playerHandle = 0;
-        SPAWN(player_type, &playerHandle, (vec2f){RSIZE*(CHUNK_WIDTH/2+1), RSIZE*(CHUNK_WIDTH/2+1)});
+        SPAWN(player_type, &playerHandle, (vec2f){RSIZE*(CHUNK_WIDTH/2+1), RSIZE*(CHUNK_WIDTH/2+1)}); // TODO wait for the client to join first
         SPAWN(zombie_type, 0, (vec2f){RSIZE*(CHUNK_WIDTH/2), RSIZE*(CHUNK_WIDTH+1)});
         SPAWN(zombie_type, 0, (vec2f){RSIZE*(CHUNK_WIDTH+1), RSIZE*(CHUNK_WIDTH/2)});
         SPAWN(rabbit_type, 0, (vec2f){RSIZE*(CHUNK_WIDTH-1), RSIZE*(1)});
@@ -98,28 +98,42 @@ void* serverLoop() {
         while (serverEvents.count > 0) {
             takeEvent();
         }
-        p = (struct ent_player*)getEnt(playerHandle, player_type);
-        p->pos = (vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)};
-        playerClient.player = (struct ent_player*)p;
-        ((struct ent_player*)p)->cl = &playerClient;
+        
     }
-    
+    /*
     bool playerConnected = false;
-    int deciSecondsToWait = 100;
+    int centiSecondsToWait = 1000;
+    E(FrameStart, SDL_GetTicks(), frameNumber++);
     while (!playerConnected) {
         struct event* e = &serverEvents.buffer[serverEvents.readHead];
         if (e->type == eventClientHello) {
+            SPAWN(player_type, &playerHandle, (vec2f){RSIZE*(CHUNK_WIDTH/2+1), RSIZE*(CHUNK_WIDTH/2+1)});
             struct dClientHello* hello = &e->data.detClientHello;
-            E(ConnectClient, hello->clientID, 0);
+            // Add the first player via the above events:
+            while (serverEvents.count > 0) {
+                takeEvent();
+            }
+            E(ServerHello, .clientID=hello->clientID, .playerHandle=playerHandle, .clientAddress=hello->clientAddress);
+            // Wait for them to ready up:
+            centiSecondsToWait = 1000;
+        }
+        if (e->type == eventClientReady) {
+            playerConnected = true;
             break;
         }
-        SDL_Delay(100);
-        deciSecondsToWait--;
-        if (deciSecondsToWait <= 0) {
-            printf("*** Waited too long for client to connect!\n");
+        SDL_Delay(10);
+        centiSecondsToWait--;
+        if (centiSecondsToWait <= 0) {
+            printf("*** Server waited too long for client to connect!\n");
             exit(1);
         }
     }
+    E(FrameEnd, SDL_GetTicks(), frameNumber);
+    */
+    p = (struct ent_player*)getEnt(playerHandle, player_type);
+    p->pos = (vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)};
+    playerClient.player = (struct ent_player*)p;
+    ((struct ent_player*)p)->cl = &playerClient;
     
     while (running) {
         tickStartTime = SDL_GetTicks();
@@ -209,7 +223,7 @@ int main() {
     }
     
     // Begin listening for server serverEvents:
-    pthread_create(&listenThread, NULL, eventListener, 0); // a thread is born!
+    pthread_create(&serverListenerThread, NULL, serverListener, 0); // a thread is born!
     // Begin updating the game state:
     pthread_create(&serverThread, NULL, serverLoop, 0);
     // Begin accepting inputs and rendering the screen:
@@ -254,7 +268,7 @@ int main() {
         fclose(demoFile);
     cleanup_graphics();
     cleanup_audio();
-    pthread_join(listenThread, 0);
+    pthread_join(serverListenerThread, 0);
     pthread_join(clientThread, 0);
     pthread_join(serverThread, 0);
     //pthread_cancel(listenThread); // Could use pthread_cancel() for a timer-based emergency thread killing system failsafe.

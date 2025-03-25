@@ -138,31 +138,6 @@ void takeEvent() {
 void sendEvents(struct eventsBuffer* eBuff) {
     //TODO send the events!!!!
 }
-// Add a client to the server's clients list:
-void addClient(uint32_t id, uint16_t flags) {
-    bool clientAlreadyConnected = false;
-    for (int i=0; i<MAX_CLIENTS; i++) {
-        if (clients[i].id == id) {
-            clientAlreadyConnected = true;
-            break;
-        }
-    }
-    if (clientAlreadyConnected) {
-        printf("Client %d already connected.\n", id);;;;
-        return;
-    }
-    // Connect the new client:
-    for (int i=0; i<MAX_CLIENTS; i++) {
-        // Find an empty slot:
-        if (clients[i].id == 0) {
-            printf("Connecting new client %d to client slot %d.\n", id, i);
-            memset(&clients[i], 0, sizeof(clients[0]));
-            clients[i].id = id;
-            clients[i].flags = flags;
-            break;
-        }
-    }
-}
 void evPlayerMove(struct dPlayerMove* d) {
     struct ent_player* p = (struct ent_player*)getEnt(d->p, player_type);
     if (p == 0)
@@ -573,16 +548,47 @@ void evInvalid(struct dInvalid* d) {}
 // Markers for the start/end of a server frame:
 void evFrameStart(struct dFrameStart* d) {}
 void evFrameEnd(struct dFrameEnd* d) {}
+// Add a client to the server's clients list:
+void addClient(uint32_t id, uint16_t flags) {
+    printf("addClient(id=%d, flags=%d)\n", id, flags);
+    bool clientAlreadyConnected = false;
+    for (int i=0; i<MAX_CLIENTS; i++) {
+        if (clients[i].id == id) {
+            clientAlreadyConnected = true;
+            break;
+        }
+    }
+    if (clientAlreadyConnected) {
+        printf("Client %d already connected.\n", id);;;;
+        return;
+    }
+    // Connect the new client:
+    for (int i=0; i<MAX_CLIENTS; i++) {
+        // Find an empty slot:
+        if (clients[i].id == 0) {
+            printf("Connecting new client %d to client slot %d.\n", id, i);
+            memset(&clients[i], 0, sizeof(clients[0]));
+            clients[i].id = id;
+            clients[i].flags = flags;
+            break;
+        }
+    }
+}
 // Sent by client to server. Requests to be put into the game.
 void evClientHello(struct dClientHello* d) {
     printf("Server got a ClientHello: id=%d, ip=%d\n", d->clientID, d->clientAddress);
     //TODO trigger an evSpawnPlayer() if there is room for a new player
+    addClient(d->clientID, d->clientFlags);
 }
 void evSpawnPlayer(struct dSpawnPlayer* d) {
     //TODO SPAWN A PLAYER IN THE ENTITY BUFFER, RETURN THE HANDLE TO IT VIA A ConnectClient event!
 }
-void evConnectClient(struct dConnectClient* d) {
-    printf("Connecting client %d to player entity with handle %d.\n", d->clientID, d->playerHandle);
+
+void evServerHello(struct dServerHello* d) {
+    printf("Assigning client %d to player entity with handle %d.\n", d->clientID, d->playerHandle);
+}
+void evClientReady(struct dClientReady* d) {
+    printf("Client %d is now ready to play.\n", d->clientID);
 }
 void evPlaySound(struct dPlaySound* d) {
     playSoundChannel(d->sound, d->channel);

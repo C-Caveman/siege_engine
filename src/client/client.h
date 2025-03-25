@@ -67,6 +67,11 @@ extern char menuPageNames[NUM_MENU_PAGES][MAX_MENU_ITEM_LEN];
 extern char PAUSE_MENU_ITEMS[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN];
 extern char SETTINGS_MENU_ITEMS[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN];
 
+enum clientFlagsEnum {
+    CLIENT_IS_LOCAL =   1<<0,
+    CLIENT_WHATEVER =   1<<1,
+};
+
 struct client {
     // General info:
     uint32_t id;

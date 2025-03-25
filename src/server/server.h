@@ -7,8 +7,11 @@
 #include "../client/graphics.h"
 #include "../client/input.h"
 #include "../client/client.h"
-#include "server_constants.h"
 
+#define P_ACCEL  1024 //64
+#define P_MAX_SPEED 64
+#define FRICTION 8.0
+#define MIN_SPEED 0.05
 
 extern int num_clients;
 extern struct client clients[MAX_CLIENTS]; //TODO move server constants

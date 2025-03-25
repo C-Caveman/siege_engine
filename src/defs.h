@@ -190,9 +190,10 @@ extern struct client playerClient; //-------------------------- Player client (f
     f(Invalid, int foobarScoobar;) \
     f(FrameStart, uint32_t time; uint32_t frameNumber;) \
     f(FrameEnd, uint32_t time; uint32_t frameNumber;) \
-    f(ClientHello, uint32_t clientID; uint32_t clientAddress;) \
+    f(ClientHello, uint32_t clientID; uint32_t clientAddress; uint16_t clientFlags;) \
     f(SpawnPlayer, uint32_t clientID; handle playerHandle;) \
-    f(ConnectClient, uint32_t clientID; handle playerHandle;) \
+    f(ServerHello, uint32_t clientID; handle playerHandle; uint32_t clientAddress;) \
+    f(ClientReady, uint32_t clientID;) \
     f(PlaySound, uint32_t sound; uint32_t channel;) \
     f(Use, handle user; handle target;) \
     f(Explode, handle h;) \

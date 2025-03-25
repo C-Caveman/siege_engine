@@ -67,8 +67,35 @@ void* clientLoop() {
     // Connect to the server:
     playerClient.id = 101;
     playerClient.address = 10101010;
-    CE(ClientHello, playerClient.id, playerClient.address);
+    playerClient.flags = 0;
+    CE(ClientHello, playerClient.id, playerClient.address, playerClient.flags);
     sendCommandsToServer();
+    printf("Chunga-wunga!\n");
+    SDL_Delay(50);
+    /* TODO wait for server to be ready before entering the client loop!
+    bool connectedToServer = false;
+    int centiSecondsToWait = 100;
+    while (!connectedToServer) {
+        struct event* e = &serverEvents.buffer[serverEvents.readHead];
+        if (e->type == eventServerHello) {
+            //struct dServerHello* serverHello = &e.data.detServerHello;
+            connectedToServer = true;
+            CE(ClientReady, .clientID=playerClient.id);
+            sendCommandsToServer();
+            printf("doi\n");
+            SDL_Delay(100);
+            break;
+        }
+        SDL_Delay(10);
+        centiSecondsToWait--;
+        if (centiSecondsToWait <= 0) {
+            fprintf(stderr, "*** Client waited too long for the server to respond.\n");
+            running = false;
+            return 0;
+        }
+    }
+    printf("Done waiting for server response.\n");
+    */
     // Input and rendering loop:
     frameStartTime = SDL_GetTicks();
     while (running) {
@@ -76,7 +103,7 @@ void* clientLoop() {
         clientDt = ((float)SDL_GetTicks() - (float)frameStartTime) / 1000.f;
         if (clientDt < 0) {
             printf("clientDt was negative!!!!: %f\n", clientDt);
-            exit(0);
+            exit(-1);
         }
         frameStartTime = SDL_GetTicks();
         //
