@@ -2,6 +2,7 @@
 // update the clients on what has happened (if multiplayer)
 
 #include "server.h"
+#include "../netcode/netcode.h"
 #include <unistd.h>
 #include <pthread.h>
 
@@ -12,6 +13,11 @@ struct client clients[MAX_CLIENTS] = {0};
 uint8_t anim_tick = 0;
 uint32_t frameNumber = 0;
 
+char theirIpAddress[] = "192.168.0.237";
+int theirPort = 1111;
+int myPort = 1111;
+int sock = 0;
+
 
 #define logThread(...) {\
     if (DEBUG_THREADS) \
@@ -21,10 +27,17 @@ sem_t eventCountMutex;
 // Listen for events coming from the server:
 pthread_t serverListenerThread;
 void* serverListener() {
+    struct eventsBuffer serverListenBuffer;
+    serverListenBuffer.buffer[0].type = 1;
+    printf("%d\n", serverListenBuffer.buffer[0].type);
     logThread("Server listener thread enabled!\n");
+    char dummyBuf[1024] = {0};
     while (running) {
+        //printf("Server awaiting UDP message...\n");
+        udpRecv((char*)&dummyBuf, &sock);
+        //printf("Server got message '%s'\n", dummyBuf);
         // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< UDP recv goes here
-        SDL_Delay(100);
+        //SDL_Delay(100);
     }
     logThread("Listen thread exiting.\n");
     return 0;
@@ -155,6 +168,10 @@ void* serverLoop() {
             takeEvent();
         }
         
+        //TODO send stuff to the client!!
+        char sendBuffer[] = "Hello me!";
+        udpSendN((char*)&sendBuffer, sizeof(sendBuffer), &sock);
+        
         // Game state updated, now sleep until it's time for the next tick:
         uint32_t tickEndTime = SDL_GetTicks();
         uint32_t tickTimeElapsed = tickEndTime - tickStartTime;
@@ -222,6 +239,9 @@ int main() {
         printf("\n");
     }
     
+    // Start networking stuff:
+    udpInit(&sock, myPort, theirPort, (char*)theirIpAddress);
+    
     // Begin listening for server serverEvents:
     pthread_create(&serverListenerThread, NULL, serverListener, 0); // a thread is born!
     // Begin updating the game state:
@@ -268,9 +288,11 @@ int main() {
         fclose(demoFile);
     cleanup_graphics();
     cleanup_audio();
-    pthread_join(serverListenerThread, 0);
+    //pthread_join(serverListenerThread, 0);
     pthread_join(clientThread, 0);
     pthread_join(serverThread, 0);
-    //pthread_cancel(listenThread); // Could use pthread_cancel() for a timer-based emergency thread killing system failsafe.
+    udpShut(&sock);
+    //TODO add a listenerShutdown event to join these properly!
+    pthread_cancel(serverListenerThread);
     return 0;
 }

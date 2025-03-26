@@ -17,7 +17,7 @@ CC = gcc
 CFLAGS = -g -Wall -Werror -Wpedantic -std=gnu99
 INCLUDES=-Io/includes
 LIBS = -lm -lSDL2 -lSDL2_ttf -lSDL2_mixer -lpthread
-OBJECTS = o/vars.o o/server.o o/audio.o o/graphics.o o/input.o o/world.o o/chunk.o o/ent.o o/defs.o o/client.o o/keyEnum.o
+OBJECTS = o/vars.o o/server.o o/audio.o o/graphics.o o/input.o o/world.o o/chunk.o o/ent.o o/defs.o o/client.o o/keyEnum.o o/netcode.o
 
 ex: ${OBJECTS} Makefile
 	cd o/
@@ -31,6 +31,8 @@ o/client.o: src/client/client.c src/client/client.h src/client/animations.h
 	${CC} ${CFLAGS} -c src/client/client.c -o o/client.o ${INCLUDES}
 o/server.o: src/server/server.c src/server/server.h o/graphics.o o/input.o o/ent.o o/defs.o o/client.o o/audio.o
 	${CC} ${CFLAGS} -c src/server/server.c -o o/server.o ${INCLUDES}
+o/netcode.o: src/netcode/netcode.c src/netcode/netcode.h
+	${CC} ${CFLAGS} -c src/netcode/netcode.c -o o/netcode.o ${INCLUDES}
 o/audio.o: src/client/audio.c src/client/audio.h src/client/sfx.h src/client/music.h
 	${CC} ${CFLAGS} -c src/client/audio.c -o o/audio.o ${INCLUDES}
 src/client/sfx.h: assets/audio/sfx src/buildScripts/makeSFXEnum.sh
