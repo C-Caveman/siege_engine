@@ -33,11 +33,8 @@ void* serverListener() {
     logThread("Server listener thread enabled!\n");
     char dummyBuf[1024] = {0};
     while (running) {
-        //printf("Server awaiting UDP message...\n");
-        udpRecv((char*)&dummyBuf, &sock);
-        //printf("Server got message '%s'\n", dummyBuf);
-        // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< UDP recv goes here
-        //SDL_Delay(100);
+        /*int messageLen = */udpRecv((char*)&dummyBuf, &sock);
+        //printf("serverListener got %d client events.\n", messageLen / (int)sizeof(struct event));
     }
     logThread("Listen thread exiting.\n");
     return 0;
@@ -169,7 +166,7 @@ void* serverLoop() {
         }
         
         //TODO send stuff to the client!!
-        char sendBuffer[] = "Hello me!";
+        char sendBuffer[] = "Hello me!!!!!!!!!!!!!!!!!!!!!!!!";
         udpSendN((char*)&sendBuffer, sizeof(sendBuffer), &sock);
         
         // Game state updated, now sleep until it's time for the next tick:

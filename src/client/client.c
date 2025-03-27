@@ -41,8 +41,13 @@ uint32_t clientFrame = 0;
 volatile float clientDt = 0;
 volatile uint32_t frameStartTime = 0;
 
+extern char theirIpAddress[];
+extern int theirPort;
+extern int myPort;
+extern int sock;
 void sendCommandsToServer() { //TODO ADD MULTIPLAYER PATH HERE!!! TODO
     int cmdEventsSent = 0;
+    //
     while (clientCmdEvents.count > 0 && serverEvents.count <= EVENT_BUFFER_SIZE-1) {
         memcpy(&serverEvents.buffer[serverEvents.writeHead], &clientCmdEvents.buffer[clientCmdEvents.readHead], sizeof(clientCmdEvents.buffer[0]));
         memset(&clientCmdEvents.buffer[clientCmdEvents.readHead], 0, sizeof(clientCmdEvents.buffer[0]));
@@ -55,6 +60,8 @@ void sendCommandsToServer() { //TODO ADD MULTIPLAYER PATH HERE!!! TODO
         clientCmdEvents.count--;
         cmdEventsSent++;
     }
+    //
+    
     sem_wait(&eventCountMutex);
     serverEvents.count += cmdEventsSent;
     sem_post(&eventCountMutex);

@@ -121,6 +121,33 @@ void applyEvent(struct event* ev) {
         EVENT_LIST(TO_EVENT_CASE)
     };
 }
+void incReadHead(struct eventsBuffer* b) {
+    b->readHead++;
+    if (b->readHead > EVENT_BUFFER_SIZE-1)
+        b->readHead = 0;
+}
+void incWriteHead(struct eventsBuffer* b) {
+    b->writeHead++;
+    if (b->writeHead > EVENT_BUFFER_SIZE-1)
+        b->writeHead = 0;
+}
+
+// Move events from one buffer to another (used to get messages from the listener threads).
+void transferEvents(struct eventsBuffer* in, struct eventsBuffer* out) {
+    int numEventsToTransfer = in->count;
+    if (out->count+numEventsToTransfer > EVENT_BUFFER_SIZE-2) {
+        fprintf(stderr, "*** transferEvents() tried to move events to an already full buffer!\n");
+        exit(-1);
+    }
+    for (int i=0; i<numEventsToTransfer; i++) {
+        memcpy(&in->buffer[in->readHead], &out->buffer[in->writeHead], sizeof(out->buffer[0]));
+        memset(&in->buffer[in->readHead], 0, sizeof(out->buffer[0]));
+        incReadHead(in);
+        incWriteHead(out);
+    }
+    in->count = in->count-numEventsToTransfer;
+    out->count = out->count+numEventsToTransfer;
+}
 void takeEvent() {
     if (serverEvents.count <= 0)
         return;
