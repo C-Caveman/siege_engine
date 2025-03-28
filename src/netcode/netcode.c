@@ -164,7 +164,7 @@ int udpRecv(char* recv, int* sock) {
     logNetcode("Listening on (%s, %d)...\n", inet_ntoa(myAddress.sin_addr), ntohs(myAddress.sin_port));
     int recv_msg_len = recvfrom(*sock, 
                                 (char *)recv, 
-                                MAX_BUF_SIZE,
+                                MAX_UDP_PAYLOAD,
                                 MSG_WAITALL, 
                                 0,//(struct sockaddr *) &myAddress,
                                 0//&myAddressLen
