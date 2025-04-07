@@ -1,53 +1,62 @@
-// update the world using messages from the clients,
-// update the clients on what has happened (if multiplayer)
+// Update the state of the game world, take in client commands, and tell the clients what changed.
 
 #include "server.h"
 #include "../netcode/netcode.h"
 #include <unistd.h>
 #include <pthread.h>
 
-volatile int running = 0;
-struct world test_world = {0};
-struct client playerClient;
-struct client clients[MAX_CLIENTS] = {0};
-uint8_t anim_tick = 0;
-uint32_t frameNumber = 0;
+extern volatile int running;
+extern struct world test_world;
+extern struct client playerClient;
+extern struct client clients[MAX_CLIENTS];
+extern uint8_t anim_tick;
+extern uint32_t frameNumber;
 
-char theirIpAddress[] = "192.168.0.237";
-int theirPort = 1111;
-int myPort = 1111;
-int sock = 0;
+extern struct eventBufferFlat      serverEventBuffer;
+extern struct eventBufferCircular  serverEventListenBuffer;
+
+extern sem_t serverListenerCountMutex;
+extern sem_t clientListenerCountMutex;
+
+extern struct inbox serverInbox;
+extern struct outbox outboxToClient;
+
 
 
 #define logThread(...) {\
     if (DEBUG_THREADS) \
         printf( __VA_ARGS__ );\
 }
-sem_t eventCountMutex;
 // Listen for events coming from the server:
-pthread_t serverListenerThread;
 void* serverListener() {
-    struct eventsBuffer serverListenBuffer;
-    serverListenBuffer.buffer[0].type = 1;
-    printf("%d\n", serverListenBuffer.buffer[0].type);
+    struct eventBufferFlat packetBuffer;
+    serverInbox.recvBuffer = (char *)packetBuffer.buffer;
     logThread("Server listener thread enabled!\n");
-    char dummyBuf[1024] = {0};
     while (running) {
-        /*int messageLen = */udpRecv((char*)&dummyBuf, &sock);
-        //printf("serverListener got %d client events.\n", messageLen / (int)sizeof(struct event));
+        int packetLen = inboxRecv(&serverInbox, sizeof(packetBuffer.buffer));
+        int numPacketEvents = packetLen / (int)sizeof(struct event);
+        packetBuffer.count = numPacketEvents;
+        if (numPacketEvents > 0)
+            printf("serverListener got %3d client events, first was a '%s'.\n", numPacketEvents, eventName(packetBuffer.buffer[0].type));
+        // Add the events to the ring buffer:
+        linearBufferToCircularBuffer(&packetBuffer, &serverEventListenBuffer, packetBuffer.count, &serverListenerCountMutex);
     }
     logThread("Listen thread exiting.\n");
     return 0;
+}
+void recvClientCommands() {
+    // Pull client events from the listener's ring buffer:
+    circularBufferToFlatBuffer(&serverEventListenBuffer, &serverEventBuffer, &serverListenerCountMutex);
 }
 
 #define EVENT_COUNT_BUFFER_SIZE 60
 int countBuffer[EVENT_COUNT_BUFFER_SIZE] = {0};
 int countBufferPos = 0;
 void trackEventCount() {
-    if (serverEvents.count > EVENT_BUFFER_SIZE-2) {
-        fprintf(stderr, "*** serverEvents buffer overflowing!\n");
+    if (serverEventBuffer.count > EVENT_BUFFER_SIZE-2) {
+        fprintf(stderr, "*** serverEventBuffer buffer overflowing!\n");
     }
-    countBuffer[countBufferPos++] = serverEvents.count;
+    countBuffer[countBufferPos++] = serverEventBuffer.count;
     if (countBufferPos >= EVENT_COUNT_BUFFER_SIZE)
         countBufferPos = 0;
     if (frameNumber < EVENT_COUNT_BUFFER_SIZE) {
@@ -69,7 +78,6 @@ void trackEventCount() {
 volatile uint32_t tickStartTime = 0;
 volatile float serverDt = 0;
 #define TICKS_PER_SECOND 128
-pthread_t serverThread;
 void* serverLoop() {
     logThread("Server thread enabled!\n");
     mainWorld = &test_world;
@@ -105,9 +113,7 @@ void* serverLoop() {
         SPAWN(spawner_type, 0, (vec2f){RSIZE*(CHUNK_WIDTH/4-0.5), RSIZE*(CHUNK_WIDTH/4-0.5)});
         E(FrameEnd, SDL_GetTicks(), frameNumber);
         // Set the initial gamestate via the above events:
-        while (serverEvents.count > 0) {
-            takeEvent();
-        }
+        processEvents();
         
     }
     /*
@@ -115,14 +121,12 @@ void* serverLoop() {
     int centiSecondsToWait = 1000;
     E(FrameStart, SDL_GetTicks(), frameNumber++);
     while (!playerConnected) {
-        struct event* e = &serverEvents.buffer[serverEvents.readHead];
+        struct event* e = &serverEventBuffer.buffer[serverEventBuffer.count];
         if (e->type == eventClientHello) {
             SPAWN(player_type, &playerHandle, (vec2f){RSIZE*(CHUNK_WIDTH/2+1), RSIZE*(CHUNK_WIDTH/2+1)});
             struct dClientHello* hello = &e->data.detClientHello;
             // Add the first player via the above events:
-            while (serverEvents.count > 0) {
-                takeEvent();
-            }
+            processEvents();
             E(ServerHello, .clientID=hello->clientID, .playerHandle=playerHandle, .clientAddress=hello->clientAddress);
             // Wait for them to ready up:
             centiSecondsToWait = 1000;
@@ -145,29 +149,35 @@ void* serverLoop() {
     playerClient.player = (struct ent_player*)p;
     ((struct ent_player*)p)->cl = &playerClient;
     
+    running = true;
+    
     while (running) {
         tickStartTime = SDL_GetTicks();
         //
         // Read client events, update the game state, and send server events:
         //
-        if (!playingDemo) {
-            E(FrameStart, tickStartTime, frameNumber++);
-            // Entity updates:
-            thinkAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-            moveAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-            wallCollision(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-            defragEntArray();
-            E(FrameEnd, SDL_GetTicks(), frameNumber);
-        }
+        E(FrameStart, tickStartTime, frameNumber++);
+        recvClientCommands();
+        // Entity updates:
+        thinkAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+        moveAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+        wallCollision(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+        defragEntArray();
+        E(FrameEnd, SDL_GetTicks(), frameNumber);
         trackEventCount();
-        // Update gamestate from the server's packets:
-        while (serverEvents.count > 0) {
-            takeEvent();
+        // Send the events to the client (TODO do this for ALL CLIENTS, not just the first one!)
+        int eventsToSend = serverEventBuffer.count;
+        int eventsSent = 0;
+        while (eventsToSend > 0) {
+            int numPacketEvents = eventsToSend;
+            if (numPacketEvents > MAX_PACKET_EVENTS)
+                numPacketEvents = MAX_PACKET_EVENTS;
+            inboxSend(&serverInbox, &outboxToClient, numPacketEvents*sizeof(serverEventBuffer.buffer[0]));
+            eventsToSend -= numPacketEvents;
+            eventsSent += numPacketEvents;
         }
-        
-        //TODO send stuff to the client!!
-        char sendBuffer[] = "Hello me!!!!!!!!!!!!!!!!!!!!!!!!";
-        udpSendN((char*)&sendBuffer, sizeof(sendBuffer), &sock);
+        // Update gamestate from the server's packets:
+        processEvents();
         
         // Game state updated, now sleep until it's time for the next tick:
         uint32_t tickEndTime = SDL_GetTicks();
@@ -183,113 +193,3 @@ void* serverLoop() {
     return 0;
 }
 
-// Client loop implemented in client.c
-void* clientLoop();
-pthread_t clientThread;
-
-int main() {
-    //
-    // Initialize server:
-    //
-    sem_init(&eventCountMutex, 0, 1);
-    applyConfig((char*)"config/config.txt");
-    running = 1;
-    
-    
-    // Demo recording:
-    char demoFileName[] = "demos/demo001.bin";
-    FILE* demoFile = 0;
-    if (recordingDemo)
-        demoFile = fopen(demoFileName, "wb");
-    if (recordingDemo && !demoFile) {
-        printf("*** Failed to create/open %s.\n", demoFileName);
-        exit(-1);
-    }
-    
-    // Demo playback:
-    if (playingDemo)
-        demoFile = fopen(demoFileName, "r");
-    if (playingDemo && !demoFile) {
-        printf("*** Failed to open %s.\n", demoFileName);
-        exit(-1);
-    }
-    if (playingDemo && recordingDemo) {
-        printf("*** playingDemo and recordingDemo at the same time is not allowed!\n");
-        exit(-1);
-    }
-    int demoFileSize = 0;
-    if (playingDemo) {
-        /* Size of file */
-        fseek(demoFile, 0, SEEK_END);
-        demoFileSize = ftell(demoFile);
-        fseek(demoFile, 0, SEEK_SET);
-    }
-    int numDemoEvents = demoFileSize / sizeof(serverEvents.buffer[0]);
-    int numDemoEventsRead = 0;
-    uint32_t nextDemoFrameTime = 0;
-    
-    #define DEBUG_EVENT_SIZES 0
-    #define TO_SIZE_PRINT(name, ...) printf("%32s: %3ld bytes long.\n", #name, sizeof(struct d##name));
-    if (DEBUG_EVENT_SIZES) {
-        printf("Event packet sizes:\n");
-        EVENT_LIST(TO_SIZE_PRINT)
-        printf("\n");
-    }
-    
-    // Start networking stuff:
-    udpInit(&sock, myPort, theirPort, (char*)theirIpAddress);
-    
-    // Begin listening for server serverEvents:
-    pthread_create(&serverListenerThread, NULL, serverListener, 0); // a thread is born!
-    // Begin updating the game state:
-    pthread_create(&serverThread, NULL, serverLoop, 0);
-    // Begin accepting inputs and rendering the screen:
-    pthread_create(&clientThread, NULL, clientLoop, 0);
-    
-    
-    if (timeScale < 0.01)
-        timeScale = 1;
-    //
-    //;;; GAME LOOP:
-    //
-    while (running) {
-        // Record demo:
-        if (recordingDemo && demoFile && serverEvents.count > 0) {
-            fwrite(serverEvents.buffer, sizeof(serverEvents.buffer[0]), serverEvents.count, demoFile);
-        }
-        // Play demo:
-        if (playingDemo && demoFile) {
-            playerClient.player->sprites[PLAYER_CROSSHAIR].flags |= INVISIBLE;
-            while (nextDemoFrameTime < curFrameStart && numDemoEventsRead < numDemoEvents && serverEvents.count < EVENT_BUFFER_SIZE-2 && !feof(demoFile)) {
-                // peek at the next event's FrameStart time
-                int gotAnEvent = fread(&serverEvents.buffer[serverEvents.count], sizeof(serverEvents.buffer[0]), 1, demoFile);
-                if (gotAnEvent == 1 && serverEvents.buffer[serverEvents.count].type == eventFrameStart) {
-                    nextDemoFrameTime = serverEvents.buffer[serverEvents.count].data.detFrameStart.time;
-                }
-                serverEvents.count += (gotAnEvent == 1);
-                numDemoEventsRead += 1;
-            }
-            if (numDemoEventsRead >= numDemoEvents) {
-                printf("**** END OF DEMO!!!\n");
-                running = false;
-            }
-        }
-        
-        if (playingDemo && numDemoEventsRead >= numDemoEvents)
-            break;
-        
-        SDL_Delay(100);
-    }
-    printf("Server was running for %d seconds.\n", SDL_GetTicks() / 1000);
-    if (demoFile)
-        fclose(demoFile);
-    cleanup_graphics();
-    cleanup_audio();
-    //pthread_join(serverListenerThread, 0);
-    pthread_join(clientThread, 0);
-    pthread_join(serverThread, 0);
-    udpShut(&sock);
-    //TODO add a listenerShutdown event to join these properly!
-    pthread_cancel(serverListenerThread);
-    return 0;
-}

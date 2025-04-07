@@ -16,6 +16,27 @@
 #define LOG_NETCODE 0
 #define logNetcode(...) if (LOG_NETCODE) { printf(__VA_ARGS__ ); }
 
+struct inbox {
+    int sock;
+    struct sockaddr_in address;
+    char* sendBuffer;
+    char* recvBuffer;
+};
+struct outbox {
+    // id is not set by netcode.c, use it for your own purposes:
+    int id;
+    struct sockaddr_in address;
+};
+void outboxCreate(struct outbox* ob, int port, char* addressString, int id);
+void inboxCreate(struct inbox* myInbox, int myPort, char* myAddressString);
+void inboxDestroy(struct inbox* myInbox);
+void inboxSend(struct inbox* in, struct outbox* out, int messageLen);
+int inboxRecv(struct inbox* in, int bufferSize);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// old, dead code below ////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 extern struct sockaddr_in myAddress;
 extern struct sockaddr_in theirAddress;
 extern unsigned int myAddressLen;
@@ -27,6 +48,8 @@ extern int myIp;
 void findAddresses();
 // Select which valid network interface to use.
 void selectLocalAddress();
+// Get an address of a specified type: 'e' for ethernet, 'l' for loopback, 'w' for wifi
+void getDefaultAddress(char c, char* addressString, int stringLen);
 
 // init vars used to send messages
 // (use different port numbers if both parties are on the same machine)

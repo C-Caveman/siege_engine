@@ -104,7 +104,6 @@ void nearbyEntInteractionBidirectional(entBasics* user, void (*fn)(entBasics*, e
         }
     }
 }
-struct eventsBuffer serverEvents = {0};
 #define TO_EVENT_NAMES(name, detailsUnused) #name,
 char eventNames[NUM_EVENTS][64] = {
     EVENT_LIST(TO_EVENT_NAMES)
@@ -121,48 +120,86 @@ void applyEvent(struct event* ev) {
         EVENT_LIST(TO_EVENT_CASE)
     };
 }
-void incReadHead(struct eventsBuffer* b) {
+void incReadHead(struct eventBufferCircular* b) {
     b->readHead++;
     if (b->readHead > EVENT_BUFFER_SIZE-1)
         b->readHead = 0;
 }
-void incWriteHead(struct eventsBuffer* b) {
+void incWriteHead(struct eventBufferCircular* b) {
     b->writeHead++;
     if (b->writeHead > EVENT_BUFFER_SIZE-1)
         b->writeHead = 0;
 }
-
-// Move events from one buffer to another (used to get messages from the listener threads).
-void transferEvents(struct eventsBuffer* in, struct eventsBuffer* out) {
-    int numEventsToTransfer = in->count;
-    if (out->count+numEventsToTransfer > EVENT_BUFFER_SIZE-2) {
-        fprintf(stderr, "*** transferEvents() tried to move events to an already full buffer!\n");
-        exit(-1);
+// Move events from a flat array to a circular events buffer: (assumes exclusive use of the circle buffer's writeHead)
+void linearBufferToCircularBuffer(struct eventBufferFlat* in, struct eventBufferCircular* out, int numEventsToCopy, sem_t* circleCountMutex) {
+    // Circular buffer count is touched by multiple threads!
+    sem_wait(circleCountMutex);
+    int outCount = out->count;
+    sem_post(circleCountMutex);
+    if (outCount + numEventsToCopy > EVENT_BUFFER_SIZE) {
+        fprintf(stderr, "*** linearBufferToCircularBuffer() tried to overfill a circular buffer!\n");
+        exit(1);
     }
-    for (int i=0; i<numEventsToTransfer; i++) {
-        memcpy(&in->buffer[in->readHead], &out->buffer[in->writeHead], sizeof(out->buffer[0]));
-        memset(&in->buffer[in->readHead], 0, sizeof(out->buffer[0]));
-        incReadHead(in);
+    for (int i=0; i<numEventsToCopy; i++) {
+        out->buffer[out->writeHead] = in->buffer[i];
         incWriteHead(out);
     }
-    in->count = in->count-numEventsToTransfer;
-    out->count = out->count+numEventsToTransfer;
+    in->count -= numEventsToCopy;
+    // Circle buffer count is touched by multiple threads!
+    sem_wait(circleCountMutex);
+    out->count += numEventsToCopy;
+    sem_post(circleCountMutex);
 }
-void takeEvent() {
-    if (serverEvents.count <= 0)
+// Fill an empty flat buffer with the contents of a circular buffer: (assumes exclusive use of the circle buffer's readHead)
+void circularBufferToFlatBuffer(struct eventBufferCircular* in, struct eventBufferFlat* out, sem_t* circleCountMutex) {
+    // Circular buffer count is touched by multiple threads!
+    sem_wait(circleCountMutex);
+    int numEventsToCopy = in->count;
+    sem_post(circleCountMutex);
+    if (out->count + numEventsToCopy > EVENT_BUFFER_SIZE) {
+        fprintf(stderr, "*** circularBufferToFlatBuffer() numEventsToCopy was greater than EVENT_BUFFER_SIZE!\n");
+        exit(1);
+    }
+    for (int i=0; i<numEventsToCopy; i++) {
+        out->buffer[i] = in->buffer[in->readHead];
+        incReadHead(in);
+    }
+    out->count += numEventsToCopy;
+    // Circular buffer count is touched by multiple threads!
+    sem_wait(circleCountMutex);
+    in->count -= numEventsToCopy;
+    sem_post(circleCountMutex);
+}
+void stinky() {
+    if (serverEventBuffer.count < 1)
         return;
-    //printf("Event: %d '%s'\n", serverEvents.buffer[serverEvents.readHead].type, eventName(serverEvents.buffer[serverEvents.readHead].type));
-    applyEvent(&serverEvents.buffer[serverEvents.readHead]);
-    memset((void*)&serverEvents.buffer[serverEvents.readHead], 0, sizeof(serverEvents.buffer[0]));
-    // Protect the serverEvents counter:
-    sem_wait(&eventCountMutex);
-    serverEvents.count--;
-    sem_post(&eventCountMutex);
-    serverEvents.readHead++;
-    if (serverEvents.readHead >= EVENT_BUFFER_SIZE-1)
-        serverEvents.readHead = 0;
+    //printf("Event: %d '%s'\n", serverEventBuffer.buffer[serverEventBuffer.count].type, eventName(serverEventBuffer.buffer[serverEventBuffer.count].type));
+    applyEvent(&serverEventBuffer.buffer[serverEventBuffer.count-1]);
+    serverEventBuffer.count--;
+    memset((void*)&serverEventBuffer.buffer[serverEventBuffer.count], 0, sizeof(serverEventBuffer.buffer[0]));
 }
-void sendEvents(struct eventsBuffer* eBuff) {
+void processEvents() {
+    while (serverEventBuffer.count > 0) {
+        int i = serverEventBuffer.count-1;
+        if (serverEventBuffer.buffer[i].type == eventPlayerShoot)
+                printf("Processing a PlayerShoot event at index %d, count=%d...\n", i, serverEventBuffer.count);
+        applyEvent(&serverEventBuffer.buffer[i]);
+        serverEventBuffer.count--;
+    }
+    memset(&serverEventBuffer.buffer, 0, sizeof(serverEventBuffer.buffer));
+}
+//;;;
+void processEventsGeneric(struct eventBufferFlat* eventList, struct world* w) {
+    while (serverEventBuffer.count > 0) {
+        int i = serverEventBuffer.count-1;
+        if (serverEventBuffer.buffer[i].type == eventPlayerShoot)
+                printf("Processing a PlayerShoot event at index %d, count=%d...\n", i, serverEventBuffer.count);
+        applyEvent(&serverEventBuffer.buffer[i]);
+        serverEventBuffer.count--;
+    }
+    memset(&serverEventBuffer.buffer, 0, sizeof(serverEventBuffer.buffer));
+}
+void sendEvents(struct eventBufferFlat* eBuff, int* inSocket, int* outSocket) {
     //TODO send the events!!!!
 }
 void evPlayerMove(struct dPlayerMove* d) {
@@ -186,8 +223,8 @@ void evPlayerShoot(struct dPlayerShoot* d) {
     handle h = 0;
     vec2f spawnPos = v2fAdd(d->shootPos, v2fScale(aimDir, RSIZE/2));
     vec2f spawnVel = v2fScale(aimDir, 800);
-    SPAWN(projectile_type, &h, spawnPos);
-    E(EntMove, .h=h, .pos=spawnPos, .vel=spawnVel);
+    SPAWN_IMMEDIATE(projectile_type, &h, spawnPos);
+    E_IMMEDIATE(EntMove, .h=h, .pos=spawnPos, .vel=spawnVel);
 }
 void evEntMove(struct dEntMove* d) {
     entBasics* e = getEnt(d->h, 0);
@@ -293,14 +330,14 @@ void playerInteract(entBasics* player, entBasics* useTarget) {
     struct ent_player* user = (struct ent_player*)player;
     if (!useTarget || !user->cl || !user->cl->interacting)
         return;
-    E(Use, .user=user->h, .target=useTarget->h);
+    E_IMMEDIATE(Use, .user=user->h, .target=useTarget->h);
 }
 
 void windShieldSplatter(entBasics* attacker, entBasics* victim) {
     if (victim == 0 || attacker == 0)
         return;
     if (victim->type == zombie_type && v2fDist(victim->pos, attacker->pos) < RSIZE*2)
-        E(ZombieWindShieldSplatter, victim->h);
+        E_IMMEDIATE(ZombieWindShieldSplatter, victim->h);
 }
 
 #define HEAT_UPDATE_DELAY_MILLIS 10
@@ -308,7 +345,7 @@ void playerThink(struct ent_player* e) {                              // PLAYER
     // Debug commands:
     if (playerClient.zombieSpawning && mainWorld->entArraySpace > ENTITY_BYTES_ARRAY_LEN/8 && countRemainingHandles() > 10) {
         vec2f spawnPos = v2fAdd(playerClient.camera_center, v2iToF(playerClient.aim_pixel_pos));
-        SPAWN(zombie_type, 0, spawnPos);
+        SPAWN_IMMEDIATE(zombie_type, 0, spawnPos);
     }
     if (playerClient.explodingEverything) {
         playerClient.explodingEverything = false;
@@ -320,7 +357,7 @@ void playerThink(struct ent_player* e) {                              // PLAYER
             // Run the correct think function for this entity:
             entBasics* e = (entBasics*)&mainWorld->entity_bytes_array[i];
             if (e->type == zombie_type && v2fDist(playerClient.player->pos, e->pos) < RSIZE*10)
-                E(ZombieDie, e->h);
+                E_IMMEDIATE(ZombieDie, e->h);
         }
     }
     // Get the heat value:
@@ -446,10 +483,10 @@ void projectileThink(struct ent_projectile* e) {
     curTile = worldTileFromPos(p);
     bool hitWall = (curTile != 0 && curTile->wall_height > 0);
     if (hitWall) {
-        E(ChangeTile, .tileNumber=tileIndexToNumber(v2fToI(v2fScalarDiv(p, RSIZE))), .floor=tileGold01, .height=0, .wall=tiledark, .wallSide=tiledark);
+        E_IMMEDIATE(ChangeTile, .tileNumber=tileIndexToNumber(v2fToI(v2fScalarDiv(p, RSIZE))), .floor=tileGold01, .height=0, .wall=tiledark, .wallSide=tiledark);
     }
     if (passedTimestamp(e->timeOut) || hitWall) {
-        E(Explode, e->h);
+        E_IMMEDIATE(Explode, e->h);
         return;
     }
 }
@@ -464,7 +501,7 @@ void evDespawn(struct dDespawn* d) {
     despawnEnt(getEnt(d->h, 0));
 }
 void explosionThink(struct ent_explosion* e) {
-    E(Despawn, e->h);
+    E_IMMEDIATE(Despawn, e->h);
 }
 void explosionAnim(struct ent_explosion* e) {}
 
@@ -629,12 +666,12 @@ void evZombieDie(struct dZombieDie* d) {
     int numGibs = anim_data[zombieGibs].len; //TODO make this loop its own function/event
     for (int i=0; i<numGibs; i++) {
         handle h = 0;
-        SPAWN(gib_type, &h, e->pos);
+        SPAWN_IMMEDIATE(gib_type, &h, e->pos);
         if (!h)
             break;
-        E(EntMove, .h=h, .pos=e->pos, .vel=(vec2f){randfn()*randfn()*GIB_SPEED,randfn()*randfn()*GIB_SPEED});
-        E(SpriteRotate, .h=h, .index=i, .angle=e->sprites[0].rotation);
-        E(SpriteSetAnim, .h=h, .anim=zombieGibs, .frame=i);
+        E_IMMEDIATE(EntMove, .h=h, .pos=e->pos, .vel=(vec2f){randfn()*randfn()*GIB_SPEED,randfn()*randfn()*GIB_SPEED});
+        E_IMMEDIATE(SpriteRotate, .h=h, .index=i, .angle=e->sprites[0].rotation);
+        E_IMMEDIATE(SpriteSetAnim, .h=h, .anim=zombieGibs, .frame=i);
     }
     despawnEnt((entBasics*)e);
 }
@@ -649,19 +686,19 @@ void evZombieWindShieldSplatter(struct dZombieWindShieldSplatter* d) {
     vec2f splatterDir = v2fNormalized(v2fAdd(v2fScale(v2fNormalized(playerClient.player->vel),-1), (vec2f){randfn()*SCATTER_FORCE,randfn()*SCATTER_FORCE}));
     for (int i=0; i<numGibs; i++) {
         handle h = 0;
-        SPAWN(gib_type, &h, e->pos);
+        SPAWN_IMMEDIATE(gib_type, &h, e->pos);
         if (!h)
             break;
-        E(EntMove, .h=h, .pos=e->pos, .vel=v2fAdd(v2fScale(splatterDir, SPLATTER_FORCE*(randfns()+0.25f)), playerClient.player->vel));
-        E(SpriteRotate, .h=h, .index=i, .angle=e->sprites[0].rotation);
-        E(SpriteSetAnim, .h=h, .anim=zombieGibs, .frame=i);
+        E_IMMEDIATE(EntMove, .h=h, .pos=e->pos, .vel=v2fAdd(v2fScale(splatterDir, SPLATTER_FORCE*(randfns()+0.25f)), playerClient.player->vel));
+        E_IMMEDIATE(SpriteRotate, .h=h, .index=i, .angle=e->sprites[0].rotation);
+        E_IMMEDIATE(SpriteSetAnim, .h=h, .anim=zombieGibs, .frame=i);
     }
     despawnEnt((entBasics*)e);
 }
 void zombieThink(struct ent_zombie* e) {
     e->nextThink = tickStartTime + 40;
     if (e->health <= 0) {
-        E(ZombieDie, e->h);
+        E_IMMEDIATE(ZombieDie, e->h);
         return;
     }
     entBasics* t = getEnt(e->target, player_type);
@@ -701,7 +738,7 @@ void zombieThink(struct ent_zombie* e) {
         }
         vec2f persuitVelocity = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), e->speed+bonusSpeed));
         if (distToTarget < RSIZE*10 || randf() > 0.1)
-            E(EntMove, .h=e->h, .pos=e->pos, .vel=persuitVelocity);
+            E_IMMEDIATE(EntMove, .h=e->h, .pos=e->pos, .vel=persuitVelocity);
         e->targetPos = t->pos;
     }
     /*
@@ -757,7 +794,7 @@ void evExplode(struct dExplode* d) {
     if (!e)
         return;
     // Spawn an explosion, despawn the entitiy.
-    SPAWN(explosion_type, 0, e->pos);
+    SPAWN_IMMEDIATE(explosion_type, 0, e->pos);
     playSoundChannel(explosion01, CHAN_WORLD);
     despawnEnt(e);
 }
@@ -765,11 +802,11 @@ void spawnerThink(struct ent_spawner* e) {
     e->nextThink = tickStartTime + SPAWN_INTERVAL;
     if (e->health <= 0) {
         playSoundChannel(explosion03, CHAN_EXPLOSION);
-        E(Explode, e->h);
+        E_IMMEDIATE(Explode, e->h);
         return;
     }
-    SPAWN(zombie_type, 0, e->pos);
-    E(PlaySound, boomHow, CHAN_WORLD);
+    SPAWN_IMMEDIATE(zombie_type, 0, e->pos);
+    E_IMMEDIATE(PlaySound, boomHow, CHAN_WORLD);
     e->numSpawns += 1;
     if (e->numSpawns >= MAX_SPAWNS) {
         e->flags |= NOTHINK;
@@ -872,7 +909,7 @@ handle reserveEntHandle(uint16_t entType) {
         }
     }
     if (i >= ENTITY_BYTES_ARRAY_LEN-1) {
-        printf("***\n*** No space left in the entity array!!!\n***\n");
+        fatal("No space left in the entity array!!!");
         return 0;
     }
     // A handle is available and we have enough memory for its entity type.
@@ -949,7 +986,7 @@ entBasics* findEntSpace(uint16_t entType) {
         }
     }
     if (i >= ENTITY_BYTES_ARRAY_LEN-1) {
-        printf("***\n*** No space left in the entity array!!!\n***\n");
+        fatal("No space left in the entity array!!!");
         return 0;
         //exit(-1);
     }

@@ -12,6 +12,8 @@
 #define DEBUG_CLIENT 1
 #define DEBUG_SERVER 1
 #define DEBUG_DIALOG 0
+// Print an error message with file/lineNum, then kill the program.
+#define fatal(message) { fprintf(stderr, "*** %s:%d *** " message "\n", __FILE__, __LINE__); exit(1); }
 // Temporary hack for singleplayer movement smoothness:
 #define SINGLEPLAYER_HACK 1
 
@@ -236,67 +238,80 @@ struct event {
     } data;
 };
 #define EVENT_BUFFER_SIZE 8192*4
-// circular buffer for events (allows concurrent reading and writing)
-struct eventsBuffer {
+struct eventBufferFlat {
+    int count;
+    int sequenceNumber;
+    struct event buffer[EVENT_BUFFER_SIZE];
+};
+struct eventBufferCircular {
     int count;
     int readHead;
     int writeHead;
     int sequenceNumber;
     struct event buffer[EVENT_BUFFER_SIZE];
 };
+#define MAX_PACKET_EVENTS (508 / sizeof(struct event))
 extern volatile uint32_t curFrameStart;
 extern volatile uint32_t tickStartTime;
 extern volatile uint32_t frameStartTime;
 extern volatile float clientDt;
 extern volatile float serverDt;
-extern struct eventsBuffer serverEvents;
-extern struct eventsBuffer clientCmdEvents;
-extern struct eventsBuffer clientEvents;
+extern struct eventBufferFlat       serverEventBuffer;
+extern struct eventBufferCircular   serverEventListenBuffer;
+extern sem_t                        serverListenerCountMutex;
+extern struct eventBufferFlat       clientEventBuffer;
+extern struct eventBufferCircular   clientEventListenBuffer;
+extern sem_t                        clientListenerCountMutex;
+extern struct eventBufferFlat       clientCommandEventsBuffer;
 void applyEvent(struct event* ev);
 void makeEvent(struct event e);
-void takeEvent();
-void sendEvents(struct eventsBuffer* eBuff);
-extern sem_t eventCountMutex;
+void processEvents();
+void sendEvents(struct eventBufferFlat* eBuff, int* inSocket, int* outSocket);
 // Queue up a server event: (to be sent to the client)
 #define E(eventName, ...) {\
-    if (serverEvents.count < EVENT_BUFFER_SIZE-2) { \
-        serverEvents.buffer[serverEvents.writeHead].data.det##eventName = (struct d##eventName) { event##eventName, __VA_ARGS__ }; \
-        serverEvents.buffer[serverEvents.writeHead].type = event##eventName;\
-        sem_wait(&eventCountMutex); \
-        serverEvents.count++; \
-        sem_post(&eventCountMutex); \
-        serverEvents.writeHead++; \
-        if (serverEvents.writeHead >= EVENT_BUFFER_SIZE-1) \
-            serverEvents.writeHead = 0;\
+    if (serverEventBuffer.count < EVENT_BUFFER_SIZE-2) { \
+        serverEventBuffer.buffer[serverEventBuffer.count].data.det##eventName = (struct d##eventName) { event##eventName, __VA_ARGS__ }; \
+        serverEventBuffer.buffer[serverEventBuffer.count].type = event##eventName;\
+        serverEventBuffer.count++; \
     } \
     else { \
-        printf("*** Too many serverEvents this frame!!\n"); \
+        printf("*** Too many events to add to serverEventBuffer this frame!!\n"); \
         exit(-1); \
     } \
 }
+// Run an event immediately instead of putting it in the queue:
+#define E_IMMEDIATE(eventName, ...) { \
+    struct d##eventName immediateEventDetails = { event##eventName, __VA_ARGS__ }; \
+    ev##eventName(&immediateEventDetails); \
+}
 // Queue up a client event: (to be sent to the server)
 #define CE(eventName, ...) {\
-    if (clientCmdEvents.count < EVENT_BUFFER_SIZE-2) { \
-        clientCmdEvents.buffer[clientCmdEvents.writeHead].data.det##eventName = (struct d##eventName) { event##eventName, __VA_ARGS__ }; \
-        clientCmdEvents.buffer[clientCmdEvents.writeHead].type = event##eventName;\
-        clientCmdEvents.count++; \
-        clientCmdEvents.writeHead++; \
-        if (clientCmdEvents.writeHead >= EVENT_BUFFER_SIZE-1) \
-            clientCmdEvents.writeHead = 0;\
+    if (clientCommandEventsBuffer.count < EVENT_BUFFER_SIZE-2) { \
+        clientCommandEventsBuffer.buffer[clientCommandEventsBuffer.count].data.det##eventName = (struct d##eventName) { event##eventName, __VA_ARGS__ }; \
+        clientCommandEventsBuffer.buffer[clientCommandEventsBuffer.count].type = event##eventName;\
+        clientCommandEventsBuffer.count++; \
     } \
     else { \
-        printf("*** Too many client serverEvents this frame!!\n"); \
+        printf("*** Too many events to add to clientCommandEventsBuffer this frame!!\n"); \
         exit(-1); \
     } \
 }
 handle reserveHandle(uint16_t entType); //-------- Set aside a handle to be assigned an entity later.
-// Spawn an entity (only to be called by the server)
+// Spawn an entity by queing up a spawn event (only to be called by the server)
 #define SPAWN(typeOfEntity, handleRef, ...) {\
     handle newHandle = reserveHandle(typeOfEntity); \
     if (handleRef != 0) {\
         *((handle*)handleRef) = newHandle;\
     }\
     E(ForceSpawn, .entType=typeOfEntity, .pos=__VA_ARGS__, .h=newHandle);\
+}
+// Spawn an entity immediately (only to be called by the server)
+#define SPAWN_IMMEDIATE(typeOfEntity, handleRef, ...) {\
+    handle newHandle = reserveHandle(typeOfEntity); \
+    if (handleRef != 0) {\
+        *((handle*)handleRef) = newHandle;\
+    }\
+    E_IMMEDIATE(ForceSpawn, .entType=typeOfEntity, .pos=__VA_ARGS__, .h=newHandle);\
 }
 
 //////////////////////////////////////////////////////////////////////////////////// ;;

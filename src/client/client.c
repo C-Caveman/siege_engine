@@ -1,13 +1,17 @@
-// Handle player inputs, draw the screen, and accept server events.
+// Handle player inputs, draw the screen, and obtain the state of the world from the server.
 
 #include "client.h"
 #include "../client/graphics.h"
 #include "../client/audio.h"
+#include "../netcode/netcode.h"
 extern volatile float clientDt;
-struct eventsBuffer clientCmdEvents = {0};
-struct eventsBuffer clientEvents = {0};
-#define logDialog(...) if (DEBUG_DIALOG) { printf(__VA_ARGS__); }
 
+struct eventBufferFlat       clientEventBuffer = {0};
+struct eventBufferCircular   clientEventListenBuffer = {0};
+struct eventBufferFlat       clientCommandEventsBuffer = {0};
+
+#define logDialog(...) if (DEBUG_DIALOG) { printf(__VA_ARGS__); }
+// TODO make an x-macro system for dialog actors!
 struct dialogActor actors[] = {
     {".", {typewriterA01, voiceThudA3}, {black, black} },
     {"pig", {voiceJolly02, voiceMetalB1}, {facePigTalk01, facePig01} },
@@ -41,13 +45,11 @@ uint32_t clientFrame = 0;
 volatile float clientDt = 0;
 volatile uint32_t frameStartTime = 0;
 
-extern char theirIpAddress[];
-extern int theirPort;
-extern int myPort;
-extern int sock;
+extern struct inbox clientInbox;
+extern struct outbox outboxToServer;
 void sendCommandsToServer() { //TODO ADD MULTIPLAYER PATH HERE!!! TODO
-    int cmdEventsSent = 0;
-    //
+    //int cmdEventsSent = 0;
+    /*
     while (clientCmdEvents.count > 0 && serverEvents.count <= EVENT_BUFFER_SIZE-1) {
         memcpy(&serverEvents.buffer[serverEvents.writeHead], &clientCmdEvents.buffer[clientCmdEvents.readHead], sizeof(clientCmdEvents.buffer[0]));
         memset(&clientCmdEvents.buffer[clientCmdEvents.readHead], 0, sizeof(clientCmdEvents.buffer[0]));
@@ -60,11 +62,19 @@ void sendCommandsToServer() { //TODO ADD MULTIPLAYER PATH HERE!!! TODO
         clientCmdEvents.count--;
         cmdEventsSent++;
     }
-    //
+    */
     
-    sem_wait(&eventCountMutex);
-    serverEvents.count += cmdEventsSent;
-    sem_post(&eventCountMutex);
+    /* TODO:
+        -send the command buffer's contents to the server
+        -empty the command buffer
+        -profit
+    */
+    // Send commands to the server's inbox:
+    clientInbox.sendBuffer = (char*)clientCommandEventsBuffer.buffer;
+    inboxSend(&clientInbox, &outboxToServer, clientCommandEventsBuffer.count*sizeof(clientCommandEventsBuffer.buffer[0]));
+    // Empty the command buffer:
+    memset(clientCommandEventsBuffer.buffer, 0, sizeof(clientCommandEventsBuffer.buffer));
+    clientCommandEventsBuffer.count = 0;
 }
 
 void* clientLoop() {
@@ -78,7 +88,7 @@ void* clientLoop() {
     CE(ClientHello, playerClient.id, playerClient.address, playerClient.flags);
     sendCommandsToServer();
     printf("Chunga-wunga!\n");
-    SDL_Delay(50);
+    //SDL_Delay(50);
     /* TODO wait for server to be ready before entering the client loop!
     bool connectedToServer = false;
     int centiSecondsToWait = 100;

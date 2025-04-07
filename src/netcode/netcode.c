@@ -7,6 +7,81 @@
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <stdbool.h>
+#ifndef fatal
+    // Print an error message with file/lineNum, then kill the program.
+    #define fatal(message) { fprintf(stderr, "*** %s:%d *** " message "\n", __FILE__, __LINE__); perror(""); exit(1); }
+#endif
+
+void makeAddress(struct sockaddr_in* a, int port, char* addressString) {
+    memset(&a, 0, myAddressLen);
+    memset(&a,  0, myAddressLen);
+    a->sin_family = AF_INET; // IPv4
+    a->sin_addr.s_addr = INADDR_ANY;
+    a->sin_port = htons(port);
+    int ipStringValid = inet_aton(addressString, &a->sin_addr);
+    if (!ipStringValid)
+        fprintf(stderr, "*** Warning! IP address string in makeAddress() was invalid!\n");
+}
+void outboxCreate(struct outbox* ob, int port, char* addressString, int id) {
+    // Set the outbox's address:
+    makeAddress(&ob->address, port, addressString);
+    ob->id = id;
+}
+// Make an inbox to send/receive messages at myAddressString/myPort.
+void inboxCreate(struct inbox* myInbox, int myPort, char* myAddressString) {
+    // Set the inbox's address:
+    makeAddress(&myInbox->address, myPort, myAddressString);
+    // get a socket for my address
+    if ( (myInbox->sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0 )
+        fatal("inboxCreate() socket creation failed.");
+    // set the socket options
+    int enableBroadcast = 1;
+    setsockopt(myInbox->sock, SOL_SOCKET, SO_BROADCAST,
+            &enableBroadcast, sizeof(enableBroadcast));
+    
+    //bind(*sock,  (const struct sockaddr *)&myAddress, myAddressLen )
+    
+    if ( bind(myInbox->sock, (const struct sockaddr *)&myInbox->address, sizeof(myInbox->address)) < 0 ) {
+        fatal("inboxCreate() socket binding failed.");
+    }
+}
+void inboxDestroy(struct inbox* myInbox) {
+    if (!myInbox || !myInbox->sock)
+        return;
+    close(myInbox->sock);
+    memset(myInbox, 0, sizeof(struct inbox));
+}
+void inboxSend(struct inbox* in, struct outbox* out, int messageLen) {
+    if (!in->sendBuffer)
+        fatal("Inbox did not have a sendBuffer set!");
+    logNetcode("Sending message from (%s, %d)", inet_ntoa(in->address.sin_addr), ntohs(in->address.sin_port));
+    logNetcode(" to (%s, %d) (id=%d)\n", inet_ntoa(out->address.sin_addr), ntohs(out->address.sin_port), out->id);
+    if (messageLen > MAX_UDP_PAYLOAD)
+        fatal("Tried to send more than MAX_UDP_PAYLOAD bytes!\n");
+    sendto(in->sock, 
+            (const char *)in->sendBuffer, 
+            messageLen,
+            MSG_CONFIRM, 
+            (const struct sockaddr *)&out->address,
+            sizeof(out->address));
+}
+int inboxRecv(struct inbox* in, int bufferSize) {
+    if (!in->recvBuffer)
+        fatal("Inbox did not have a recvBuffer set!");
+    int messageLen = recvfrom(in->sock, 
+                                (char *)in->recvBuffer, 
+                                bufferSize,
+                                MSG_WAITALL, 
+                                0,/*(struct sockaddr *)&senderAddress,*/
+                                0/*&senderAddressLen*/
+                               );
+    return messageLen;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// old, dead code below ////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 struct sockaddr_in myAddress;
 struct sockaddr_in theirAddress;
@@ -90,6 +165,27 @@ void selectLocalAddress() {
     }
     freeifaddrs(addresses);
 }
+// Get an address of a specified type: 'e' for ethernet, 'l' for loopback, 'w' for wifi
+void getDefaultAddress(char c, char* addressString, int stringLen) {
+   struct ifaddrs *addresses;
+    if (getifaddrs(&addresses) == -1) {
+        printf("getifaddrs call failed\n");
+        exit(-1);
+    }
+    struct ifaddrs *address = addresses;
+    while(address) {
+        int family = address->ifa_addr->sa_family;
+        if (family == AF_INET || family == AF_LOCAL) {
+            getnameinfo(address->ifa_addr, sizeof(struct sockaddr_in), addressString, stringLen, 0, 0, NI_NUMERICHOST);
+            if (address->ifa_name[0] == c) {
+                printf("%s, '%s' <-- SELECTED!\n", address->ifa_name, addressString);
+                break;
+            }
+        }
+        address = address->ifa_next;
+    }
+    freeifaddrs(addresses);
+}
 
 
 // give this an int* to get a socket
@@ -100,12 +196,17 @@ void udpInit(int* sock, int my_port, int their_port, char* their_ip_address) {
     memset(&myAddress,  0, myAddressLen);
     myAddress.sin_family = AF_INET; // IPv4
     myAddress.sin_addr.s_addr = INADDR_ANY;
-    selectLocalAddress();
+    //selectLocalAddress();
     // convert the ip string to an ip number
     //int myIpStringValid = inet_aton(myIp_address, &myAddress.sin_addr);
+    
+    /*
     int theirIpStringValid = inet_aton(their_ip_address, &theirAddress.sin_addr);
     if (!theirIpStringValid)
         printf("*** Warning! IP address string in udpInit() was invalid!\n");
+    */
+    makeAddress(&theirAddress, their_port, their_ip_address);
+    
     myIp = myAddress.sin_addr.s_addr;
     
     printf("My IP address:    %s\n", inet_ntoa(myAddress.sin_addr));
@@ -139,19 +240,27 @@ void udpInit(int* sock, int my_port, int their_port, char* their_ip_address) {
 void udpShut(int* socket) {
     close(*socket);
 }
-// send a udp message
+
+// send a udp message (assumes message is null-terminated)
 void udpSend(char* send, int* sock) {
     logNetcode("Sending message '%s' from (%s, %d)", send, inet_ntoa(myAddress.sin_addr), ntohs(myAddress.sin_port));
     logNetcode(" to (%s, %d)\n", inet_ntoa(theirAddress.sin_addr), ntohs(theirAddress.sin_port));
+    int messageLen = strlen(send);
+    if (messageLen > MAX_UDP_PAYLOAD) {
+        fprintf(stderr, "*** udpSend() tried to send more than MAX_UDP_PAYLOAD bytes!\n");
+    }
     sendto(*sock, 
             (const char *)send, 
-            strlen(send),
+            messageLen,
             MSG_CONFIRM, 
             (const struct sockaddr *) &theirAddress,
             theirAddressLen);
 }
 // send a udp message of fixed size
 void udpSendN(char* send, int n, int* sock) {
+    if (n > MAX_UDP_PAYLOAD) {
+        fprintf(stderr, "*** udpSendN() tried to send more than MAX_UDP_PAYLOAD bytes!\n");
+    }
     sendto(*sock, 
             (const char *)send, 
             n,

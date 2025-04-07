@@ -107,7 +107,7 @@ struct ent_spawner {
 ENTITY_TYPES_LIST(TO_INIT_PROTOTYPES)
 ENTITY_TYPES_LIST(TO_THINK_PROTOTYPES)
 ENTITY_TYPES_LIST(TO_ANIMATE_PROTOTYPES)
-//======================================================================// Generic entity functions. //
+//======================================================================// Generic entity functions: //
 void forceSpawn(uint16_t entType, vec2f pos, handle h);
 void despawnEnt(entBasics* ent);
 void thinkAllEnts(char* array, int array_len);
@@ -123,5 +123,10 @@ char* entTypeName(int type);
 void collideWall(entBasics* e);
 void wallCollision(char* array, int array_len);
 void defragEntArray();
+//======================================================================// Entity buffer utilities: //
+// Move events from a flat array to a circular events buffer: (assumes exclusive use of the circle buffer's writeHead)
+void linearBufferToCircularBuffer(struct eventBufferFlat* in, struct eventBufferCircular* out, int numEventsToCopy, sem_t* circleCountMutex);
+// Fill an empty flat buffer with the contents of a circular buffer: (assumes exclusive use of the circle buffer's readHead)
+void circularBufferToFlatBuffer(struct eventBufferCircular* in, struct eventBufferFlat* out, sem_t* circleCountMutex);
 
 #endif
