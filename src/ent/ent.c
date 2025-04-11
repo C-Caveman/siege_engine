@@ -9,6 +9,7 @@ extern volatile int mouse_x;
 extern volatile int mouse_y;
 extern struct anim_info anim_data[];
 extern struct client clients[MAX_CLIENTS]; //------------------ Server's list of player clients.
+extern struct serverState server;
 
 struct handle_info handles[NUM_HANDLES] = { //=================================// ENTITY HANDLES //
     {0,1,true}, // Handle 0 is the Null handle.
@@ -653,6 +654,10 @@ void evServerHello(struct dServerHello* d) {
 }
 void evClientReady(struct dClientReady* d) {
     printf("Client %d is now ready to play.\n", d->clientID);
+}
+void evClientPause(struct dClientPause* d) {
+    printf("Client %d toggled the server's pause state.\n", d->clientID);
+    server.paused = !server.paused;
 }
 void evPlaySound(struct dPlaySound* d) {
     playSoundChannel(d->sound, d->channel);

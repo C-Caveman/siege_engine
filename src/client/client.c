@@ -113,6 +113,10 @@ void* clientLoop() {
     }
     printf("Done waiting for server response.\n");
     */
+    
+    playerClient.menuPage = PAUSE_MENU;
+    clientPauseToggle(&playerClient);
+    
     // Input and rendering loop:
     frameStartTime = SDL_GetTicks();
     while (running) {
@@ -176,12 +180,10 @@ int menuSizes[NUM_MENU_PAGES] = {
 char menuPageNames[NUM_MENU_PAGES][MAX_MENU_ITEM_LEN] = {
     MENU_PAGES_LIST(TO_STRING)
 };
-char PAUSE_MENU_ITEMS[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN] = {
-    PAUSE_MENU_LIST(TO_STRING)
+#define TO_MENU_STRING_ARRAYS(name) char name##_ITEMS[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN] = { \
+    name##_LIST(TO_STRING) \
 };
-char SETTINGS_MENU_ITEMS[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN] = {
-    SETTINGS_MENU_LIST(TO_STRING)
-};
+MENU_PAGES_LIST(TO_MENU_STRING_ARRAYS)
 #define TO_MENU_LISTING_ADDRESS(name) &(name##_ITEMS), 
 char (*menuPages[NUM_MENU_PAGES])[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN] = {
     MENU_PAGES_LIST(TO_MENU_LISTING_ADDRESS)
@@ -436,44 +438,69 @@ void clientSelectMenuItem() {
     int selection = playerClient.menuSelection[playerClient.menuPage];
     //printf("Menu '%s' size %d\n", playerClient.menuPageNames[playerClient.menuPage], menuSizes[playerClient.menuPage]);
     switch(playerClient.menuPage) {
+        
         case PAUSE_MENU:
-            switch(selection) {
-                case menuResume:
-                    playerClient.paused = false;
-                    break;
-                case menuSettings:
-                    playerClient.menuPage = SETTINGS_MENU;
-                    break;
-                case menuQuit:
-                    playerClient.quitting = true;
-                    running = false;
-                    break;
-            }
-            break;
+        switch(selection) {
+            case menuResume:
+                clientPauseToggle(&playerClient);
+                break;
+            case menuSettings:
+                playerClient.menuPage = SETTINGS_MENU;
+                break;
+            case menuQuit:
+                playerClient.quitting = true;
+                running = false;
+                break;
+        }
+        break;
         
         case SETTINGS_MENU:
-            switch(selection) {
-                case menuMusicVolumeUp:
-                    musicVolume = fclamp(musicVolume+0.1, 0, 1);
-                    setMusicVolume(musicVolume);
-                    break;
-                case menuMusicVolumeDown:
-                    musicVolume = fclamp(musicVolume-0.1, 0, 1);
-                    setMusicVolume(musicVolume);
-                    break;
-                case menuSfxVolume:
-                    sfxVolume = 0;
-                    setSfxVolume(sfxVolume);
-                    break;
-                case menuvoiceVolume:
-                    break;
-                case menuFullscreen:
-                    if (fullscreen)
-                        goWindowed();
-                    else
-                        goFullscreen();
-                    break;
-            }
-            break;
+        switch(selection) {
+            case menuMusicVolumeUp:
+                musicVolume = fclamp(musicVolume+0.1, 0, 1);
+                setMusicVolume(musicVolume);
+                break;
+            case menuMusicVolumeDown:
+                musicVolume = fclamp(musicVolume-0.1, 0, 1);
+                setMusicVolume(musicVolume);
+                break;
+            case menuSfxVolume:
+                sfxVolume = 0;
+                setSfxVolume(sfxVolume);
+                break;
+            case menuvoiceVolume:
+                break;
+            case menuFullscreen:
+                if (fullscreen)
+                    goWindowed();
+                else
+                    goFullscreen();
+                break;
+        }
+        break;
+        
+        case START_MENU:
+        switch(selection) {
+            case menuSingleplayer:
+                printf("Singleplayer selected!\n");
+                break;
+            case menuMultiplayer:
+                printf("Multiplayer selected!\n");
+                break;
+            case menuOptions:
+                printf("Options selected!\n");
+                break;
+            case menuExit:
+                printf("Exit selected!\n");
+                break;
+        }
+        break;
     }
+}
+
+void clientPauseToggle(struct client* cl) {
+    CE(ClientPause, cl->id);
+    cl->paused = !cl->paused;
+    if (cl->paused)
+        cl->menuPage = PAUSE_MENU;
 }

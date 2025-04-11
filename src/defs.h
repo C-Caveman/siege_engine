@@ -186,6 +186,12 @@ extern struct world* mainWorld; //---------------------------- Main world.
 extern uint8_t anim_tick; //----------------------------------- Frame counter for animations.
 extern struct client playerClient; //-------------------------- Player client (for the client side).
 
+// Server details:
+struct serverState {
+    bool paused;
+    int numClients;
+};
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////// ;;
 // Events: (defined in ent.cpp)
 #define EVENT_LIST(f) \
@@ -196,6 +202,7 @@ extern struct client playerClient; //-------------------------- Player client (f
     f(SpawnPlayer, uint32_t clientID; handle playerHandle;) \
     f(ServerHello, uint32_t clientID; handle playerHandle; uint32_t clientAddress;) \
     f(ClientReady, uint32_t clientID;) \
+    f(ClientPause, uint32_t clientID;) \
     f(PlaySound, uint32_t sound; uint32_t channel;) \
     f(Use, handle user; handle target;) \
     f(Explode, handle h;) \

@@ -78,6 +78,10 @@ void trackEventCount() {
 volatile uint32_t tickStartTime = 0;
 volatile float serverDt = 0;
 #define TICKS_PER_SECOND 128
+struct serverState server = {
+    .paused = false,
+    .numClients = 0
+};
 void* serverLoop() {
     logThread("Server thread enabled!\n");
     mainWorld = &test_world;
@@ -159,10 +163,12 @@ void* serverLoop() {
         E(FrameStart, tickStartTime, frameNumber++);
         recvClientCommands();
         // Entity updates:
-        thinkAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-        moveAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-        wallCollision(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-        defragEntArray();
+        if (!server.paused) { //TODO add a pauseTime value to prevent glitchyness when unpausing
+            thinkAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+            moveAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+            wallCollision(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+            defragEntArray();
+        }
         E(FrameEnd, SDL_GetTicks(), frameNumber);
         trackEventCount();
         // Send the events to the client (TODO do this for ALL CLIENTS, not just the first one!)

@@ -121,7 +121,7 @@ void clientInput(struct client* client) {
                     playSound(click02);
                 }
                 else if (isBackingOut) {
-                    client->paused = false;
+                    clientPauseToggle(client);
                 }
             }
             
@@ -200,9 +200,7 @@ void clientInput(struct client* client) {
                     //playMusicLoop(rocketEngineLoopMusic);
                     break;
                 case enum_inputPause:
-                    client->paused = !client->paused;
-                    if (client->paused)
-                        client->menuPage = PAUSE_MENU;
+                    clientPauseToggle(client);
                     break;
                     
                 default:
