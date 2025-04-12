@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <pthread.h>
 
+extern struct serverState server;
+
 volatile int running = false;
 struct world test_world = {0};
 struct client playerClient;
@@ -100,7 +102,7 @@ int main() {
     running = false;
     // Begin updating the game state:
     pthread_create(&serverThread, NULL, serverLoop, 0);
-    while (!running)// TODO add SINGLEPLAYER variable for this
+    while (!server.running)// TODO add SINGLEPLAYER variable for this
         ;
     // Begin accepting inputs and rendering the screen:
     pthread_create(&clientThread, NULL, clientLoop, 0);

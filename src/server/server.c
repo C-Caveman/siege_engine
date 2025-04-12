@@ -21,6 +21,11 @@ extern sem_t clientListenerCountMutex;
 extern struct inbox serverInbox;
 extern struct outbox outboxToClient;
 
+struct serverState server = {
+    .running = false,
+    .paused = false,
+    .numClients = 0
+};
 
 
 #define logThread(...) {\
@@ -32,7 +37,7 @@ void* serverListener() {
     struct eventBufferFlat packetBuffer;
     serverInbox.recvBuffer = (char *)packetBuffer.buffer;
     logThread("Server listener thread enabled!\n");
-    while (running) {
+    while (server.running) {
         int packetLen = inboxRecv(&serverInbox, sizeof(packetBuffer.buffer));
         int numPacketEvents = packetLen / (int)sizeof(struct event);
         packetBuffer.count = numPacketEvents;
@@ -78,10 +83,6 @@ void trackEventCount() {
 volatile uint32_t tickStartTime = 0;
 volatile float serverDt = 0;
 #define TICKS_PER_SECOND 128
-struct serverState server = {
-    .paused = false,
-    .numClients = 0
-};
 void* serverLoop() {
     logThread("Server thread enabled!\n");
     mainWorld = &test_world;
@@ -153,9 +154,10 @@ void* serverLoop() {
     playerClient.player = (struct ent_player*)p;
     ((struct ent_player*)p)->cl = &playerClient;
     
-    running = true;
+    //running = true;
+    server.running = true;
     
-    while (running) {
+    while (server.running) {
         tickStartTime = SDL_GetTicks();
         //
         // Read client events, update the game state, and send server events:

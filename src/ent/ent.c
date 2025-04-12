@@ -659,6 +659,11 @@ void evClientPause(struct dClientPause* d) {
     printf("Client %d toggled the server's pause state.\n", d->clientID);
     server.paused = !server.paused;
 }
+void evClientQuit(struct dClientQuit* d) {
+    printf("Client %d is quitting the game.\n", d->clientID);
+    server.running = false;
+    playerClient.running = false;
+}
 void evPlaySound(struct dPlaySound* d) {
     playSoundChannel(d->sound, d->channel);
 }

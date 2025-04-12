@@ -114,12 +114,13 @@ void* clientLoop() {
     printf("Done waiting for server response.\n");
     */
     
-    playerClient.menuPage = PAUSE_MENU;
     clientPauseToggle(&playerClient);
+    playerClient.menuPage = START_MENU;
+    playerClient.running = true;
     
     // Input and rendering loop:
     frameStartTime = SDL_GetTicks();
-    while (running) {
+    while (playerClient.running) {
         anim_tick = SDL_GetTicks() % 256; //- 8-bit timestamp for animations.
         clientDt = ((float)SDL_GetTicks() - (float)frameStartTime) / 1000.f;
         if (clientDt < 0) {
@@ -492,6 +493,7 @@ void clientSelectMenuItem() {
                 break;
             case menuExit:
                 printf("Exit selected!\n");
+                CE(ClientQuit, .clientID=playerClient.id);
                 break;
         }
         break;

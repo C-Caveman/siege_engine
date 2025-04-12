@@ -188,6 +188,7 @@ extern struct client playerClient; //-------------------------- Player client (f
 
 // Server details:
 struct serverState {
+    bool running;
     bool paused;
     int numClients;
 };
@@ -203,6 +204,7 @@ struct serverState {
     f(ServerHello, uint32_t clientID; handle playerHandle; uint32_t clientAddress;) \
     f(ClientReady, uint32_t clientID;) \
     f(ClientPause, uint32_t clientID;) \
+    f(ClientQuit, uint32_t clientID;) \
     f(PlaySound, uint32_t sound; uint32_t channel;) \
     f(Use, handle user; handle target;) \
     f(Explode, handle h;) \

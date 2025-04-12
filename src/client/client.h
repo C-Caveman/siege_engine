@@ -80,6 +80,7 @@ struct client {
     uint32_t id;
     uint32_t address;
     uint16_t flags;
+    bool running;
     // Player entity:
     struct ent_player* player;
     //

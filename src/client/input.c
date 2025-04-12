@@ -117,6 +117,7 @@ void clientInput(struct client* client) {
                     clientSelectMenuItem();
                 }
                 if (isBackingOut && client->menuPage != PAUSE_MENU) {
+                    // Return to pause menu from a submenu:
                     client->menuPage = PAUSE_MENU;
                     playSound(click02);
                 }
