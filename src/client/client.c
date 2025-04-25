@@ -4,6 +4,7 @@
 #include "../client/graphics.h"
 #include "../client/audio.h"
 #include "../netcode/netcode.h"
+#include <time.h>
 extern volatile float clientDt;
 
 struct eventBufferFlat       clientEventBuffer = {0};
@@ -77,12 +78,42 @@ void sendCommandsToServer() { //TODO ADD MULTIPLAYER PATH HERE!!! TODO
     clientCommandEventsBuffer.count = 0;
 }
 
+
+// Listen for events coming from the server:
+void* clientListener() {
+    //struct eventBufferFlat packetBuffer;
+    //serverInbox.recvBuffer = (char *)packetBuffer.buffer;
+    logThread("ClientListener thread enabled!\n");
+    while (playerClient.running) {
+        SDL_Delay(10);
+        /*
+        int packetLen = inboxRecv(&serverInbox, sizeof(packetBuffer.buffer));
+        int numPacketEvents = packetLen / (int)sizeof(struct event);
+        packetBuffer.count = numPacketEvents;
+        if (numPacketEvents > 0)
+            printf("clientListener got %3d client events, first was a '%s'.\n", numPacketEvents, eventName(packetBuffer.buffer[0].type));
+        // Add the events to the ring buffer:
+        linearBufferToCircularBuffer(&packetBuffer, &serverEventListenBuffer, packetBuffer.count, &serverListenerCountMutex);
+        */
+    }
+    logThread("ClientListener thread exiting.\n");
+    return 0;
+}
+void recvServerCommands() {
+    // Pull client events from the listener's ring buffer:
+    //circularBufferToFlatBuffer(&serverEventListenBuffer, &serverEventBuffer, &serverListenerCountMutex);
+}
+
+
+
+
 void* clientLoop() {
     logThread("Client thread enabled!\n");
     init_graphics();
     init_audio();
     // Connect to the server:
-    playerClient.id = 101;
+    srand(time(NULL));
+    playerClient.id = rand();
     playerClient.address = 10101010;
     playerClient.flags = 0;
     CE(ClientHello, playerClient.id, playerClient.address, playerClient.flags);
@@ -450,7 +481,7 @@ void clientSelectMenuItem() {
                 break;
             case menuQuit:
                 playerClient.quitting = true;
-                running = false;
+                CE(ClientQuit, .clientID=playerClient.id);
                 break;
         }
         break;
@@ -484,6 +515,7 @@ void clientSelectMenuItem() {
         switch(selection) {
             case menuSingleplayer:
                 printf("Singleplayer selected!\n");
+                clientPauseToggle(&playerClient);
                 break;
             case menuMultiplayer:
                 printf("Multiplayer selected!\n");

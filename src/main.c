@@ -8,7 +8,6 @@
 
 extern struct serverState server;
 
-volatile int running = false;
 struct world test_world = {0};
 struct client playerClient;
 struct client clients[MAX_CLIENTS] = {0};
@@ -31,14 +30,15 @@ int clientPort = 2222;
 struct inbox clientInbox = {0};
 struct outbox outboxToServer = {0};
 
-// Client loop implemented in client.c
+// Client logic in client.c
 void* clientLoop();
+void* clientListener();
 pthread_t clientThread;
-// Server loop implemented in server.c
+pthread_t clientListenerThread;
+// Server logic in server.c
 void* serverLoop();
 void* serverListener();
 pthread_t serverThread;
-// Listen for events coming from the server:
 pthread_t serverListenerThread;
 
 int main() {
@@ -99,13 +99,14 @@ int main() {
     }
     
     
-    running = false;
     // Begin updating the game state:
     pthread_create(&serverThread, NULL, serverLoop, 0);
     while (!server.running)// TODO add SINGLEPLAYER variable for this
-        ;
+        SDL_Delay(5);
     // Begin accepting inputs and rendering the screen:
     pthread_create(&clientThread, NULL, clientLoop, 0);
+    playerClient.running = true;
+    pthread_create(&clientListenerThread, NULL, clientListener, 0);
     // Begin listening for server serverEvents:
     pthread_create(&serverListenerThread, NULL, serverListener, 0); // a thread is born!
     
@@ -115,7 +116,7 @@ int main() {
     //
     //;;; GAME LOOP:
     //
-    while (running) {
+    while (server.running) {
         // Record demo:
         if (recordingDemo && demoFile && serverEventBuffer.count > 0) {
             fwrite(serverEventBuffer.buffer, sizeof(serverEventBuffer.buffer[0]), serverEventBuffer.count, demoFile);
@@ -134,7 +135,7 @@ int main() {
             }
             if (numDemoEventsRead >= numDemoEvents) {
                 printf("**** END OF DEMO!!!\n");
-                running = false;
+                server.running = false;
             }
         }
         
@@ -150,9 +151,11 @@ int main() {
     cleanup_audio();
     //pthread_join(serverListenerThread, 0);
     pthread_join(clientThread, 0);
+    pthread_join(clientListenerThread, 0);
     pthread_join(serverThread, 0);
+    pthread_join(serverListenerThread, 0);
     //TODO add a listenerShutdown event to join these properly!
-    pthread_cancel(serverListenerThread);
+    //pthread_cancel(serverListenerThread);
     sem_destroy(&clientListenerCountMutex);
     sem_destroy(&serverListenerCountMutex);
     inboxDestroy(&clientInbox);

@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <pthread.h>
 
-extern volatile int running;
 extern struct world test_world;
 extern struct client playerClient;
 extern struct client clients[MAX_CLIENTS];
@@ -20,6 +19,7 @@ extern sem_t clientListenerCountMutex;
 
 extern struct inbox serverInbox;
 extern struct outbox outboxToClient;
+extern struct outbox outboxToServer;
 
 struct serverState server = {
     .running = false,
@@ -32,11 +32,11 @@ struct serverState server = {
     if (DEBUG_THREADS) \
         printf( __VA_ARGS__ );\
 }
-// Listen for events coming from the server:
+// Listen for events coming from the client:
 void* serverListener() {
     struct eventBufferFlat packetBuffer;
     serverInbox.recvBuffer = (char *)packetBuffer.buffer;
-    logThread("Server listener thread enabled!\n");
+    logThread("ServerListener thread enabled!\n");
     while (server.running) {
         int packetLen = inboxRecv(&serverInbox, sizeof(packetBuffer.buffer));
         int numPacketEvents = packetLen / (int)sizeof(struct event);
@@ -46,7 +46,7 @@ void* serverListener() {
         // Add the events to the ring buffer:
         linearBufferToCircularBuffer(&packetBuffer, &serverEventListenBuffer, packetBuffer.count, &serverListenerCountMutex);
     }
-    logThread("Listen thread exiting.\n");
+    logThread("ServerListener thread exiting.\n");
     return 0;
 }
 void recvClientCommands() {
@@ -154,7 +154,6 @@ void* serverLoop() {
     playerClient.player = (struct ent_player*)p;
     ((struct ent_player*)p)->cl = &playerClient;
     
-    //running = true;
     server.running = true;
     
     while (server.running) {
@@ -197,6 +196,8 @@ void* serverLoop() {
         sleepTime = fclamp(sleepTime, 0, MAX_SERVER_SLEEP_TIME);
         SDL_Delay(sleepTime);
     }
+    // Tell the serverListener we are exiting:
+    inboxSend(&serverInbox, &outboxToServer, 1*sizeof(serverEventBuffer.buffer[0]));
     logThread("Server thread exiting.\n");
     return 0;
 }

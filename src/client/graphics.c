@@ -131,13 +131,15 @@ void setTileWidth() {
     texelWidth = tileWidth / TILE_PIXEL_DIAMETER;
     printf("tileWidth for res (%d,%d) %f\n", window_x, window_y, tileWidth);
 }
-
+#define logGraphics(...) { if (DEBUG_GRAPHICS) printf(__VA_ARGS__); }
 void init_graphics() {
+    logGraphics("Initializing graphics...\n");
     // find the file path of the executable, primarily to build an absolute path to the font file
     get_path();
     //
     // initialize the window
     //
+    logGraphics("Initializing window...\n");
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
         printf("*** SDL init failed:\n%s\n", SDL_GetError());
     // Set the logical resolution:

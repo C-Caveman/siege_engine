@@ -45,7 +45,7 @@ void clientInput(struct client* client) {
         just_clicked = false;
         int inputIndex = enum_inputKeyUnbound;
         if (event.type == SDL_QUIT) // window was closed (not a keyboard event)
-            running = false;
+            CE(ClientQuit, .clientID=client->id);
         if (event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) {
             inputIndex = inputFromKey(event.key.keysym.sym);
         }
@@ -168,7 +168,7 @@ void clientInput(struct client* client) {
                     break;
                 
                 case enum_inputQuit:
-                    running = false;
+                    CE(ClientQuit, .clientID=client->id);
                     client->quitting = true;
                     break;
                     
