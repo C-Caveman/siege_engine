@@ -11,6 +11,11 @@ extern struct anim_info anim_data[];
 extern struct client clients[MAX_CLIENTS]; //------------------ Server's list of player clients.
 extern struct serverState server;
 
+#define logEvent(...) {\
+    if (DEBUG_EVENTS)\
+        printf( __VA_ARGS__ );\
+}
+
 struct handle_info handles[NUM_HANDLES] = { //=================================// ENTITY HANDLES //
     {0,1,true}, // Handle 0 is the Null handle.
 };
@@ -171,19 +176,11 @@ void circularBufferToFlatBuffer(struct eventBufferCircular* in, struct eventBuff
     in->count -= numEventsToCopy;
     sem_post(circleCountMutex);
 }
-void stinky() {
-    if (serverEventBuffer.count < 1)
-        return;
-    //printf("Event: %d '%s'\n", serverEventBuffer.buffer[serverEventBuffer.count].type, eventName(serverEventBuffer.buffer[serverEventBuffer.count].type));
-    applyEvent(&serverEventBuffer.buffer[serverEventBuffer.count-1]);
-    serverEventBuffer.count--;
-    memset((void*)&serverEventBuffer.buffer[serverEventBuffer.count], 0, sizeof(serverEventBuffer.buffer[0]));
-}
 void processEvents() {
     while (serverEventBuffer.count > 0) {
         int i = serverEventBuffer.count-1;
         if (serverEventBuffer.buffer[i].type == eventPlayerShoot)
-                printf("Processing a PlayerShoot event at index %d, count=%d...\n", i, serverEventBuffer.count);
+                logEvent("Processing a PlayerShoot event at index %d, count=%d...\n", i, serverEventBuffer.count);
         applyEvent(&serverEventBuffer.buffer[i]);
         serverEventBuffer.count--;
     }
@@ -615,7 +612,7 @@ void evFrameStart(struct dFrameStart* d) {}
 void evFrameEnd(struct dFrameEnd* d) {}
 // Add a client to the server's clients list:
 void addClient(uint32_t id, uint16_t flags) {
-    printf("addClient(id=%d, flags=%d)\n", id, flags);
+    logEvent("addClient(id=%d, flags=%d)\n", id, flags);
     bool clientAlreadyConnected = false;
     for (int i=0; i<MAX_CLIENTS; i++) {
         if (clients[i].id == id) {
@@ -624,14 +621,14 @@ void addClient(uint32_t id, uint16_t flags) {
         }
     }
     if (clientAlreadyConnected) {
-        printf("Client %d already connected.\n", id);;;;
+        logEvent("Client %d already connected.\n", id);;;;
         return;
     }
     // Connect the new client:
     for (int i=0; i<MAX_CLIENTS; i++) {
         // Find an empty slot:
         if (clients[i].id == 0) {
-            printf("Connecting new client %d to client slot %d.\n", id, i);
+            logEvent("Connecting new client %d to client slot %d.\n", id, i);
             memset(&clients[i], 0, sizeof(clients[0]));
             clients[i].id = id;
             clients[i].flags = flags;
@@ -641,7 +638,7 @@ void addClient(uint32_t id, uint16_t flags) {
 }
 // Sent by client to server. Requests to be put into the game.
 void evClientHello(struct dClientHello* d) {
-    printf("Server got a ClientHello: id=%d, ip=%d\n", d->clientID, d->clientAddress);
+    logEvent("Server got a ClientHello: id=%d, ip=%d\n", d->clientID, d->clientAddress);
     //TODO trigger an evSpawnPlayer() if there is room for a new player
     addClient(d->clientID, d->clientFlags);
 }
@@ -650,17 +647,17 @@ void evSpawnPlayer(struct dSpawnPlayer* d) {
 }
 
 void evServerHello(struct dServerHello* d) {
-    printf("Assigning client %d to player entity with handle %d.\n", d->clientID, d->playerHandle);
+    logEvent("Assigning client %d to player entity with handle %d.\n", d->clientID, d->playerHandle);
 }
 void evClientReady(struct dClientReady* d) {
-    printf("Client %d is now ready to play.\n", d->clientID);
+    logEvent("Client %d is now ready to play.\n", d->clientID);
 }
 void evClientPause(struct dClientPause* d) {
-    printf("Client %d toggled the server's pause state.\n", d->clientID);
+    logEvent("Client %d toggled the server's pause state.\n", d->clientID);
     server.paused = !server.paused;
 }
 void evClientQuit(struct dClientQuit* d) {
-    printf("Client %d is quitting the game.\n", d->clientID);
+    logEvent("Client %d is quitting the game.\n", d->clientID);
     server.running = false;
     playerClient.running = false;
 }
@@ -845,8 +842,7 @@ int getEntSize(int type) {
     #define GET_ENT_SIZES(name) case name##_type:  size = sizeof(struct ent_##name); break; 
     ENTITY_TYPES_LIST(GET_ENT_SIZES)
     default:
-        printf("*** Unknown entity type in getEntSize()\n");
-        exit(-1);
+        fatal("*** Unknown entity type in getEntSize()\n");
     }
     return size;
 }
@@ -855,11 +851,11 @@ int getNextEnt(int i, char* array, int array_len) {
     if (array[i] == HEADER_BYTE) {
         int ent_size = ((entBasics*)&array[i])->size;
         i += ent_size; // Skip past this entity.
-        if (DEBUG_ENTS) { printf("getNextEnt() entity at %d. Size is %d.\n", i, ent_size); }
+        logEvent("getNextEnt() entity at %d. Size is %d.\n", i, ent_size);
     }
     while (array[i] != HEADER_BYTE && i < array_len) { // Increment i until reaching the next entity.
         i += 1;
-        if (DEBUG_ENTS) { printf("getNextEnt() skipping past %d.\n", i); }
+        logEvent("getNextEnt() skipping past %d.\n", i);
     }
     if (i >= array_len-1) // Out of bounds.
         i = -1;

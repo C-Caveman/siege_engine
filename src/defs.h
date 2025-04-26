@@ -10,7 +10,8 @@
 #define DEBUG_GRAPHICS_LOADING 0
 #define DEBUG_THREADS 1
 #define DEBUG_CLIENT 1
-#define DEBUG_SERVER 1
+#define DEBUG_SERVER 0
+#define DEBUG_EVENTS 0
 #define DEBUG_DIALOG 0
 // Print an error message with file/lineNum, then kill the program.
 #define fatal(message) { fprintf(stderr, "*** %s:%d *** " message "\n", __FILE__, __LINE__); exit(1); }

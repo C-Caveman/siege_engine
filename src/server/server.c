@@ -32,6 +32,10 @@ struct serverState server = {
     if (DEBUG_THREADS) \
         printf( __VA_ARGS__ );\
 }
+#define logServer(...) {\
+    if (DEBUG_SERVER)\
+        printf( __VA_ARGS__ );\
+}
 // Listen for events coming from the client:
 void* serverListener() {
     struct eventBufferFlat packetBuffer;
@@ -42,7 +46,7 @@ void* serverListener() {
         int numPacketEvents = packetLen / (int)sizeof(struct event);
         packetBuffer.count = numPacketEvents;
         if (numPacketEvents > 0)
-            printf("serverListener got %3d client events, first was a '%s'.\n", numPacketEvents, eventName(packetBuffer.buffer[0].type));
+            logServer("serverListener got %3d client events, first was a '%s'.\n", numPacketEvents, eventName(packetBuffer.buffer[0].type));
         // Add the events to the ring buffer:
         linearBufferToCircularBuffer(&packetBuffer, &serverEventListenBuffer, packetBuffer.count, &serverListenerCountMutex);
     }
@@ -76,10 +80,6 @@ void trackEventCount() {
 }
 
 // Server thread (simulate the world):
-#define logServer(...) {\
-    if (DEBUG_SERVER) \
-        printf( __VA_ARGS__ );\
-}
 volatile uint32_t tickStartTime = 0;
 volatile float serverDt = 0;
 #define TICKS_PER_SECOND 128
