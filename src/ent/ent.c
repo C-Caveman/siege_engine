@@ -808,7 +808,7 @@ void evExplode(struct dExplode* d) {
 void spawnerThink(struct ent_spawner* e) {
     e->nextThink = tickStartTime + SPAWN_INTERVAL;
     if (e->health <= 0) {
-        playSoundChannel(explosion03, CHAN_EXPLOSION);
+        playSoundChannel(explosion03, CHAN_MONSTER);
         E_IMMEDIATE(Explode, e->h);
         return;
     }

@@ -28,10 +28,6 @@ struct serverState server = {
 };
 
 
-#define logThread(...) {\
-    if (DEBUG_THREADS) \
-        printf( __VA_ARGS__ );\
-}
 #define logServer(...) {\
     if (DEBUG_SERVER)\
         printf( __VA_ARGS__ );\
@@ -40,7 +36,7 @@ struct serverState server = {
 void* serverListener() {
     struct eventBufferFlat packetBuffer;
     serverInbox.recvBuffer = (char *)packetBuffer.buffer;
-    logThread("ServerListener thread enabled!\n");
+    dlog(THREAD, "ServerListener thread enabled!\n");
     while (server.running) {
         int packetLen = inboxRecv(&serverInbox, sizeof(packetBuffer.buffer));
         int numPacketEvents = packetLen / (int)sizeof(struct event);
@@ -50,7 +46,7 @@ void* serverListener() {
         // Add the events to the ring buffer:
         linearBufferToCircularBuffer(&packetBuffer, &serverEventListenBuffer, packetBuffer.count, &serverListenerCountMutex);
     }
-    logThread("ServerListener thread exiting.\n");
+    dlog(THREAD, "ServerListener thread exiting.\n");
     return 0;
 }
 void recvClientCommands() {
@@ -84,7 +80,7 @@ volatile uint32_t tickStartTime = 0;
 volatile float serverDt = 0;
 #define TICKS_PER_SECOND 128
 void* serverLoop() {
-    logThread("Server thread enabled!\n");
+    dlog(THREAD, "Server thread enabled!\n");
     mainWorld = &test_world;
     initMainWorld();
      // Place tiles:
@@ -198,7 +194,7 @@ void* serverLoop() {
     }
     // Tell the serverListener we are exiting:
     inboxSend(&serverInbox, &outboxToServer, 1*sizeof(serverEventBuffer.buffer[0]));
-    logThread("Server thread exiting.\n");
+    dlog(THREAD, "Server thread exiting.\n");
     return 0;
 }
 

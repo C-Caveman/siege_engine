@@ -32,10 +32,7 @@ char* nameOfAnnotationType(int t) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////// Loop ;;
-#define logThread(...) {\
-    if (DEBUG_THREADS) \
-        printf( __VA_ARGS__ );\
-}
+
 #define logClient(...) {\
     if (DEBUG_CLIENT) \
         printf( __VA_ARGS__ );\
@@ -83,7 +80,7 @@ void sendCommandsToServer() { //TODO ADD MULTIPLAYER PATH HERE!!! TODO
 void* clientListener() {
     //struct eventBufferFlat packetBuffer;
     //serverInbox.recvBuffer = (char *)packetBuffer.buffer;
-    logThread("ClientListener thread enabled!\n");
+    dlog(THREAD, "ClientListener thread enabled!\n");
     while (playerClient.running) {
         SDL_Delay(10);
         /*
@@ -96,7 +93,7 @@ void* clientListener() {
         linearBufferToCircularBuffer(&packetBuffer, &serverEventListenBuffer, packetBuffer.count, &serverListenerCountMutex);
         */
     }
-    logThread("ClientListener thread exiting.\n");
+    dlog(THREAD, "ClientListener thread exiting.\n");
     return 0;
 }
 void recvServerCommands() {
@@ -108,7 +105,7 @@ void recvServerCommands() {
 
 
 void* clientLoop() {
-    logThread("Client thread enabled!\n");
+    dlog(THREAD, "Client thread enabled!\n");
     init_graphics();
     init_audio();
     // Connect to the server:
@@ -200,7 +197,7 @@ void* clientLoop() {
         SDL_Delay(sleepTime);
         clientFrame++;
     }
-    logThread("Client thread exiting.\n");
+    dlog(THREAD, "Client thread exiting.\n");
     return 0;
 }
 
@@ -514,17 +511,17 @@ void clientSelectMenuItem() {
         case START_MENU:
         switch(selection) {
             case menuSingleplayer:
-                printf("Singleplayer selected!\n");
+                dlog(MENU, "Singleplayer selected!\n");
                 clientPauseToggle(&playerClient);
                 break;
             case menuMultiplayer:
-                printf("Multiplayer selected!\n");
+                dlog(MENU, "Multiplayer selected!\n");
                 break;
             case menuOptions:
-                printf("Options selected!\n");
+                dlog(MENU, "Options selected!\n");
                 break;
             case menuExit:
-                printf("Exit selected!\n");
+                dlog(MENU, "Exit selected!\n");
                 CE(ClientQuit, .clientID=playerClient.id);
                 break;
         }

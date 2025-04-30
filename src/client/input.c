@@ -112,7 +112,7 @@ void clientInput(struct client* client) {
                     }
                 }
                 if (isSelecting) {
-                    printf("Page '%s' item '%s'\n", menuPageNames[client->menuPage], menuPages[client->menuPage][0][client->menuSelection[client->menuPage]]);
+                    dlog(MENU, "Page '%s' item '%s'\n", menuPageNames[client->menuPage], menuPages[client->menuPage][0][client->menuSelection[client->menuPage]]);
                     playSound(click02);
                     clientSelectMenuItem();
                 }

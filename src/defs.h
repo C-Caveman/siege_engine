@@ -2,17 +2,23 @@
 #define DEFS
 // Some useful primitives and constants.
 
+// Debug logging:
+#define dlog(category, ...) {\
+    if (LOG_##category) \
+        printf( __VA_ARGS__ );\
+}
 // Debug flags:
 #define DEBUG_ENTS 0
 #define DEBUG_ENT_SPAWNING 0
 #define DEBUG_ENT_HANDLES 0
 #define DEBUG_GRAPHICS 0
 #define DEBUG_GRAPHICS_LOADING 0
-#define DEBUG_THREADS 1
+#define LOG_THREAD 1
 #define DEBUG_CLIENT 1
 #define DEBUG_SERVER 0
 #define DEBUG_EVENTS 0
 #define DEBUG_DIALOG 0
+#define LOG_MENU 0
 // Print an error message with file/lineNum, then kill the program.
 #define fatal(message) { fprintf(stderr, "*** %s:%d *** " message "\n", __FILE__, __LINE__); exit(1); }
 // Temporary hack for singleplayer movement smoothness:
