@@ -1,6 +1,7 @@
 // make sending messages easier
 
 #include "netcode.h"
+#include "../defs.h"
 #include <time.h>
 #include <stdint.h>
 #include <arpa/inet.h>
@@ -64,6 +65,29 @@ void inboxSend(struct inbox* in, struct outbox* out, int messageLen) {
             MSG_CONFIRM, 
             (const struct sockaddr *)&out->address,
             sizeof(out->address));
+}
+void inboxSendAllEvents(struct inbox* in, struct outbox* out, int numEventsToSend) {
+    if (!in->sendBuffer)
+        fatal("Inbox did not have a sendBuffer set!");
+    if (numEventsToSend*sizeof(serverEventBuffer.buffer[0]) > MAX_UDP_PAYLOAD)
+        fatal("Tried to send more than MAX_UDP_PAYLOAD bytes!\n");
+    logNetcode("Sending message from (%s, %d)", inet_ntoa(in->address.sin_addr), ntohs(in->address.sin_port));
+    logNetcode(" to (%s, %d) (id=%d)\n", inet_ntoa(out->address.sin_addr), ntohs(out->address.sin_port), out->id);
+    int numEventsSent = 0;
+    int numPacketEvents = 0;
+    while (numEventsSent < numEventsToSend) {
+        numPacketEvents = numEventsToSend - numEventsSent;
+        if (numPacketEvents > MAX_PACKET_EVENTS)
+            numPacketEvents = MAX_PACKET_EVENTS;
+        int messageLen = sizeof(serverEventBuffer.buffer[0]) * numPacketEvents;
+        sendto(in->sock, 
+            (const char *) ( in->sendBuffer + numEventsSent * sizeof(serverEventBuffer.buffer[0]) ), 
+            messageLen,
+            MSG_CONFIRM, 
+            (const struct sockaddr *)&out->address,
+            sizeof(out->address));
+        numEventsSent += numPacketEvents;
+    }
 }
 int inboxRecv(struct inbox* in, int bufferSize) {
     if (!in->recvBuffer)

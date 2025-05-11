@@ -46,6 +46,7 @@ void* serverListener() {
         // Add the events to the ring buffer:
         linearBufferToCircularBuffer(&packetBuffer, &serverEventListenBuffer, packetBuffer.count, &serverListenerCountMutex);
     }
+    serverInbox.recvBuffer = 0;
     dlog(THREAD, "ServerListener thread exiting.\n");
     return 0;
 }
@@ -169,16 +170,7 @@ void* serverLoop() {
         E(FrameEnd, SDL_GetTicks(), frameNumber);
         trackEventCount();
         // Send the events to the client (TODO do this for ALL CLIENTS, not just the first one!)
-        int eventsToSend = serverEventBuffer.count;
-        int eventsSent = 0;
-        while (eventsToSend > 0) {
-            int numPacketEvents = eventsToSend;
-            if (numPacketEvents > MAX_PACKET_EVENTS)
-                numPacketEvents = MAX_PACKET_EVENTS;
-            inboxSend(&serverInbox, &outboxToClient, numPacketEvents*sizeof(serverEventBuffer.buffer[0]));
-            eventsToSend -= numPacketEvents;
-            eventsSent += numPacketEvents;
-        }
+        inboxSendAllEvents(&serverInbox, &outboxToClient, serverEventBuffer.count);
         // Update gamestate from the server's packets:
         processEvents();
         

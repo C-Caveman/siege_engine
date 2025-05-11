@@ -31,6 +31,7 @@ void outboxCreate(struct outbox* ob, int port, char* addressString, int id);
 void inboxCreate(struct inbox* myInbox, int myPort, char* myAddressString);
 void inboxDestroy(struct inbox* myInbox);
 void inboxSend(struct inbox* in, struct outbox* out, int messageLen);
+void inboxSendAllEvents(struct inbox* in, struct outbox* out, int numEventsToSend);
 int inboxRecv(struct inbox* in, int bufferSize);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
