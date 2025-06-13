@@ -33,7 +33,7 @@ o/server.o: src/server/server.c src/server/server.h o/graphics.o o/input.o o/ent
 	${CC} ${CFLAGS} -c src/server/server.c -o o/server.o ${INCLUDES}
 o/main.o: src/main.c o/server.o o/client.o o/graphics.o o/input.o o/ent.o o/defs.o o/client.o o/audio.o
 	${CC} ${CFLAGS} -c src/main.c -o o/main.o ${INCLUDES}
-o/netcode.o: src/netcode/netcode.c src/netcode/netcode.h
+o/netcode.o: src/netcode/netcode.c src/netcode/netcode.h o/defs.o
 	${CC} ${CFLAGS} -c src/netcode/netcode.c -o o/netcode.o ${INCLUDES}
 o/audio.o: src/client/audio.c src/client/audio.h src/client/sfx.h src/client/music.h
 	${CC} ${CFLAGS} -c src/client/audio.c -o o/audio.o ${INCLUDES}

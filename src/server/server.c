@@ -27,11 +27,9 @@ struct serverState server = {
     .numClients = 0
 };
 
+//TODO remove this debug var
+int* secondEvent = (int*)&serverEventBuffer.buffer[1];
 
-#define logServer(...) {\
-    if (DEBUG_SERVER)\
-        printf( __VA_ARGS__ );\
-}
 // Listen for events coming from the client:
 void* serverListener() {
     struct eventBufferFlat packetBuffer;
@@ -41,8 +39,13 @@ void* serverListener() {
         int packetLen = inboxRecv(&serverInbox, sizeof(packetBuffer.buffer));
         int numPacketEvents = packetLen / (int)sizeof(struct event);
         packetBuffer.count = numPacketEvents;
-        if (numPacketEvents > 0)
-            logServer("serverListener got %3d client events, first was a '%s'.\n", numPacketEvents, eventName(packetBuffer.buffer[0].type));
+        if (numPacketEvents > 0) {
+            dlog(SERVER_RECV, "serverListener got %3d events: \n", numPacketEvents);
+            for (int i=0; i<numPacketEvents; i++)
+                dlog(SERVER_RECV, "%d:%s\n", packetBuffer.buffer[i].type, eventName(packetBuffer.buffer[i].type));
+        }
+        dlog(SERVER_RECV, "\n");
+        
         // Add the events to the ring buffer:
         linearBufferToCircularBuffer(&packetBuffer, &serverEventListenBuffer, packetBuffer.count, &serverListenerCountMutex);
     }
@@ -59,9 +62,8 @@ void recvClientCommands() {
 int countBuffer[EVENT_COUNT_BUFFER_SIZE] = {0};
 int countBufferPos = 0;
 void trackEventCount() {
-    if (serverEventBuffer.count > EVENT_BUFFER_SIZE-2) {
-        fprintf(stderr, "*** serverEventBuffer buffer overflowing!\n");
-    }
+    if (serverEventBuffer.count > EVENT_BUFFER_SIZE-2)
+        fatal( "serverEventBuffer overflowing!\n");
     countBuffer[countBufferPos++] = serverEventBuffer.count;
     if (countBufferPos >= EVENT_COUNT_BUFFER_SIZE)
         countBufferPos = 0;
@@ -170,7 +172,13 @@ void* serverLoop() {
         E(FrameEnd, SDL_GetTicks(), frameNumber);
         trackEventCount();
         // Send the events to the client (TODO do this for ALL CLIENTS, not just the first one!)
-        inboxSendAllEvents(&serverInbox, &outboxToClient, serverEventBuffer.count);
+        if (!(serverEventBuffer.count == 2 && serverEventBuffer.buffer[0].type == eventFrameStart && serverEventBuffer.buffer[1].type == eventFrameEnd)) {
+            dlog(SERVER_SEND, "server sending %3d events: \n", serverEventBuffer.count);
+            for (int i=0; i<serverEventBuffer.count; i++)
+                dlog(SERVER_SEND, "    %d:%s\n", serverEventBuffer.buffer[i].type, eventName(serverEventBuffer.buffer[i].type));
+            dlog(SERVER_SEND, "\n");
+            inboxSendAllEvents(&serverInbox, &outboxToClient, serverEventBuffer.count);
+        }
         // Update gamestate from the server's packets:
         processEvents();
         

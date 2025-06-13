@@ -66,6 +66,16 @@ void inboxSend(struct inbox* in, struct outbox* out, int messageLen) {
             (const struct sockaddr *)&out->address,
             sizeof(out->address));
 }
+void printEventPacket(char* packet, int numEvents) {
+    if (numEvents < 0 || numEvents > MAX_PACKET_EVENTS)
+        fatal("Can't print packet with invalid size.");
+    printf("Packet with %d events:\n", numEvents);
+    struct event* e = (struct event*)packet;
+    for (int i=0; i<numEvents; i++) {
+        printf("    '%s'\n", eventName(e->type));
+        e++;
+    }
+}
 void inboxSendAllEvents(struct inbox* in, struct outbox* out, int numEventsToSend) {
     if (!in->sendBuffer)
         fatal("Inbox did not have a sendBuffer set!");
@@ -73,6 +83,11 @@ void inboxSendAllEvents(struct inbox* in, struct outbox* out, int numEventsToSen
         fatal("Tried to send more than MAX_UDP_PAYLOAD bytes!\n");
     logNetcode("Sending message from (%s, %d)", inet_ntoa(in->address.sin_addr), ntohs(in->address.sin_port));
     logNetcode(" to (%s, %d) (id=%d)\n", inet_ntoa(out->address.sin_addr), ntohs(out->address.sin_port), out->id);
+    dlog(EVENT_TRANSMISSION, "inboxSendAllEvents: sending ");
+    for (int i=0; i<serverEventBuffer.count; i++) {
+        dlog(EVENT_TRANSMISSION, "%d:%s, ", serverEventBuffer.buffer[i].type, eventName(serverEventBuffer.buffer[i].type));
+    }
+    dlog(EVENT_TRANSMISSION, "\n");
     int numEventsSent = 0;
     int numPacketEvents = 0;
     while (numEventsSent < numEventsToSend) {
@@ -80,6 +95,10 @@ void inboxSendAllEvents(struct inbox* in, struct outbox* out, int numEventsToSen
         if (numPacketEvents > MAX_PACKET_EVENTS)
             numPacketEvents = MAX_PACKET_EVENTS;
         int messageLen = sizeof(serverEventBuffer.buffer[0]) * numPacketEvents;
+        if (LOG_PACKETS) {
+            printf("Sending -> ");
+            printEventPacket(in->sendBuffer + numEventsSent * sizeof(struct event), numPacketEvents);
+        }
         sendto(in->sock, 
             (const char *) ( in->sendBuffer + numEventsSent * sizeof(serverEventBuffer.buffer[0]) ), 
             messageLen,
@@ -99,6 +118,10 @@ int inboxRecv(struct inbox* in, int bufferSize) {
                                 0,/*(struct sockaddr *)&senderAddress,*/
                                 0/*&senderAddressLen*/
                                );
+    if (LOG_PACKETS) {
+        printf("Received -> ");
+        printEventPacket(in->recvBuffer, messageLen / sizeof(struct event));
+    }
     return messageLen;
 }
 

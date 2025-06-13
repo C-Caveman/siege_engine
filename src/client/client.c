@@ -46,30 +46,16 @@ volatile uint32_t frameStartTime = 0;
 extern struct inbox clientInbox;
 extern struct outbox outboxToServer;
 void sendCommandsToServer() { //TODO ADD MULTIPLAYER PATH HERE!!! TODO
-    //int cmdEventsSent = 0;
-    /*
-    while (clientCmdEvents.count > 0 && serverEvents.count <= EVENT_BUFFER_SIZE-1) {
-        memcpy(&serverEvents.buffer[serverEvents.writeHead], &clientCmdEvents.buffer[clientCmdEvents.readHead], sizeof(clientCmdEvents.buffer[0]));
-        memset(&clientCmdEvents.buffer[clientCmdEvents.readHead], 0, sizeof(clientCmdEvents.buffer[0]));
-        clientCmdEvents.readHead++;
-        serverEvents.writeHead++;
-        if (clientCmdEvents.readHead >= EVENT_BUFFER_SIZE-1)
-            clientCmdEvents.readHead = 0;
-        if (serverEvents.writeHead >= EVENT_BUFFER_SIZE-1)
-            serverEvents.writeHead = 0;
-        clientCmdEvents.count--;
-        cmdEventsSent++;
+    if (clientCommandEventsBuffer.count == 0)
+        return;
+    dlog(CLIENT_SEND, "sendCommandsToServer: sending %d events to server:\n", clientCommandEventsBuffer.count);
+    for (int i=0; i<clientCommandEventsBuffer.count; i++) {
+        dlog(CLIENT_SEND, "    %d:%s\n", clientCommandEventsBuffer.buffer[i].type, eventName(clientCommandEventsBuffer.buffer[i].type));
     }
-    */
-    
-    /* TODO:
-        -send the command buffer's contents to the server
-        -empty the command buffer
-        -profit
-    */
+    dlog(CLIENT_SEND, "\n");
     // Send commands to the server's inbox:
     clientInbox.sendBuffer = (char*)clientCommandEventsBuffer.buffer;
-    inboxSend(&clientInbox, &outboxToServer, clientCommandEventsBuffer.count*sizeof(clientCommandEventsBuffer.buffer[0]));
+    inboxSendAllEvents(&clientInbox, &outboxToServer, clientCommandEventsBuffer.count);
     // Empty the command buffer:
     memset(clientCommandEventsBuffer.buffer, 0, sizeof(clientCommandEventsBuffer.buffer));
     clientCommandEventsBuffer.count = 0;
@@ -78,27 +64,31 @@ void sendCommandsToServer() { //TODO ADD MULTIPLAYER PATH HERE!!! TODO
 
 // Listen for events coming from the server:
 void* clientListener() {
-    //struct eventBufferFlat packetBuffer;
-    //serverInbox.recvBuffer = (char *)packetBuffer.buffer;
     dlog(THREAD, "ClientListener thread enabled!\n");
+    struct eventBufferFlat packetBuffer;
+    clientInbox.recvBuffer = (char *)packetBuffer.buffer;
     while (playerClient.running) {
-        SDL_Delay(10);
-        /*
-        int packetLen = inboxRecv(&serverInbox, sizeof(packetBuffer.buffer));
+        int packetLen = inboxRecv(&clientInbox, sizeof(packetBuffer.buffer));
         int numPacketEvents = packetLen / (int)sizeof(struct event);
         packetBuffer.count = numPacketEvents;
-        if (numPacketEvents > 0)
-            printf("clientListener got %3d client events, first was a '%s'.\n", numPacketEvents, eventName(packetBuffer.buffer[0].type));
+        if (numPacketEvents > 0) {
+            dlog(CLIENT_RECV, "clientListener got %3d events: \n", numPacketEvents);
+            for (int i=0; i<numPacketEvents; i++)
+                dlog(CLIENT_RECV, "    %d:%s \n", packetBuffer.buffer[i].type, eventName(packetBuffer.buffer[i].type));
+        }
+        dlog(CLIENT_RECV, "\n");
         // Add the events to the ring buffer:
-        linearBufferToCircularBuffer(&packetBuffer, &serverEventListenBuffer, packetBuffer.count, &serverListenerCountMutex);
-        */
+        linearBufferToCircularBuffer(&packetBuffer, &clientEventListenBuffer, packetBuffer.count, &clientListenerCountMutex);
+        memset(packetBuffer.buffer, 0, packetLen);
+        packetBuffer.count = 0;
     }
     dlog(THREAD, "ClientListener thread exiting.\n");
+    clientInbox.recvBuffer = 0;
     return 0;
 }
 void recvServerCommands() {
     // Pull client events from the listener's ring buffer:
-    //circularBufferToFlatBuffer(&serverEventListenBuffer, &serverEventBuffer, &serverListenerCountMutex);
+    circularBufferToFlatBuffer(&clientEventListenBuffer, &clientEventBuffer, &clientListenerCountMutex); //TODO ???? clientEventBuffer ????
 }
 
 
@@ -115,7 +105,6 @@ void* clientLoop() {
     playerClient.flags = 0;
     CE(ClientHello, playerClient.id, playerClient.address, playerClient.flags);
     sendCommandsToServer();
-    printf("Chunga-wunga!\n");
     //SDL_Delay(50);
     /* TODO wait for server to be ready before entering the client loop!
     bool connectedToServer = false;
@@ -149,6 +138,8 @@ void* clientLoop() {
     // Input and rendering loop:
     frameStartTime = SDL_GetTicks();
     while (playerClient.running) {
+        // Pull server events from the listener's ring buffer:
+        recvServerCommands();
         anim_tick = SDL_GetTicks() % 256; //- 8-bit timestamp for animations.
         clientDt = ((float)SDL_GetTicks() - (float)frameStartTime) / 1000.f;
         if (clientDt < 0) {

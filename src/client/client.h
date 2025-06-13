@@ -72,7 +72,8 @@ extern char SETTINGS_MENU_ITEMS[MAX_MENU_ITEMS][MAX_MENU_ITEM_LEN];
 
 enum clientFlagsEnum {
     CLIENT_IS_LOCAL =   1<<0,
-    CLIENT_WHATEVER =   1<<1,
+    CLIENT_IS_HOST =    1<<1,
+    CLIENT_IS_CONNECTED=1<<2,
 };
 
 struct client {
