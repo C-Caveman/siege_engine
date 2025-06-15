@@ -27,9 +27,6 @@ struct serverState server = {
     .numClients = 0
 };
 
-//TODO remove this debug var
-int* secondEvent = (int*)&serverEventBuffer.buffer[1];
-
 // Listen for events coming from the client:
 void* serverListener() {
     struct eventBufferFlat packetBuffer;
@@ -55,7 +52,7 @@ void* serverListener() {
 }
 void recvClientCommands() {
     // Pull client events from the listener's ring buffer:
-    circularBufferToFlatBuffer(&serverEventListenBuffer, &serverEventBuffer, &serverListenerCountMutex);
+    circularBufferToFlatBuffer(&serverEventListenBuffer, &serverEventBuffer, &serverListenerCountMutex, 1);
 }
 
 #define EVENT_COUNT_BUFFER_SIZE 60
@@ -181,7 +178,6 @@ void* serverLoop() {
         }
         // Update gamestate from the server's packets:
         processEvents();
-        
         // Game state updated, now sleep until it's time for the next tick:
         uint32_t tickEndTime = SDL_GetTicks();
         uint32_t tickTimeElapsed = tickEndTime - tickStartTime;

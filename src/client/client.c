@@ -88,7 +88,7 @@ void* clientListener() {
 }
 void recvServerCommands() {
     // Pull client events from the listener's ring buffer:
-    circularBufferToFlatBuffer(&clientEventListenBuffer, &clientEventBuffer, &clientListenerCountMutex); //TODO ???? clientEventBuffer ????
+    circularBufferToFlatBuffer(&clientEventListenBuffer, &clientEventBuffer, &clientListenerCountMutex, 0); //TODO ???? clientEventBuffer ????
 }
 
 

@@ -21,14 +21,18 @@
 #define LOG_MENU 0
 #define LOG_CLIENT_EVENTS 0
 #define LOG_CLIENT_SEND 0
-#define LOG_CLIENT_RECV 1
-#define LOG_SERVER_SEND 1
+#define LOG_CLIENT_RECV 0
+#define LOG_SERVER_SEND 0
 #define LOG_SERVER_RECV 0
 #define LOG_SERVER_EVENT_CREATION 0
 #define LOG_EVENT_TRANSMISSION 0
 #define LOG_PACKETS 0
+#define LOG_BUFFERS 1
 // Print an error message with file/lineNum, then kill the program.
-#define fatal(message) { fprintf(stderr, "*** %s:%d *** " message "\n", __FILE__, __LINE__); exit(1); }
+#define fatal(message) { \
+    fprintf(stderr, "*** %s:%d *** " message "\n", __FILE__, __LINE__); \
+    exit(1); \
+}
 // Temporary hack for singleplayer movement smoothness:
 #define SINGLEPLAYER_HACK 1
 

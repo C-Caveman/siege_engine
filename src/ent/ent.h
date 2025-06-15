@@ -127,6 +127,6 @@ void defragEntArray();
 // Move events from a flat array to a circular events buffer: (assumes exclusive use of the circle buffer's writeHead)
 void linearBufferToCircularBuffer(struct eventBufferFlat* in, struct eventBufferCircular* out, int numEventsToCopy, sem_t* circleCountMutex);
 // Fill an empty flat buffer with the contents of a circular buffer: (assumes exclusive use of the circle buffer's readHead)
-void circularBufferToFlatBuffer(struct eventBufferCircular* in, struct eventBufferFlat* out, sem_t* circleCountMutex);
+void circularBufferToFlatBuffer(struct eventBufferCircular* in, struct eventBufferFlat* out, sem_t* circleCountMutex, bool debug);
 
 #endif
