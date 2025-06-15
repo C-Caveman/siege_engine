@@ -52,7 +52,7 @@ void* serverListener() {
 }
 void recvClientCommands() {
     // Pull client events from the listener's ring buffer:
-    circularBufferToFlatBuffer(&serverEventListenBuffer, &serverEventBuffer, &serverListenerCountMutex, 1);
+    circularBufferToFlatBuffer(&serverEventListenBuffer, &serverEventBuffer, &serverListenerCountMutex, 0);
 }
 
 #define EVENT_COUNT_BUFFER_SIZE 60

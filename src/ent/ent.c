@@ -162,10 +162,10 @@ void circularBufferToFlatBuffer(struct eventBufferCircular* in, struct eventBuff
     if (in->count == 0)
         return;
     
-    if (debug == 0)
+    if (debug == 1)
         dlog(BUFFERS, "Before filling, buffer has %3d events: \n", out->count);
     for (int i=0; i<out->count; i++)
-        if (debug == 0)
+        if (debug == 1)
             dlog(BUFFERS, "    %d:%s\n", out->buffer[i].type, eventName(out->buffer[i].type));
     
     // Circular buffer count is touched by multiple threads!
@@ -176,10 +176,10 @@ void circularBufferToFlatBuffer(struct eventBufferCircular* in, struct eventBuff
         fprintf(stderr, "*** circularBufferToFlatBuffer() numEventsToCopy was greater than EVENT_BUFFER_SIZE!\n");
         exit(1);
     }
-    if (debug == 0)
+    if (debug == 1)
         dlog(BUFFERS, "Moving %3d events to the flat buffer: \n", numEventsToCopy);
     for (int i=0; i<numEventsToCopy; i++) {
-        if (debug == 0)
+        if (debug == 1)
             dlog(BUFFERS, "    %d:%s\n", in->buffer[in->readHead].type, eventName(in->buffer[in->readHead].type));
         out->buffer[out->count + i] = in->buffer[in->readHead];
         incReadHead(in);
@@ -190,12 +190,12 @@ void circularBufferToFlatBuffer(struct eventBufferCircular* in, struct eventBuff
     in->count -= numEventsToCopy;
     sem_post(circleCountMutex);
     
-    if (debug == 0)
+    if (debug == 1)
         dlog(BUFFERS, "After filling, buffer has %3d events: \n", out->count);
     for (int i=0; i<out->count; i++)
-        if (debug == 0)
+        if (debug == 1)
             dlog(BUFFERS, "    %d:%s\n", out->buffer[i].type, eventName(out->buffer[i].type));
-    if (debug == 0)
+    if (debug == 1)
         dlog(BUFFERS, "\n");
 }
 void processEvents() {

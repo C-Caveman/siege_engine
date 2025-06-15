@@ -161,6 +161,7 @@ void* clientLoop() {
         }
         // TODO use client data for rendering, not the server data!!
         */
+        memset(&clientEventBuffer, 0, sizeof(clientEventBuffer));
         
         SDL_RenderClear(renderer);
         if (!playerClient.paused) {
