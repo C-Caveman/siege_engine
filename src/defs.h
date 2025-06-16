@@ -8,16 +8,14 @@
         printf( __VA_ARGS__ );\
 }
 // Debug flags:
-#define DEBUG_ENTS 0
-#define DEBUG_ENT_SPAWNING 0
-#define DEBUG_ENT_HANDLES 0
-#define DEBUG_GRAPHICS 0
-#define DEBUG_GRAPHICS_LOADING 0
+#define LOG_ENTS 0
+#define LOG_ENTITY_BYTES_ARRAY 0
+#define LOG_ENT_SPAWNING 0
+#define LOG_ENT_HANDLES 0
+#define LOG_GRAPHICS 0
 #define LOG_THREAD 0
-#define DEBUG_CLIENT 1
-#define DEBUG_SERVER 0
-#define DEBUG_EVENTS 0
-#define DEBUG_DIALOG 0
+#define LOG_EVENTS 0
+#define LOG_DIALOG 0
 #define LOG_MENU 0
 #define LOG_CLIENT_EVENTS 0
 #define LOG_CLIENT_SEND 0
@@ -26,6 +24,7 @@
 #define LOG_SERVER_RECV 0
 #define LOG_SERVER_EVENT_CREATION 0
 #define LOG_EVENT_TRANSMISSION 0
+#define LOG_NETCODE 0
 #define LOG_PACKETS 0
 #define LOG_BUFFERS 1
 // Print an error message with file/lineNum, then kill the program.

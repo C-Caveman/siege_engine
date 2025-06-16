@@ -11,11 +11,6 @@ extern struct anim_info anim_data[];
 extern struct client clients[MAX_CLIENTS]; //------------------ Server's list of player clients.
 extern struct serverState server;
 
-#define logEvent(...) {\
-    if (DEBUG_EVENTS)\
-        printf( __VA_ARGS__ );\
-}
-
 struct handle_info handles[NUM_HANDLES] = { //=================================// ENTITY HANDLES //
     {0,1,true}, // Handle 0 is the Null handle.
 };
@@ -58,14 +53,14 @@ void unclaim_handle(handle i) { //-------------------- Unbind a handle (not a co
         handles[i].claimed = 0;
         handles[i].copies--;
     }
-    if (DEBUG_ENT_HANDLES) { printf("Unclaimed handle %d. Copies = %d.\n", i, handles[i].copies); }
+    dlog(ENT_HANDLES, "Unclaimed handle %d. Copies = %d.\n", i, handles[i].copies);
 }
 handle copy_handle(handle i) { //--------------------- Copy a bound handle (another entity's handle).
     if (handles[i].claimed == true && i != 0)
         { handles[i].copies++; }
     else
         { i = 0; } //Null handle.
-    if (DEBUG_ENT_HANDLES) { printf("Copied handle %d. Now has %d copies.\n", i, handles[i].copies); }
+    dlog(ENT_HANDLES, "Copied handle %d. Now has %d copies.\n", i, handles[i].copies);
     return i;
 }
 handle uncopy_handle(handle i) { //------------------- Uncopy a bound handle, replace with null.
@@ -202,7 +197,7 @@ void processEvents() {
     while (serverEventBuffer.count > 0) {
         int i = serverEventBuffer.count-1;
         if (serverEventBuffer.buffer[i].type == eventPlayerShoot)
-                logEvent("Processing a PlayerShoot event at index %d, count=%d...\n", i, serverEventBuffer.count);
+                dlog(EVENTS, "Processing a PlayerShoot event at index %d, count=%d...\n", i, serverEventBuffer.count);
         applyEvent(&serverEventBuffer.buffer[i]);
         serverEventBuffer.count--;
     }
@@ -285,7 +280,7 @@ handle findPlayer() { // first entity handle should be the player TODO add a pla
     return 1;
 }
 void playerInit(struct ent_player* e) {
-    if (DEBUG_ENTS) { printf("Player entity initializing!\n"); }
+    dlog(ENTS, "Player entity initializing!\n");
     e->health = 1;
     e->pos = (vec2f){0,0};
     // Init the sprites:
@@ -371,7 +366,7 @@ void playerThink(struct ent_player* e) {                              // PLAYER
         playerClient.explodingEverything = false;
         for (int i=getFirstEnt(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); i != -1; i=getNextEnt(i, mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN)) {
             if (mainWorld->entity_bytes_array[i] != HEADER_BYTE) {
-                if (DEBUG_ENTS) { printf("*** Invalid index given by getNextEnt() in thinkAllEnts()\n"); }
+                dlog(ENTS, "*** Invalid index given by getNextEnt() in thinkAllEnts()\n");
                 break;
             }
             // Run the correct think function for this entity:
@@ -448,8 +443,7 @@ void playerThink(struct ent_player* e) {                              // PLAYER
 void playerAnim(struct ent_player* e) {}
 
 void sceneryInit(struct ent_scenery* e) {                              // SCENERY
-    if (DEBUG_ENTS)
-        printf("Scenery ent initializing!\n");
+    dlog(ENTS, "Scenery ent initializing!\n");
     e->flags |= NOTHINK | HEIGHT_LOWEST;
     e->num_sprites = NUM_SCENERY_SPRITES;
     e->sprites[SCENERY_SPRITE_1].anim = rocket_tank;
@@ -634,7 +628,7 @@ void evFrameStart(struct dFrameStart* d) {}
 void evFrameEnd(struct dFrameEnd* d) {}
 // Add a client to the server's clients list:
 void addClient(uint32_t id, uint16_t flags) {
-    logEvent("addClient(id=%d, flags=%d)\n", id, flags);
+    dlog(EVENTS, "addClient(id=%d, flags=%d)\n", id, flags);
     bool clientAlreadyConnected = false;
     for (int i=0; i<MAX_CLIENTS; i++) {
         if (clients[i].id == id) {
@@ -643,14 +637,14 @@ void addClient(uint32_t id, uint16_t flags) {
         }
     }
     if (clientAlreadyConnected) {
-        logEvent("Client %d already connected.\n", id);;;;
+        dlog(EVENTS, "Client %d already connected.\n", id);;;;
         return;
     }
     // Connect the new client:
     for (int i=0; i<MAX_CLIENTS; i++) {
         // Find an empty slot:
         if (clients[i].id == 0) {
-            logEvent("Connecting new client %d to client slot %d.\n", id, i);
+            dlog(EVENTS, "Connecting new client %d to client slot %d.\n", id, i);
             memset(&clients[i], 0, sizeof(clients[0]));
             clients[i].id = id;
             clients[i].flags = flags;
@@ -660,7 +654,7 @@ void addClient(uint32_t id, uint16_t flags) {
 }
 // Sent by client to server. Requests to be put into the game.
 void evClientHello(struct dClientHello* d) {
-    logEvent("Server got a ClientHello: id=%d, ip=%d\n", d->clientID, d->clientAddress);
+    dlog(EVENTS, "Server got a ClientHello: id=%d, ip=%d\n", d->clientID, d->clientAddress);
     //TODO trigger an evSpawnPlayer() if there is room for a new player
     addClient(d->clientID, d->clientFlags);
 }
@@ -669,17 +663,17 @@ void evSpawnPlayer(struct dSpawnPlayer* d) {
 }
 
 void evServerHello(struct dServerHello* d) {
-    logEvent("Assigning client %d to player entity with handle %d.\n", d->clientID, d->playerHandle);
+    dlog(EVENTS, "Assigning client %d to player entity with handle %d.\n", d->clientID, d->playerHandle);
 }
 void evClientReady(struct dClientReady* d) {
-    logEvent("Client %d is now ready to play.\n", d->clientID);
+    dlog(EVENTS, "Client %d is now ready to play.\n", d->clientID);
 }
 void evClientPause(struct dClientPause* d) {
-    logEvent("Client %d toggled the server's pause state.\n", d->clientID);
+    dlog(EVENTS, "Client %d toggled the server's pause state.\n", d->clientID);
     server.paused = !server.paused;
 }
 void evClientQuit(struct dClientQuit* d) {
-    logEvent("Client %d is quitting the game.\n", d->clientID);
+    dlog(EVENTS, "Client %d is quitting the game.\n", d->clientID);
     server.running = false;
     playerClient.running = false;
 }
@@ -873,11 +867,10 @@ int getNextEnt(int i, char* array, int array_len) {
     if (array[i] == HEADER_BYTE) {
         int ent_size = ((entBasics*)&array[i])->size;
         i += ent_size; // Skip past this entity.
-        logEvent("getNextEnt() entity at %d. Size is %d.\n", i, ent_size);
+        dlog(ENTITY_BYTES_ARRAY, "getNextEnt() entity at %d. Size is %d.\n", i, ent_size);
     }
     while (array[i] != HEADER_BYTE && i < array_len) { // Increment i until reaching the next entity.
         i += 1;
-        logEvent("getNextEnt() skipping past %d.\n", i);
     }
     if (i >= array_len-1) // Out of bounds.
         i = -1;
@@ -917,20 +910,20 @@ handle reserveEntHandle(uint16_t entType) {
     while (i<ENTITY_BYTES_ARRAY_LEN) {
         // Empty slot?
         if (array[i] != HEADER_BYTE) {
-            if (DEBUG_ENT_SPAWNING) { printf("Found an open slot at %d.\n", i); }
+            dlog(ENT_SPAWNING, "Found an open slot at %d.\n", i);
             empty_space_len += 1;
             i += 1;
         }
         // Slot occupied.
         else {
             int skip_bytes = ((entBasics*)&array[i])->size;
-            if (DEBUG_ENT_SPAWNING) { printf("Slots [%d, %d] already taken.\n", i, i+skip_bytes-1); }
+            dlog(ENT_SPAWNING, "Slots [%d, %d] already taken.\n", i, i+skip_bytes-1);
             empty_space_len = 0;
             i += skip_bytes;
         }
         // Got enough space to store the ent.
         if (empty_space_len == required_space) {
-            if (DEBUG_ENT_SPAWNING) { printf("Found enough space for ent in [%d, %d]\n", i-required_space, i-1); }
+            dlog(ENT_SPAWNING, "Found enough space for ent in [%d, %d]\n", i-required_space, i-1);
             i = i-required_space;
             mainWorld->entArraySpace += required_space;
             break;
@@ -994,20 +987,20 @@ entBasics* findEntSpace(uint16_t entType) {
     while (i<ENTITY_BYTES_ARRAY_LEN) {
         // Empty slot?
         if (array[i] != HEADER_BYTE) {
-            if (DEBUG_ENT_SPAWNING) { printf("Found an open slot at %d.\n", i); }
+            dlog(ENT_SPAWNING, "Found an open slot at %d.\n", i);
             empty_space_len += 1;
             i += 1;
         }
         // Slot occupied.
         else {
             int skip_bytes = ((entBasics*)&array[i])->size;
-            if (DEBUG_ENT_SPAWNING) { printf("Slots [%d, %d] already taken.\n", i, i+skip_bytes-1); }
+            dlog(ENT_SPAWNING, "Slots [%d, %d] already taken.\n", i, i+skip_bytes-1);
             empty_space_len = 0;
             i += skip_bytes;
         }
         // Got enough space to store the ent.
         if (empty_space_len == required_space) {
-            if (DEBUG_ENT_SPAWNING) { printf("Found enough space for ent in [%d, %d]\n", i-required_space, i-1); }
+            dlog(ENT_SPAWNING, "Found enough space for ent in [%d, %d]\n", i-required_space, i-1);
             i = i-required_space;
             mainWorld->entArraySpace += required_space;
             break;
@@ -1049,7 +1042,7 @@ void despawnEnt(entBasics* e) {
     unclaim_handle(e->h);
     int size = e->size;
     mainWorld->entArraySpace -= size;
-    if (DEBUG_ENTS) { printf("Despawning ent of size %d\n", size); }
+    dlog(ENT_SPAWNING, "Despawning ent of size %d\n", size);
     updateEntCount(e->type, -1);
     memset((void*)e, 0, size*sizeof(char));
 }
@@ -1057,7 +1050,7 @@ void despawnEnt(entBasics* e) {
 void thinkAllEnts(char* array, int array_len) {
     for (int i=getFirstEnt(array, array_len); i != -1; i=getNextEnt(i, array, array_len)) {
         if (array[i] != HEADER_BYTE) {
-            if (DEBUG_ENTS) { printf("*** Invalid index given by getNextEnt() in thinkAllEnts()\n"); }
+            dlog(ENTS, "*** Invalid index given by getNextEnt() in thinkAllEnts()\n");
             break;
         }
         // Run the correct think function for this entity:
@@ -1078,7 +1071,7 @@ void thinkAllEnts(char* array, int array_len) {
 void animateAllEnts(char* array, int array_len) {
     for (int i=getFirstEnt(array, array_len); i != -1; i=getNextEnt(i, array, array_len)) {
         if (array[i] != HEADER_BYTE) {
-            if (DEBUG_ENTS) { printf("*** Invalid index given by getNextEnt() in animateAllEnts()\n"); }
+            dlog(ENTS, "*** Invalid index given by getNextEnt() in animateAllEnts()\n");
             break;
         }
         // Run the correct animation function for this entity:
@@ -1233,7 +1226,7 @@ void collideWall(entBasics* e) {
 void wallCollision(char* array, int array_len) {
     for (int i=getFirstEnt(array, array_len); i != -1; i=getNextEnt(i, array, array_len)) {
         if (array[i] != HEADER_BYTE) {
-            if (DEBUG_ENTS) { printf("*** Invalid index given by getNextEnt() in thinkAllEnts()\n"); }
+            dlog(ENTS, "*** Invalid index given by getNextEnt() in thinkAllEnts()\n");
             break;
         }
         entBasics* e = ((entBasics*)&array[i]);

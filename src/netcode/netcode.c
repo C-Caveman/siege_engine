@@ -55,8 +55,8 @@ void inboxDestroy(struct inbox* myInbox) {
 void inboxSend(struct inbox* in, struct outbox* out, int messageLen) {
     if (!in->sendBuffer)
         fatal("Inbox did not have a sendBuffer set!");
-    logNetcode("Sending message from (%s, %d)", inet_ntoa(in->address.sin_addr), ntohs(in->address.sin_port));
-    logNetcode(" to (%s, %d) (id=%d)\n", inet_ntoa(out->address.sin_addr), ntohs(out->address.sin_port), out->id);
+    dlog(NETCODE, "Sending message from (%s, %d)", inet_ntoa(in->address.sin_addr), ntohs(in->address.sin_port));
+    dlog(NETCODE, " to (%s, %d) (id=%d)\n", inet_ntoa(out->address.sin_addr), ntohs(out->address.sin_port), out->id);
     if (messageLen > MAX_UDP_PAYLOAD)
         fatal("Tried to send more than MAX_UDP_PAYLOAD bytes!\n");
     sendto(in->sock, 
@@ -81,8 +81,8 @@ void inboxSendAllEvents(struct inbox* in, struct outbox* out, int numEventsToSen
         fatal("Inbox did not have a sendBuffer set!");
     if (numEventsToSend*sizeof(serverEventBuffer.buffer[0]) > MAX_UDP_PAYLOAD)
         fatal("Tried to send more than MAX_UDP_PAYLOAD bytes!\n");
-    logNetcode("Sending message from (%s, %d)", inet_ntoa(in->address.sin_addr), ntohs(in->address.sin_port));
-    logNetcode(" to (%s, %d) (id=%d)\n", inet_ntoa(out->address.sin_addr), ntohs(out->address.sin_port), out->id);
+    dlog(NETCODE, "Sending message from (%s, %d)", inet_ntoa(in->address.sin_addr), ntohs(in->address.sin_port));
+    dlog(NETCODE, " to (%s, %d) (id=%d)\n", inet_ntoa(out->address.sin_addr), ntohs(out->address.sin_port), out->id);
     dlog(EVENT_TRANSMISSION, "inboxSendAllEvents: sending ");
     for (int i=0; i<serverEventBuffer.count; i++) {
         dlog(EVENT_TRANSMISSION, "%d:%s, ", serverEventBuffer.buffer[i].type, eventName(serverEventBuffer.buffer[i].type));
@@ -290,8 +290,8 @@ void udpShut(int* socket) {
 
 // send a udp message (assumes message is null-terminated)
 void udpSend(char* send, int* sock) {
-    logNetcode("Sending message '%s' from (%s, %d)", send, inet_ntoa(myAddress.sin_addr), ntohs(myAddress.sin_port));
-    logNetcode(" to (%s, %d)\n", inet_ntoa(theirAddress.sin_addr), ntohs(theirAddress.sin_port));
+    dlog(NETCODE, "Sending message '%s' from (%s, %d)", send, inet_ntoa(myAddress.sin_addr), ntohs(myAddress.sin_port));
+    dlog(NETCODE, " to (%s, %d)\n", inet_ntoa(theirAddress.sin_addr), ntohs(theirAddress.sin_port));
     int messageLen = strlen(send);
     if (messageLen > MAX_UDP_PAYLOAD) {
         fprintf(stderr, "*** udpSend() tried to send more than MAX_UDP_PAYLOAD bytes!\n");
@@ -317,7 +317,7 @@ void udpSendN(char* send, int n, int* sock) {
 }
 // recv a udp message
 int udpRecv(char* recv, int* sock) {
-    logNetcode("Listening on (%s, %d)...\n", inet_ntoa(myAddress.sin_addr), ntohs(myAddress.sin_port));
+    dlog(NETCODE, "Listening on (%s, %d)...\n", inet_ntoa(myAddress.sin_addr), ntohs(myAddress.sin_port));
     int recv_msg_len = recvfrom(*sock, 
                                 (char *)recv, 
                                 MAX_UDP_PAYLOAD,

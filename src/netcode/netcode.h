@@ -13,8 +13,6 @@
 #define MY_PORT 8080
 #define MAX_UDP_PAYLOAD 508
 #define MINI_BUF_SIZE 16
-#define LOG_NETCODE 0
-#define logNetcode(...) if (LOG_NETCODE) { printf(__VA_ARGS__ ); }
 
 struct inbox {
     int sock;

@@ -85,8 +85,7 @@ void load_animations() {
         if (total_textures >= MAX_TEXTURES) { printf("*** Error: MAX_TEXTURES (%d) exceeded in load_animations.\n", MAX_TEXTURES); exit(-1); }
         anim_data[i].len = num_frames;
     }
-    if (DEBUG_GRAPHICS_LOADING)
-        printf("Loaded %d textures (max is %d).\n", total_textures, MAX_TEXTURES);
+    dlog(GRAPHICS, "Loaded %d textures (max is %d).\n", total_textures, MAX_TEXTURES);
 }
 
 
@@ -131,15 +130,14 @@ void setTileWidth() {
     texelWidth = tileWidth / TILE_PIXEL_DIAMETER;
     printf("tileWidth for res (%d,%d) %f\n", window_x, window_y, tileWidth);
 }
-#define logGraphics(...) { if (DEBUG_GRAPHICS) printf(__VA_ARGS__); }
 void init_graphics() {
-    logGraphics("Initializing graphics...\n");
+    dlog(GRAPHICS, "Initializing graphics...\n");
     // find the file path of the executable, primarily to build an absolute path to the font file
     get_path();
     //
     // initialize the window
     //
-    logGraphics("Initializing window...\n");
+    dlog(GRAPHICS, "Initializing window...\n");
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
         printf("*** SDL init failed:\n%s\n", SDL_GetError());
     // Set the logical resolution:
@@ -221,7 +219,7 @@ void draw_ent_sprites(vec2f camera_pos, entBasics* e) {
     float rotation;
     SDL_Rect ent_render_pos;
     ent_render_pos.w = ent_render_pos.h = tileWidth;
-    if (DEBUG_GRAPHICS) { printf("Num sprites in %s entity: %d\n", entTypeName(e->type), num_sprites); }
+    dlog(GRAPHICS, "Num sprites in %s entity: %d\n", entTypeName(e->type), num_sprites);
     struct sprite* sprites = (struct sprite*)( (char*)e+sizeof(entBasics) );
     struct sprite* s;
     for (int i=0; i<num_sprites; i++) {
@@ -274,8 +272,7 @@ void draw_all_ents(vec2f camera_pos, char* array, int array_len) { // ;;
     i = getFirstEnt(array, array_len);
     while (i != -1) {
         if (array[i] != HEADER_BYTE) {
-            if (DEBUG_GRAPHICS)
-                printf("*** Invalid index given by getNextEnt() in draw_all_ents()\n");
+            dlog(GRAPHICS, "*** Invalid index given by getNextEnt() in draw_all_ents()\n");
             break;
         }
         draw_ent_sprites(camera_pos, (entBasics*)&array[i]);

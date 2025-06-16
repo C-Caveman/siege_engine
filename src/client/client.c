@@ -11,7 +11,6 @@ struct eventBufferFlat       clientEventBuffer = {0};
 struct eventBufferCircular   clientEventListenBuffer = {0};
 struct eventBufferFlat       clientCommandEventsBuffer = {0};
 
-#define logDialog(...) if (DEBUG_DIALOG) { printf(__VA_ARGS__); }
 // TODO make an x-macro system for dialog actors!
 struct dialogActor actors[] = {
     {".", {typewriterA01, voiceThudA3}, {black, black} },
@@ -33,10 +32,6 @@ char* nameOfAnnotationType(int t) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////// Loop ;;
 
-#define logClient(...) {\
-    if (DEBUG_CLIENT) \
-        printf( __VA_ARGS__ );\
-}
 void clientInput(struct client* c);
 // Client thread (draw the screen, read inputs):
 uint32_t clientFrame = 0;
@@ -298,7 +293,7 @@ void clientClearDialog() {
 
 #define DEFAULT_WAIT_TIME 75
 void clientStartDialog(char* message) {
-    logDialog("dialog starting!\n");
+    dlog(DIALOG, "dialog starting!\n");
     playerClient.waitTime = DEFAULT_WAIT_TIME;
     timerStart(&playerClient.waitTimer);
     strncpy(playerClient.dialogString, message, sizeof(playerClient.dialogString)-1);
