@@ -888,6 +888,7 @@ int getFirstEnt(char* array, int array_len) {
         i = -1;
     return i;
 }
+entBasics* findEntSpace(uint16_t entType);
 handle reserveEntHandle(uint16_t entType) {
     handle h = 0;
     // Make sure there are handles left:
@@ -903,6 +904,18 @@ handle reserveEntHandle(uint16_t entType) {
     // Locate memory for the handle to map to:
     if (mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/8)
         printf("*** Warning! 7/8 of entity bytes array are full!\n");
+    
+    //////
+    entBasics* entityLocation = findEntSpace(entType);
+    if (!entityLocation)
+        fatal("No space could be reserved for '%s' entity!", entTypeName(entType));
+    h = claim_handle(entityLocation, entType);
+    if (!h)
+        fatal("No handle could be reserved for '%s' entity!", entTypeName(entType));
+    return h;
+    /////
+    
+    /*
     char* array = mainWorld->entity_bytes_array;
     int required_space = getEntSize(entType);
     int empty_space_len = 0;
@@ -910,7 +923,7 @@ handle reserveEntHandle(uint16_t entType) {
     while (i<ENTITY_BYTES_ARRAY_LEN) {
         // Empty slot?
         if (array[i] != HEADER_BYTE) {
-            dlog(ENT_SPAWNING, "Found an open slot at %d.\n", i);
+            //dlog(ENT_SPAWNING, "Found an open slot at %d.\n", i);
             empty_space_len += 1;
             i += 1;
         }
@@ -925,7 +938,7 @@ handle reserveEntHandle(uint16_t entType) {
         if (empty_space_len == required_space) {
             dlog(ENT_SPAWNING, "Found enough space for ent in [%d, %d]\n", i-required_space, i-1);
             i = i-required_space;
-            mainWorld->entArraySpace += required_space;
+            mainWorld->entArraySpace -= required_space;
             break;
         }
     }
@@ -936,6 +949,7 @@ handle reserveEntHandle(uint16_t entType) {
     // A handle is available and we have enough memory for its entity type.
     h = claim_handle((entBasics*)&array[i], entType);
     return h;
+    */
 }
 void updateEntCount(uint16_t entType, int n) {
     switch (entType) {
@@ -987,22 +1001,22 @@ entBasics* findEntSpace(uint16_t entType) {
     while (i<ENTITY_BYTES_ARRAY_LEN) {
         // Empty slot?
         if (array[i] != HEADER_BYTE) {
-            dlog(ENT_SPAWNING, "Found an open slot at %d.\n", i);
+            dlog(ENT_SPAWNING_DETAILED, "Found an open slot at %d.\n", i);
             empty_space_len += 1;
             i += 1;
         }
         // Slot occupied.
         else {
             int skip_bytes = ((entBasics*)&array[i])->size;
-            dlog(ENT_SPAWNING, "Slots [%d, %d] already taken.\n", i, i+skip_bytes-1);
+            dlog(ENT_SPAWNING_DETAILED, "Slots [%d, %d] already taken.\n", i, i+skip_bytes-1);
             empty_space_len = 0;
             i += skip_bytes;
         }
         // Got enough space to store the ent.
         if (empty_space_len == required_space) {
-            dlog(ENT_SPAWNING, "Found enough space for ent in [%d, %d]\n", i-required_space, i-1);
+            dlog(ENT_SPAWNING_DETAILED, "Found enough space for ent in [%d, %d]\n", i-required_space, i-1);
             i = i-required_space;
-            mainWorld->entArraySpace += required_space;
+            mainWorld->entArraySpace -= required_space;
             break;
         }
     }
@@ -1016,6 +1030,19 @@ entBasics* findEntSpace(uint16_t entType) {
 //  ;;;
 // Clientside ent spawning:
 void forceSpawn(uint16_t entType, vec2f pos, handle h) {
+    // Abort if we  don't have a valid handle:
+    if (!h || h >= NUM_HANDLES) {
+        dlog(ENT_SPAWNING, "Blocked '%s' spawn due to invalid handle %d.\n", entTypeName(entType), h);
+        return;
+    }
+    // Discard gib if getting close to memory limit:
+    if (mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/8 && entType == gib_type) {
+        dlog(ENT_SPAWNING, "Blocked gib spawn.\n");
+        if (handles[h].claimed && handles[h].entType != entType) {
+            despawnEnt(handles[h].ent);
+        }
+        return;
+    }
     // If this handle is taken by another type of ent, kill it.
     if (handles[h].claimed && handles[h].ent != 0 && handles[h].entType != entType) {
         despawnEnt(handles[h].ent);
@@ -1041,8 +1068,8 @@ void despawnEnt(entBasics* e) {
     }
     unclaim_handle(e->h);
     int size = e->size;
-    mainWorld->entArraySpace -= size;
-    dlog(ENT_SPAWNING, "Despawning ent of size %d\n", size);
+    mainWorld->entArraySpace += size;
+    dlog(ENT_DESPAWNING, "Despawning ent of size %d\n", size);
     updateEntCount(e->type, -1);
     memset((void*)e, 0, size*sizeof(char));
 }

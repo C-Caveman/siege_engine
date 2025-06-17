@@ -167,6 +167,7 @@ void* clientLoop() {
             drawInfo((char*)"fps", fps, 0);
             drawInfo((char*)"heat", (float)playerClient.player->heatTracker, 1);
             drawInfo((char*)"zombies", (float)mainWorld->numZombies, 2);
+            drawInfo((char*)"Mem % free", (float)mainWorld->entArraySpace * 100 / ENTITY_BYTES_ARRAY_LEN, 3);
             clientShowDialog();
         }
         else {

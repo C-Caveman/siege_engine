@@ -11,6 +11,8 @@
 #define LOG_ENTS 0
 #define LOG_ENTITY_BYTES_ARRAY 0
 #define LOG_ENT_SPAWNING 0
+#define LOG_ENT_SPAWNING_DETAILED 0
+#define LOG_ENT_DESPAWNING 0
 #define LOG_ENT_HANDLES 0
 #define LOG_GRAPHICS 0
 #define LOG_THREAD 0
@@ -28,8 +30,9 @@
 #define LOG_PACKETS 0
 #define LOG_BUFFERS 1
 // Print an error message with file/lineNum, then kill the program.
-#define fatal(message) { \
-    fprintf(stderr, "*** %s:%d *** " message "\n", __FILE__, __LINE__); \
+#define fatal(...) { \
+    fprintf(stderr, "*** %s:%d\n", __FILE__, __LINE__); \
+    fprintf(stderr, "*** " __VA_ARGS__); \
     exit(1); \
 }
 // Temporary hack for singleplayer movement smoothness:
@@ -339,6 +342,7 @@ handle reserveHandle(uint16_t entType); //-------- Set aside a handle to be assi
 // Spawn an entity immediately (only to be called by the server)
 #define SPAWN_IMMEDIATE(typeOfEntity, handleRef, ...) {\
     handle newHandle = reserveHandle(typeOfEntity); \
+    /* Optional handleRef, allows server queue up events for the new ent. */\
     if (handleRef != 0) {\
         *((handle*)handleRef) = newHandle;\
     }\
