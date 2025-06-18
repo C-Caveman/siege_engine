@@ -126,6 +126,7 @@ struct client {
     int  dialogActorFaceIndex;  // Actor's current face animation.
     int  dialogActorVoiceIndex; // Actor's current talk sound.
     int  dialogActorFrame;      // Frame offset for the face animation.
+    bool dialogJustEnded;       // Whether a dialogue message just reached its last character.
     //
     // Current menu state:
     //

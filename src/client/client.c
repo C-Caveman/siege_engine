@@ -290,6 +290,7 @@ void clientClearDialog() {
     playerClient.dialogActorFaceIndex = 0;
     playerClient.dialogActorVoiceIndex = 0;
     playerClient.dialogActorFrame = 0;
+    playerClient.dialogJustEnded = 0;
 }
 
 #define DEFAULT_WAIT_TIME 75
@@ -303,6 +304,7 @@ void clientStartDialog(char* message) {
     playerClient.dialogCharsPrinted = 0;
     playerClient.dialogStringPos = 0;
     playerClient.dialogActorFrame = 0;
+    playerClient.dialogJustEnded = 0;
 }
 
 void clientChangeActor() {
@@ -328,15 +330,24 @@ void clientChangeActor() {
 }
 
 void clientUpdateDialogue() { // Animate the dialog box.
+    int numTextBoxChars = strlen(playerClient.dialogString);
     if (playerClient.dialogVisible == 0)
         return;
+    if (!playerClient.dialogJustEnded && playerClient.dialogStringPos == numTextBoxChars) {
+        playerClient.dialogJustEnded = true;
+        playerClient.waitTime = 1000;
+        playerClient.dialogActorFrame = 0;
+    }
     timerUpdate(&playerClient.waitTimer, playerClient.waitTime);
     bool timeToPrint = false;
     if (playerClient.waitTimer.count > 0) {
         timeToPrint = true;
         timerStart(&playerClient.waitTimer);
     }
-    int numTextBoxChars = strlen(playerClient.dialogString);
+    if (playerClient.dialogJustEnded && timeToPrint) { //TODO add pause at end of dialogue, before it disappears
+        clientClearDialog();
+        return;
+    }
     //char prevChar = playerClient.dialogPrintString[(playerClient.dialogCharsPrinted > 0) ? playerClient.dialogCharsPrinted-1 : 0];
     char c = playerClient.dialogString[playerClient.dialogStringPos];
     if (c == '<') {
@@ -407,10 +418,6 @@ void clientUpdateDialogue() { // Animate the dialog box.
             playSoundChannel(actors[playerClient.dialogActorIndex].voices[playerClient.dialogActorVoiceIndex], CHAN_VOICE);
             playerClient.dialogActorFrame++;
         }
-    }
-    if (playerClient.dialogStringPos == numTextBoxChars) {
-        clientClearDialog();
-        return;
     }
 }
 
