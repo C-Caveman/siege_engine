@@ -42,6 +42,8 @@ void print_vars();
     
 #define INPUTS_LIST(f) \
     f(inputKeyUnbound) \
+    f(inputSave) \
+    f(inputLoad) \
     f(inputQuit) \
     f(inputExplodeEverything) \
     f(inputFullscreen) \

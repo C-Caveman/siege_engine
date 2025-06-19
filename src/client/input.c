@@ -171,6 +171,14 @@ void clientInput(struct client* client) {
                     CE(ClientQuit, .clientID=client->id);
                     client->quitting = true;
                     break;
+                case enum_inputSave:
+                    //CE(ClientSave, .clientID=client->id);
+                    saveWorld(0);
+                    break;
+                case enum_inputLoad:
+                    //CE(ClientLoad, .clientID=client->id);
+                    loadWorld(0);
+                    break;
                     
                 case enum_inputFullscreen:
                     if (fullscreen)

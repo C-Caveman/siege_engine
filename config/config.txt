@@ -24,6 +24,8 @@ playingDemo 0
 
 #########################
 # Controls:
+inputSave u
+inputLoad p
 inputQuit q
 inputFullscreen f
 inputMoveUp w

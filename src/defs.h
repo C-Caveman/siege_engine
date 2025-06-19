@@ -9,6 +9,7 @@
 }
 // Debug flags:
 #define LOG_ENTS 0
+#define LOG_WORLD 1
 #define LOG_ENTITY_BYTES_ARRAY 0
 #define LOG_ENT_SPAWNING 0
 #define LOG_ENT_SPAWNING_DETAILED 0
@@ -203,6 +204,8 @@ struct tile* worldTileFromPos(vec2f pos);
 vec2i worldTileIndexFromPos(vec2f pos);
 vec2i tileNumberToIndex(uint32_t tileNumber);
 uint32_t tileIndexToNumber(vec2i tileIndex);
+bool loadWorld(int saveIndex);
+bool saveWorld(int saveIndex);
 extern struct world* mainWorld; //---------------------------- Main world.
 extern uint8_t anim_tick; //----------------------------------- Frame counter for animations.
 extern struct client playerClient; //-------------------------- Player client (for the client side).

@@ -145,6 +145,7 @@ void* serverLoop() {
     }
     E(FrameEnd, SDL_GetTicks(), frameNumber);
     */
+    
     p = (struct ent_player*)getEnt(playerHandle, player_type);
     p->pos = (vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)};
     playerClient.player = (struct ent_player*)p;
