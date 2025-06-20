@@ -229,7 +229,7 @@ void draw_ent_sprites(vec2f camera_pos, entBasics* e) {
             continue;
         anim = s->anim;
         p =    v2fAdd(s->pos, e->pos);
-        tick = s->anim_tick;
+        tick = s->animTick;
         rotation = s->rotation;
         flags = s->flags;
         //
@@ -241,11 +241,11 @@ void draw_ent_sprites(vec2f camera_pos, entBasics* e) {
             s->flags |= PAUSED;
             //printf("Stopped anim for %s.\n", entTypeName(e->type));
         }
-        // Handle anim_tick overflowing back to lower values:
-        ms_since_last_frame = anim_tick - tick + (anim_tick < tick)*256;
-        // Update the frame if enough anim_ticks have passed since the last one:
+        // Handle animTick overflowing back to lower values:
+        ms_since_last_frame = animTick - tick + (animTick < tick)*256;
+        // Update the frame if enough animTicks have passed since the last one:
         if (!(flags & PAUSED) && (ms_since_last_frame > MS_PER_ANIM_FRAME)) {
-            sprites[i].anim_tick = anim_tick;
+            sprites[i].animTick = animTick;
             sprites[i].frame += 1;
         }
         // Loop if needed:

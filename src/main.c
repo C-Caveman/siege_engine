@@ -11,7 +11,7 @@ extern struct serverState server;
 struct world test_world = {0};
 struct client playerClient;
 struct client clients[MAX_CLIENTS] = {0};
-uint8_t anim_tick = 0;
+uint8_t animTick = 0;
 uint32_t frameNumber = 0;
 
 struct eventBufferFlat      serverEventBuffer = {0};

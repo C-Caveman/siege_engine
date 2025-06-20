@@ -135,7 +135,7 @@ void* clientLoop() {
     while (playerClient.running) {
         // Pull server events from the listener's ring buffer:
         recvServerCommands();
-        anim_tick = SDL_GetTicks() % 256; //- 8-bit timestamp for animations.
+        animTick = SDL_GetTicks() % 256; //- 8-bit timestamp for animations.
         clientDt = ((float)SDL_GetTicks() - (float)frameStartTime) / 1000.f;
         if (clientDt < 0) {
             printf("clientDt was negative!!!!: %f\n", clientDt);
@@ -161,7 +161,7 @@ void* clientLoop() {
         SDL_RenderClear(renderer);
         if (!playerClient.paused) {
             // Clientside animations:
-            animateAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+            animateAllEnts(mainWorld->entityBytesArray, ENTITY_BYTES_ARRAY_LEN);
             drawWorld(mainWorld);
             // DRAW A HUD!
             drawInfo((char*)"fps", fps, 0);

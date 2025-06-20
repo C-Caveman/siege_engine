@@ -161,7 +161,7 @@ enum sprite_flags {
 struct sprite {
     uint16_t anim;       // Enum value of the animation. (animation data is stored elsewhere)
     uint8_t frame;       // current frame of animation.
-    uint8_t anim_tick;   // Tick the previous frame was drawn on.
+    uint8_t animTick;   // Tick the previous frame was drawn on.
     uint8_t flags;       // Flags for sprite animation. Looping, stopped, ect.
     vec2f pos;           // Offset from the ent origin
     float rotation;
@@ -190,10 +190,18 @@ void chunkSetWall(struct chunk* c, int x, int y, int wall_top_anim, int wall_sid
 #define ENTITY_BYTES_ARRAY_LEN 2000000
 #define MAX_DRAW_DISTANCE 32
 #define MAX_GIBS 512
+struct handle_info {
+    entBasics* ent; // Entity who owns this handle.
+    uint16_t entType;
+    int16_t copies;         // Num ents using this handle.
+    bool claimed;           // Whether the entity is marked for deletion.
+};
+#define NUM_HANDLES 65536-1
 struct world { //---------------------------------------------- Collection of chunks and entities.
     char name[MAX_WORLD_NAME_LEN];
     struct chunk chunks[WORLD_WIDTH][WORLD_WIDTH]; //----------------- Tiles.
-    char entity_bytes_array[ENTITY_BYTES_ARRAY_LEN]; //-------- Entities.
+    struct handle_info handles[NUM_HANDLES];       //---------Entity handles.
+    char entityBytesArray[ENTITY_BYTES_ARRAY_LEN]; //-------- Entities.
     int entArraySpace;
     int numGibs;
     int numZombies;
@@ -207,7 +215,7 @@ uint32_t tileIndexToNumber(vec2i tileIndex);
 bool loadWorld(int saveIndex);
 bool saveWorld(int saveIndex);
 extern struct world* mainWorld; //---------------------------- Main world.
-extern uint8_t anim_tick; //----------------------------------- Frame counter for animations.
+extern uint8_t animTick; //----------------------------------- Frame counter for animations.
 extern struct client playerClient; //-------------------------- Player client (for the client side).
 
 // Server details:

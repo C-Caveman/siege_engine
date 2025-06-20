@@ -8,7 +8,7 @@
 extern struct world test_world;
 extern struct client playerClient;
 extern struct client clients[MAX_CLIENTS];
-extern uint8_t anim_tick;
+extern uint8_t animTick;
 extern uint32_t frameNumber;
 
 extern struct eventBufferFlat      serverEventBuffer;
@@ -145,7 +145,8 @@ void* serverLoop() {
     }
     E(FrameEnd, SDL_GetTicks(), frameNumber);
     */
-    
+    if (!playerHandle)
+        fatal("Player could not be spawned!");
     p = (struct ent_player*)getEnt(playerHandle, player_type);
     p->pos = (vec2f){RSIZE*(CHUNK_WIDTH/2-0.5), RSIZE*(CHUNK_WIDTH/2-0.5)};
     playerClient.player = (struct ent_player*)p;
@@ -162,9 +163,9 @@ void* serverLoop() {
         recvClientCommands();
         // Entity updates:
         if (!server.paused) { //TODO add a pauseTime value to prevent glitchyness when unpausing
-            thinkAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-            moveAllEnts(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
-            wallCollision(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN);
+            thinkAllEnts(mainWorld->entityBytesArray, ENTITY_BYTES_ARRAY_LEN);
+            moveAllEnts(mainWorld->entityBytesArray, ENTITY_BYTES_ARRAY_LEN);
+            wallCollision(mainWorld->entityBytesArray, ENTITY_BYTES_ARRAY_LEN);
             defragEntArray();
         }
         E(FrameEnd, SDL_GetTicks(), frameNumber);

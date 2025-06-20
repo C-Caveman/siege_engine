@@ -11,13 +11,13 @@ extern struct anim_info anim_data[];
 extern struct client clients[MAX_CLIENTS]; //------------------ Server's list of player clients.
 extern struct serverState server;
 
-struct handle_info handles[NUM_HANDLES] = { //=================================// ENTITY HANDLES //
-    {0,1,true}, // Handle 0 is the Null handle.
-};
+//struct handle_info handles[NUM_HANDLES] = { //=================================// ENTITY HANDLES //
+//    {0,1,true}, // Handle 0 is the Null handle.
+//};
 int countRemainingHandles() {
     int numAvailable = 0;
     for (int i=0; i<NUM_HANDLES; i++) {
-        if (handles[i].copies == 0)
+        if (mainWorld->handles[i].copies == 0)
             numAvailable++;
     }
     return numAvailable;
@@ -25,53 +25,62 @@ int countRemainingHandles() {
 handle claim_handle(entBasics* e, uint16_t entType) { //-------- Bind a handle to an entity.
     handle h = -1;
     for (int i=0; i<NUM_HANDLES; i++) {
-        if (handles[i].copies == 0) {h=i; break;}
+        if (mainWorld->handles[i].copies == 0) {
+            h=i;
+            break;
+        }
     }
-    if (h == -1) { printf("\n*** Ran out of handles!!!\n"); exit(-1); }
-    handles[h].copies = 1;
-    handles[h].ent = e;
-    handles[h].claimed = 1;
-    handles[h].entType = entType;
-    //printf("Handle %d claimed by a '%s' ent.\n", h, entTypeName(handles[h].ent->type));
+    if (h == -1)
+        fatal("Ran out of handles!!!");
+    mainWorld->handles[h].copies = 1;
+    mainWorld->handles[h].ent = e;
+    mainWorld->handles[h].claimed = 1;
+    mainWorld->handles[h].entType = entType;
+    printf("Handle %d claimed by a '%s' ent.\n", h, entTypeName(entType));
+    //printf("Handle %d claimed by a '%s' ent.\n", h, entTypeName(mainWorld->handles[h].ent->type));
     return h;
 }
 handle reserveHandle(uint16_t entType) { //-------- Set aside a handle to be assigned an entity later.
     handle h = -1;
-    for (int i=0; i<NUM_HANDLES; i++) {
-        if (handles[i].copies == 0) {h=i; break;}
+    for (int i=1; i<NUM_HANDLES; i++) {
+        if (mainWorld->handles[i].copies == 0) {
+            h=i;
+            break;
+        }
     }
-    if (h == -1) { printf("\n*** Ran out of handles!!!\n"); exit(-1); }
-    handles[h].copies = 1;
-    handles[h].ent = 0;
-    handles[h].claimed = 1;
-    handles[h].entType = entType;
-    //printf("Handle %d claimed by a '%s' ent.\n", h, entTypeName(handles[h].ent->type));
+    if (h == -1) { printf("\n*** Ran out of mainWorld->handles!!!\n"); exit(-1); }
+    mainWorld->handles[h].copies = 1;
+    mainWorld->handles[h].ent = 0;
+    mainWorld->handles[h].claimed = 1;
+    mainWorld->handles[h].entType = entType;
+    //printf("Giving handle %d to a '%s'\n", h, entTypeName(entType));
+    //printf("Handle %d claimed by a '%s' ent.\n", h, entTypeName(mainWorld->handles[h].ent->type));
     return h;
 }
 void unclaim_handle(handle i) { //-------------------- Unbind a handle (not a copy of one).
     if (i != 0) { //Null handle.
-        handles[i].claimed = 0;
-        handles[i].copies--;
+        mainWorld->handles[i].claimed = 0;
+        mainWorld->handles[i].copies--;
     }
-    dlog(ENT_HANDLES, "Unclaimed handle %d. Copies = %d.\n", i, handles[i].copies);
+    dlog(ENT_HANDLES, "Unclaimed handle %d. Copies = %d.\n", i, mainWorld->handles[i].copies);
 }
 handle copy_handle(handle i) { //--------------------- Copy a bound handle (another entity's handle).
-    if (handles[i].claimed == true && i != 0)
-        { handles[i].copies++; }
+    if (mainWorld->handles[i].claimed == true && i != 0)
+        { mainWorld->handles[i].copies++; }
     else
         { i = 0; } //Null handle.
-    dlog(ENT_HANDLES, "Copied handle %d. Now has %d copies.\n", i, handles[i].copies);
+    dlog(ENT_HANDLES, "Copied handle %d. Now has %d copies.\n", i, mainWorld->handles[i].copies);
     return i;
 }
 handle uncopy_handle(handle i) { //------------------- Uncopy a bound handle, replace with null.
-    if (i != 0) { handles[i].copies--; } //Null handle cannot be destroyed.
+    if (i != 0) { mainWorld->handles[i].copies--; } //Null handle cannot be destroyed.
     return 0;
 }
 entBasics*  getEnt(handle i, uint16_t entType) { //------------ Get an entity by its handle.
-    if (handles[i].claimed == 1 && (handles[i].entType == entType || entType == 0))
-        { return handles[i].ent; }
+    if (mainWorld->handles[i].claimed == 1 && (mainWorld->handles[i].entType == entType || entType == 0))
+        { return mainWorld->handles[i].ent; }
     else
-        { handles[i].copies--; return 0; }
+        { mainWorld->handles[i].copies--; return 0; }
 }//===============================================================================// ENTITY FUNCTIONS. //;;
 void nearbyEntInteraction(vec2f position, void (*fn)(entBasics*)) {
     vec2f p = v2fSub(v2fAdd(position, HW), (vec2f){RSIZE,RSIZE}); // Top left corner of the 3x3.
@@ -364,13 +373,13 @@ void playerThink(struct ent_player* e) {                              // PLAYER
     }
     if (playerClient.explodingEverything) {
         playerClient.explodingEverything = false;
-        for (int i=getFirstEnt(mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN); i != -1; i=getNextEnt(i, mainWorld->entity_bytes_array, ENTITY_BYTES_ARRAY_LEN)) {
-            if (mainWorld->entity_bytes_array[i] != HEADER_BYTE) {
+        for (int i=getFirstEnt(mainWorld->entityBytesArray, ENTITY_BYTES_ARRAY_LEN); i != -1; i=getNextEnt(i, mainWorld->entityBytesArray, ENTITY_BYTES_ARRAY_LEN)) {
+            if (mainWorld->entityBytesArray[i] != HEADER_BYTE) {
                 dlog(ENTS, "*** Invalid index given by getNextEnt() in thinkAllEnts()\n");
                 break;
             }
             // Run the correct think function for this entity:
-            entBasics* e = (entBasics*)&mainWorld->entity_bytes_array[i];
+            entBasics* e = (entBasics*)&mainWorld->entityBytesArray[i];
             if (e->type == zombie_type && v2fDist(playerClient.player->pos, e->pos) < RSIZE*10)
                 E_IMMEDIATE(ZombieDie, e->h);
         }
@@ -891,14 +900,14 @@ int getFirstEnt(char* array, int array_len) {
 entBasics* findEntSpace(uint16_t entType);
 handle reserveEntHandle(uint16_t entType) {
     handle h = 0;
-    // Make sure there are handles left:
+    // Make sure there are mainWorld->handles left:
     int remainingHandles = countRemainingHandles();
     if (remainingHandles == 0) {
-        printf("***\n*** No entity handles left!!!\n***\n");
+        printf("***\n*** No entity mainWorld->handles left!!!\n***\n");
         return 0;
     }
     else if (remainingHandles < 10 && entType == gib_type) {
-        printf("!!! Only %d handles left!!! Skipping gib spawn.\n", remainingHandles);
+        printf("!!! Only %d mainWorld->handles left!!! Skipping gib spawn.\n", remainingHandles);
         return 0;
     }
     // Locate memory for the handle to map to:
@@ -916,7 +925,7 @@ handle reserveEntHandle(uint16_t entType) {
     /////
     
     /*
-    char* array = mainWorld->entity_bytes_array;
+    char* array = mainWorld->entityBytesArray;
     int required_space = getEntSize(entType);
     int empty_space_len = 0;
     int i = 0;
@@ -968,12 +977,12 @@ entBasics* spawnEnt(int entType, vec2f pos, handle h) {
         printf("*** Attempted to spawn '%s' with invalid handle %d in spawnEnt()\n", entTypeName(entType), h);
         return 0;
     }
-    if (handles[h].claimed && handles[h].entType != entType) {
-        printf("*** Handle %d for spawning '%s' already claimed by a '%s' in spawnEnt()\n", h, entTypeName(entType), entTypeName(handles[h].entType));
+    if (mainWorld->handles[h].claimed && mainWorld->handles[h].entType != entType) {
+        printf("*** Handle %d for spawning '%s' already claimed by a '%s' in spawnEnt()\n", h, entTypeName(entType), entTypeName(mainWorld->handles[h].entType));
         return 0;
     }
     // Initialize the entity in the reserved memory location:
-    entBasics* new_entity = (entBasics*)handles[h].ent;
+    entBasics* new_entity = (entBasics*)mainWorld->handles[h].ent;
     new_entity->header_byte = HEADER_BYTE;
     new_entity->type = entType;
     new_entity->size = getEntSize(entType);
@@ -992,7 +1001,7 @@ entBasics* spawnEnt(int entType, vec2f pos, handle h) {
     return new_entity;
 }
 entBasics* findEntSpace(uint16_t entType) {
-    char* array = mainWorld->entity_bytes_array;
+    char* array = mainWorld->entityBytesArray;
     int required_space = getEntSize(entType);
     int empty_space_len = 0;
     int i = 0;
@@ -1038,20 +1047,20 @@ void forceSpawn(uint16_t entType, vec2f pos, handle h) {
     // Discard gib if getting close to memory limit:
     if (mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/8 && entType == gib_type) {
         dlog(ENT_SPAWNING, "Blocked gib spawn.\n");
-        if (handles[h].claimed && handles[h].entType != entType) {
-            despawnEnt(handles[h].ent);
+        if (mainWorld->handles[h].claimed && mainWorld->handles[h].entType != entType) {
+            despawnEnt(mainWorld->handles[h].ent);
         }
         return;
     }
     // If this handle is taken by another type of ent, kill it.
-    if (handles[h].claimed && handles[h].ent != 0 && handles[h].entType != entType) {
-        despawnEnt(handles[h].ent);
-        handles[h].claimed = true;
-        handles[h].entType = entType;
+    if (mainWorld->handles[h].claimed && mainWorld->handles[h].ent != 0 && mainWorld->handles[h].entType != entType) {
+        despawnEnt(mainWorld->handles[h].ent);
+        mainWorld->handles[h].claimed = true;
+        mainWorld->handles[h].entType = entType;
     }
     else {
         // Get memory for the entity!
-        handles[h].ent = findEntSpace(entType);
+        mainWorld->handles[h].ent = findEntSpace(entType);
     }
     
     spawnEnt(entType, pos, h);
@@ -1266,7 +1275,7 @@ void wallCollision(char* array, int array_len) {
 void defragEntArray() {
     if (mainWorld->numGibs < MAX_GIBS) //(mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/2)
             return;
-    char* array = mainWorld->entity_bytes_array;
+    char* array = mainWorld->entityBytesArray;
     int array_len = ENTITY_BYTES_ARRAY_LEN;
     for (int i=getFirstEnt(array, array_len); i != -1; i=getNextEnt(i, array, array_len)) {
         entBasics* e = ((entBasics*)&array[i]);

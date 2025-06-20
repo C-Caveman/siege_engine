@@ -25,7 +25,7 @@ extern SDL_Rect background;
 //extern int fullscreen, window_x, window_y, fps_cap;
 extern float tileWidth, VERTICAL_TILES_VISIBLE;
 extern volatile uint32_t curFrameStart, frame_time, frame_count, last_sec, fps;
-extern uint8_t anim_tick;
+extern uint8_t animTick;
 extern float view_x; // camera position
 extern float view_y;
 extern int mouse_x;
