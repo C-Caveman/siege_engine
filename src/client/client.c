@@ -255,7 +255,7 @@ void clientUpdatePlayerEntity() {
                     if (!e)
                         continue;
                     if (e->type == gib_type) {
-                        despawnEnt(e);
+                        despawnEnt(timmy->ents[i]);
                     }
                     else if (e) {
                         timmy = 0;

@@ -117,7 +117,7 @@ void* serverLoop() {
         processEvents();
         
     }
-    /*
+    /*  AND SO IT BEGINS...
     bool playerConnected = false;
     int centiSecondsToWait = 1000;
     E(FrameStart, SDL_GetTicks(), frameNumber++);

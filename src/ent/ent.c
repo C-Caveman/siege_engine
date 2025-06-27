@@ -22,7 +22,7 @@ int countRemainingHandles() {
     }
     return numAvailable;
 }
-handle claim_handle(entBasics* e, uint16_t entType) { //-------- Bind a handle to an entity.
+handle claim_handle(uint32_t entIndex, uint16_t entType) { //-------- Bind a handle to an entity.
     handle h = -1;
     for (int i=0; i<NUM_HANDLES; i++) {
         if (mainWorld->handles[i].copies == 0) {
@@ -33,7 +33,7 @@ handle claim_handle(entBasics* e, uint16_t entType) { //-------- Bind a handle t
     if (h == -1)
         fatal("Ran out of handles!!!");
     mainWorld->handles[h].copies = 1;
-    mainWorld->handles[h].ent = e;
+    mainWorld->handles[h].entIndex = entIndex;
     mainWorld->handles[h].claimed = 1;
     mainWorld->handles[h].entType = entType;
     printf("Handle %d claimed by a '%s' ent.\n", h, entTypeName(entType));
@@ -48,9 +48,10 @@ handle reserveHandle(uint16_t entType) { //-------- Set aside a handle to be ass
             break;
         }
     }
-    if (h == -1) { printf("\n*** Ran out of mainWorld->handles!!!\n"); exit(-1); }
+    if (h == -1)
+        fatal("\n*** Ran out of handles!!!\n");
     mainWorld->handles[h].copies = 1;
-    mainWorld->handles[h].ent = 0;
+    mainWorld->handles[h].entIndex = 0;
     mainWorld->handles[h].claimed = 1;
     mainWorld->handles[h].entType = entType;
     //printf("Giving handle %d to a '%s'\n", h, entTypeName(entType));
@@ -76,11 +77,14 @@ handle uncopy_handle(handle i) { //------------------- Uncopy a bound handle, re
     if (i != 0) { mainWorld->handles[i].copies--; } //Null handle cannot be destroyed.
     return 0;
 }
-entBasics*  getEnt(handle i, uint16_t entType) { //------------ Get an entity by its handle.
-    if (mainWorld->handles[i].claimed == 1 && (mainWorld->handles[i].entType == entType || entType == 0))
-        { return mainWorld->handles[i].ent; }
-    else
-        { mainWorld->handles[i].copies--; return 0; }
+entBasics* getEnt(handle i, uint16_t entType) { //------------ Get an entity by its handle.
+    if (mainWorld->handles[i].claimed == 1 && (mainWorld->handles[i].entType == entType || entType == 0)) {
+        return (entBasics*) &mainWorld->entityBytesArray[mainWorld->handles[i].entIndex];
+    }
+    else {
+        mainWorld->handles[i].copies--;
+        return 0;
+    }
 }//===============================================================================// ENTITY FUNCTIONS. //;;
 void nearbyEntInteraction(vec2f position, void (*fn)(entBasics*)) {
     vec2f p = v2fSub(v2fAdd(position, HW), (vec2f){RSIZE,RSIZE}); // Top left corner of the 3x3.
@@ -373,9 +377,25 @@ void playerThink(struct ent_player* e) {                              // PLAYER
     }
     if (playerClient.explodingEverything) {
         playerClient.explodingEverything = false;
+        vec2i tileToBlast = {0};
+        const int radius = 8;
+        for (int dx=-radius; dx<=radius; dx++) {
+            for (int dy=-radius; dy<=radius; dy++) {
+                tileToBlast = v2iAdd(worldTileIndexFromPos(e->pos), (vec2i){dx, dy});
+                struct tile* t = worldGetTile(tileToBlast);
+                if (t) {
+                    for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
+                        entBasics* target = getEnt(t->ents[i], 0);
+                        if (target && target->type == zombie_type)
+                            E_IMMEDIATE(ZombieDie, t->ents[i]);
+                    }
+                }
+            }
+        }
+        /*
         for (int i=getFirstEnt(mainWorld->entityBytesArray, ENTITY_BYTES_ARRAY_LEN); i != -1; i=getNextEnt(i, mainWorld->entityBytesArray, ENTITY_BYTES_ARRAY_LEN)) {
             if (mainWorld->entityBytesArray[i] != HEADER_BYTE) {
-                dlog(ENTS, "*** Invalid index given by getNextEnt() in thinkAllEnts()\n");
+                dlog(ENTS, "*** Invalid index given by getNextEnt() in playerThink()\n");
                 break;
             }
             // Run the correct think function for this entity:
@@ -383,6 +403,7 @@ void playerThink(struct ent_player* e) {                              // PLAYER
             if (e->type == zombie_type && v2fDist(playerClient.player->pos, e->pos) < RSIZE*10)
                 E_IMMEDIATE(ZombieDie, e->h);
         }
+        */
     }
     // Get the heat value:
     timerUpdate(&e->heatTimer, HEAT_UPDATE_DELAY_MILLIS);
@@ -521,7 +542,7 @@ void explosionInit(struct ent_explosion* e) {                               // E
     e->sprites[0].anim = kaboom01;
 }
 void evDespawn(struct dDespawn* d) {
-    despawnEnt(getEnt(d->h, 0));
+    despawnEnt(d->h);
 }
 void explosionThink(struct ent_explosion* e) {
     E_IMMEDIATE(Despawn, e->h);
@@ -600,7 +621,8 @@ void zombieInit(struct ent_zombie* e) {                               // ZOMBIE
     srand(time(0));
     e->nextThink = tickStartTime + 200*randf();
     e->num_sprites = 1;
-    e->nextWalk = tickStartTime;
+    e->stuckTime = 0;
+    e->lastWalkedTile = (vec2i){0};
     e->sprites[0].flags |= LOOPING;
     e->sprites[0].anim = zombie;
     e->target = findPlayer(); 
@@ -705,7 +727,7 @@ void evZombieDie(struct dZombieDie* d) {
         E_IMMEDIATE(SpriteRotate, .h=h, .index=i, .angle=e->sprites[0].rotation);
         E_IMMEDIATE(SpriteSetAnim, .h=h, .anim=zombieGibs, .frame=i);
     }
-    despawnEnt((entBasics*)e);
+    despawnEnt(d->h);
 }
 #define SPLATTER_FORCE 6000
 #define SCATTER_FORCE 0.8
@@ -725,7 +747,7 @@ void evZombieWindShieldSplatter(struct dZombieWindShieldSplatter* d) {
         E_IMMEDIATE(SpriteRotate, .h=h, .index=i, .angle=e->sprites[0].rotation);
         E_IMMEDIATE(SpriteSetAnim, .h=h, .anim=zombieGibs, .frame=i);
     }
-    despawnEnt((entBasics*)e);
+    despawnEnt(d->h);
 }
 void zombieThink(struct ent_zombie* e) {
     e->nextThink = tickStartTime + 40;
@@ -733,46 +755,62 @@ void zombieThink(struct ent_zombie* e) {
         E_IMMEDIATE(ZombieDie, e->h);
         return;
     }
-    entBasics* t = getEnt(e->target, player_type);
-    bool attacking = (t != 0 && v2fDist(t->pos, e->pos) < RSIZE/2);
+    entBasics* tar = getEnt(e->target, player_type);
+    bool attacking = (tar != 0 && v2fDist(tar->pos, e->pos) < RSIZE/2);
     if (attacking) {
         playSoundChannel(slice001, CHAN_MONSTER);
         e->nextThink = tickStartTime + 500;
     }
-    vec2f rawTargetVector = v2fSub(v2fAdd(e->targetPos, v2fScale(t->vel, 0.15f)), e->pos);
+    vec2f rawTargetVector = v2fSub(v2fAdd(e->targetPos, v2fScale(tar->vel, 0.15f)), e->pos);
     vec2f targetVector = v2fNormalized(rawTargetVector);
     float distToTarget = v2fLen(rawTargetVector);
-    if (true || passedTimestamp(e->nextWalk)) { //e->walkDelay.count > 0) {
-        e->nextWalk = tickStartTime + 40;
-        e->wanderDir = targetVector;
-        //nearbyEntInteractionBidirectional((entBasics*)e, divertNearbyZombies);
-        //if (distToTarget < RSIZE*5)
-        //    nearbyEntInteractionBidirectional((entBasics*)e, pushNearbyEnts);
-        int numTouchingEnts = 0;
-        struct tile* curTile = worldTileFromPos(e->pos);
-        if (curTile) {
-            for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
-                if (curTile->ents[i] != 0)
-                    numTouchingEnts++;
-            }
-        }
-        float bonusSpeed = 0;
-        if (numTouchingEnts > 1) {
-            float entSpecificRandomX =  sin(((float)tickStartTime)*0.001f + ((float)e->h));
-            float entSpecificRandomY =  sin(((float)tickStartTime)*0.001f + ((float)e->h)*5.f);
-            //vec2f offsetFromTileCenter = v2fNormalized(v2fSub(v2fFloor(v2fScalarDiv(v2fAdd(e->pos,HW), RSIZE)), v2fScalarDiv(e->pos,RSIZE)));
-            vec2f randomDir = (vec2f) {entSpecificRandomX, entSpecificRandomY};
-            //e->vel = v2fAdd(e->vel, v2fScale(randomDir, 40000.f*numTouchingEnts*serverDt));
-            e->wanderDir = v2fAdd(e->wanderDir, randomDir);
-        }
-        else {
-            bonusSpeed = 100;
-        }
-        vec2f persuitVelocity = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), e->speed+bonusSpeed));
-        if (distToTarget < RSIZE*10 || randf() > 0.1)
-            E_IMMEDIATE(EntMove, .h=e->h, .pos=e->pos, .vel=persuitVelocity);
-        e->targetPos = t->pos;
+    e->wanderDir = targetVector;
+    // Manage the stuckTime, for getting zombies out of places they're stuck:
+    if (!v2iIsEq(e->lastWalkedTile, e->tile)) {
+        e->lastWalkedTile = e->tile;
+        e->stuckTime = 0;
     }
+    else {
+        e->stuckTime += 40;
+    }
+    //nearbyEntInteractionBidirectional((entBasics*)e, divertNearbyZombies);
+    //if (distToTarget < RSIZE*5)
+    //    nearbyEntInteractionBidirectional((entBasics*)e, pushNearbyEnts);
+    int numTouchingEnts = 0;
+    struct tile* curTile = worldTileFromPos(e->pos);
+    if (curTile) {
+        for (int i=0; i<MAX_ENTS_PER_TILE; i++) {
+            if (curTile->ents[i] != 0 && mainWorld->handles[curTile->ents[i]].entType != gib_type)
+                numTouchingEnts++;
+        }
+    }
+    float bonusSpeed = 0;
+    float contactBonus = (numTouchingEnts > MAX_ENTS_PER_TILE/2) ? 8 : 1;
+    float t = ((float)tickStartTime)*0.001f;
+    float entRandom = (float)e->h;
+    float entRandomTimeScale = entRandom * 0.0001f;
+    float entSpecificRandomX =  sin(t*entRandomTimeScale + entRandom * contactBonus);
+    float entSpecificRandomY =  cos(t*entRandomTimeScale + entRandom * contactBonus);
+    if (numTouchingEnts > 1) {
+        //vec2f offsetFromTileCenter = v2fNormalized(v2fSub(v2fFloor(v2fScalarDiv(v2fAdd(e->pos,HW), RSIZE)), v2fScalarDiv(e->pos,RSIZE)));
+        vec2f randomDir = (vec2f) {entSpecificRandomX, entSpecificRandomY};
+        //e->vel = v2fAdd(e->vel, v2fScale(randomDir, 40000.f*numTouchingEnts*serverDt));
+        e->wanderDir = v2fAdd(e->wanderDir, v2fScale(randomDir, numTouchingEnts*contactBonus*entRandom));
+        bonusSpeed += 50 * contactBonus;
+    }
+    else {
+        bonusSpeed = 100;
+    }
+    if (e->stuckTime > 250)
+        e->wanderDir = v2fAdd(v2fNormalized(e->wanderDir), (vec2f){sin(t + entRandom), cos(t + entRandom)});
+    if (e->stuckTime > 500) {
+        e->wanderDir = (vec2f){sin(t + entRandom*4.f), cos(t + entRandom*4.f)};
+        bonusSpeed += 100;
+    }
+    vec2f persuitVelocity = v2fAdd(e->vel, v2fScale(v2fNormalized(e->wanderDir), e->speed+bonusSpeed));
+    if (distToTarget < RSIZE*10 || randf() > 0.1)
+        E_IMMEDIATE(EntMove, .h=e->h, .pos=e->pos, .vel=persuitVelocity);
+    e->targetPos = tar->pos;
     /*
     //bool shouldSleepMore = ( (mainWorld->numZombies/16) * (distToTarget*5) * randf() ) > 0.5;
     bool shouldSleepMore = (distToTarget > RSIZE*5);
@@ -828,7 +866,7 @@ void evExplode(struct dExplode* d) {
     // Spawn an explosion, despawn the entitiy.
     SPAWN_IMMEDIATE(explosion_type, 0, e->pos);
     playSoundChannel(explosion01, CHAN_WORLD);
-    despawnEnt(e);
+    despawnEnt(d->h);
 }
 void spawnerThink(struct ent_spawner* e) {
     e->nextThink = tickStartTime + SPAWN_INTERVAL;
@@ -897,7 +935,7 @@ int getFirstEnt(char* array, int array_len) {
         i = -1;
     return i;
 }
-entBasics* findEntSpace(uint16_t entType);
+uint32_t findEntSpace(uint16_t entType);
 handle reserveEntHandle(uint16_t entType) {
     handle h = 0;
     // Make sure there are mainWorld->handles left:
@@ -914,51 +952,11 @@ handle reserveEntHandle(uint16_t entType) {
     if (mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/8)
         printf("*** Warning! 7/8 of entity bytes array are full!\n");
     
-    //////
-    entBasics* entityLocation = findEntSpace(entType);
-    if (!entityLocation)
-        fatal("No space could be reserved for '%s' entity!", entTypeName(entType));
-    h = claim_handle(entityLocation, entType);
+    uint32_t entIndex = findEntSpace(entType);
+    h = claim_handle(entIndex, entType);
     if (!h)
         fatal("No handle could be reserved for '%s' entity!", entTypeName(entType));
     return h;
-    /////
-    
-    /*
-    char* array = mainWorld->entityBytesArray;
-    int required_space = getEntSize(entType);
-    int empty_space_len = 0;
-    int i = 0;
-    while (i<ENTITY_BYTES_ARRAY_LEN) {
-        // Empty slot?
-        if (array[i] != HEADER_BYTE) {
-            //dlog(ENT_SPAWNING, "Found an open slot at %d.\n", i);
-            empty_space_len += 1;
-            i += 1;
-        }
-        // Slot occupied.
-        else {
-            int skip_bytes = ((entBasics*)&array[i])->size;
-            dlog(ENT_SPAWNING, "Slots [%d, %d] already taken.\n", i, i+skip_bytes-1);
-            empty_space_len = 0;
-            i += skip_bytes;
-        }
-        // Got enough space to store the ent.
-        if (empty_space_len == required_space) {
-            dlog(ENT_SPAWNING, "Found enough space for ent in [%d, %d]\n", i-required_space, i-1);
-            i = i-required_space;
-            mainWorld->entArraySpace -= required_space;
-            break;
-        }
-    }
-    if (i >= ENTITY_BYTES_ARRAY_LEN-1) {
-        fatal("No space left in the entity array!!!");
-        return 0;
-    }
-    // A handle is available and we have enough memory for its entity type.
-    h = claim_handle((entBasics*)&array[i], entType);
-    return h;
-    */
 }
 void updateEntCount(uint16_t entType, int n) {
     switch (entType) {
@@ -982,7 +980,7 @@ entBasics* spawnEnt(int entType, vec2f pos, handle h) {
         return 0;
     }
     // Initialize the entity in the reserved memory location:
-    entBasics* new_entity = (entBasics*)mainWorld->handles[h].ent;
+    entBasics* new_entity = (entBasics*)&mainWorld->entityBytesArray[mainWorld->handles[h].entIndex];
     new_entity->header_byte = HEADER_BYTE;
     new_entity->type = entType;
     new_entity->size = getEntSize(entType);
@@ -1000,14 +998,15 @@ entBasics* spawnEnt(int entType, vec2f pos, handle h) {
     updateEntCount(entType, +1);
     return new_entity;
 }
-entBasics* findEntSpace(uint16_t entType) {
+// Get a valid index to store a new ent in the entityBytesArray:
+uint32_t findEntSpace(uint16_t entType) {
     char* array = mainWorld->entityBytesArray;
     int required_space = getEntSize(entType);
     int empty_space_len = 0;
-    int i = 0;
+    int i = 1;
     if (mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/8)
         printf("*** Warning! 7/8 of entity bytes array are full!\n");
-    while (i<ENTITY_BYTES_ARRAY_LEN) {
+    while (i<ENTITY_BYTES_ARRAY_LEN-1) {
         // Empty slot?
         if (array[i] != HEADER_BYTE) {
             dlog(ENT_SPAWNING_DETAILED, "Found an open slot at %d.\n", i);
@@ -1029,12 +1028,9 @@ entBasics* findEntSpace(uint16_t entType) {
             break;
         }
     }
-    if (i >= ENTITY_BYTES_ARRAY_LEN-1) {
+    if (i >= ENTITY_BYTES_ARRAY_LEN-1)
         fatal("No space left in the entity array!!!");
-        return 0;
-        //exit(-1);
-    }
-    return (entBasics*)&array[i];
+    return i;
 }
 //  ;;;
 // Clientside ent spawning:
@@ -1048,25 +1044,26 @@ void forceSpawn(uint16_t entType, vec2f pos, handle h) {
     if (mainWorld->entArraySpace < ENTITY_BYTES_ARRAY_LEN/8 && entType == gib_type) {
         dlog(ENT_SPAWNING, "Blocked gib spawn.\n");
         if (mainWorld->handles[h].claimed && mainWorld->handles[h].entType != entType) {
-            despawnEnt(mainWorld->handles[h].ent);
+            despawnEnt(h);
         }
         return;
     }
     // If this handle is taken by another type of ent, kill it.
-    if (mainWorld->handles[h].claimed && mainWorld->handles[h].ent != 0 && mainWorld->handles[h].entType != entType) {
-        despawnEnt(mainWorld->handles[h].ent);
+    if (mainWorld->handles[h].claimed && mainWorld->handles[h].entIndex != 0 && mainWorld->handles[h].entType != entType) {
+        despawnEnt(h);
         mainWorld->handles[h].claimed = true;
         mainWorld->handles[h].entType = entType;
     }
     else {
         // Get memory for the entity!
-        mainWorld->handles[h].ent = findEntSpace(entType);
+        mainWorld->handles[h].entIndex = findEntSpace(entType);
     }
     
     spawnEnt(entType, pos, h);
 }
 // Remove an entity from an entity segment array. TODO ent-specific cleanup TODO
-void despawnEnt(entBasics* e) {
+void despawnEnt(handle h) {
+    entBasics* e = getEnt(h, 0);
     if (!e)
         return;
     struct tile* old_tile = &mainWorld->chunks[e->chunk.y][e->chunk.x].tiles[e->tile.y][e->tile.x];
@@ -1280,7 +1277,7 @@ void defragEntArray() {
     for (int i=getFirstEnt(array, array_len); i != -1; i=getNextEnt(i, array, array_len)) {
         entBasics* e = ((entBasics*)&array[i]);
         if (e && e->type == gib_type && rand() < RAND_MAX/32){ // Delete random gibs (not just the newest ones).
-            despawnEnt(e);
+            despawnEnt(e->h);
         }
         if (mainWorld->numGibs < MAX_GIBS)
             break;

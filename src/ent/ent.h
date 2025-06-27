@@ -78,7 +78,8 @@ struct ent_zombie {
     vec2f targetPos;
     vec2f wanderDir;
     float speed;
-    uint32_t nextWalk;
+    vec2i lastWalkedTile;
+    uint32_t stuckTime;
 };
 enum gib_sprites {GIB_SPRITE_1, NUM_GIB_SPRITES};                            // GIB
 struct ent_gib {
@@ -101,7 +102,7 @@ ENTITY_TYPES_LIST(TO_THINK_PROTOTYPES)
 ENTITY_TYPES_LIST(TO_ANIMATE_PROTOTYPES)
 //======================================================================// Generic entity functions: //
 void forceSpawn(uint16_t entType, vec2f pos, handle h);
-void despawnEnt(entBasics* ent);
+void despawnEnt(handle h);
 void thinkAllEnts(char* array, int array_len);
 void animateAllEnts(char* array, int array_len);
 void moveOneEnt(entBasics* e, float deltaTime);

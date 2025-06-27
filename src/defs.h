@@ -191,7 +191,7 @@ void chunkSetWall(struct chunk* c, int x, int y, int wall_top_anim, int wall_sid
 #define MAX_DRAW_DISTANCE 32
 #define MAX_GIBS 512
 struct handle_info {
-    entBasics* ent; // Entity who owns this handle.
+    uint32_t entIndex; // Index in the entityBytesArray of the ent using this handle.
     uint16_t entType;
     int16_t copies;         // Num ents using this handle.
     bool claimed;           // Whether the entity is marked for deletion.
